@@ -2,22 +2,24 @@ import { byId, showToast } from "./dom.js";
 import { renderScreens } from "./home.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import { clearDraft, loadDraft, loadWorkouts, saveWorkouts } from "./storage.js";
-import { createWorkout, openWorkout } from "./workout.js";
+import { confirmLeaveWorkout, createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
 
 const TABS = ["home", "history"];
 let currentTab = "home";
+let onWorkoutScreen = false;
+let workoutIsNew = false;
 
-function showScreen(name) {
+// `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
+// "log" while logging a new workout.
+function showScreen(name, highlightedTab = name) {
   for (const screen of [...TABS, "workout"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
-  // The log screen has its own Save and Discard bar, so the tab bar steps aside.
-  byId("tabBar").hidden = name === "workout";
-  document.body.classList.toggle("has-tab-bar", name !== "workout");
+  onWorkoutScreen = name === "workout";
   for (const tab of document.querySelectorAll(".tab")) {
-    const isCurrent = tab.dataset.tab === name;
+    const isCurrent = tab.dataset.tab === highlightedTab;
     tab.classList.toggle("active", isCurrent);
     if (isCurrent) tab.setAttribute("aria-current", "page");
     else tab.removeAttribute("aria-current");
@@ -43,7 +45,9 @@ function openScreen(workout, isNew) {
     onDelete: deleteWorkout,
     onClose: showHome,
   });
-  showScreen("workout");
+  workoutIsNew = isNew;
+  // Editing an old workout keeps its origin tab selected; a new one is the "Log" tab.
+  showScreen("workout", isNew ? "log" : currentTab);
 }
 
 function startWorkout() {
@@ -97,11 +101,17 @@ function toggleTheme() {
 
 byId("themeButton").addEventListener("click", toggleTheme);
 byId("startButton").addEventListener("click", startWorkout);
+async function onTabClick(target) {
+  if (onWorkoutScreen) {
+    if (target === "log" && workoutIsNew) return;
+    if (!(await confirmLeaveWorkout())) return;
+  }
+  if (target === "log") startWorkout();
+  else showTab(target);
+}
+
 for (const tab of document.querySelectorAll(".tab")) {
-  tab.addEventListener("click", () => {
-    if (tab.dataset.tab === "log") startWorkout();
-    else showTab(tab.dataset.tab);
-  });
+  tab.addEventListener("click", () => onTabClick(tab.dataset.tab));
 }
 showTab("home");
 

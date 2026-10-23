@@ -59,6 +59,7 @@ function setLabel(step) {
 
 // Walks through the workout one set at a time with a total clock and rest
 // countdowns. It never changes the workout; `onExit` returns to the log screen.
+// Returns { stop, isRunning } so the caller can end it when the user navigates away.
 export function runGuidedWorkout(container, workout, unit, onExit) {
   const steps = buildSteps(workout);
   const totalClock = createStopwatch();
@@ -242,4 +243,5 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
   totalClock.start(now());
   phaseClock.start(now());
   render();
+  return { stop, isRunning: () => !finished };
 }

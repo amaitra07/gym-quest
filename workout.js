@@ -24,6 +24,9 @@ const DEFAULT_REST_SECONDS = 60;
 // edited as a copy and only replaces the original when saved.
 let session = null;
 
+// The running guided workout, if any (see player.js).
+let guidedRun = null;
+
 // The generator panel's choice and its current suggestion (not saved with the workout).
 let generatorKind = "push";
 let generated = null;
@@ -34,6 +37,7 @@ export function createWorkout() {
 
 export function openWorkout(workout, isNew, handlers) {
   session = { workout, isNew, isDirty: false, handlers };
+  guidedRun = null;
   generated = null;
   render();
 }
@@ -49,10 +53,24 @@ function pastWorkouts() {
 
 /* ---------- Actions ---------- */
 
+// Asks before throwing anything away, then stops the guided workout if one is running.
+// A new workout needs no question: it stays saved as a draft. Resolves true if it is
+// fine to leave this screen.
+export async function confirmLeaveWorkout() {
+  if (guidedRun?.isRunning()) {
+    const message = "Leave now? The guided workout will end, but your workout stays as you logged it.";
+    if (!(await confirmAction(message, "Leave"))) return false;
+  }
+  if (!session.isNew && session.isDirty) {
+    if (!(await confirmAction("Discard your changes to this workout?", "Discard changes"))) return false;
+  }
+  guidedRun?.stop();
+  guidedRun = null;
+  return true;
+}
+
 async function goBack() {
-  const needsConfirm = !session.isNew && session.isDirty;
-  if (needsConfirm && !(await confirmAction("Discard your changes to this workout?", "Discard changes"))) return;
-  session.handlers.onClose();
+  if (await confirmLeaveWorkout()) session.handlers.onClose();
 }
 
 function addExercise(name, type) {
@@ -111,7 +129,8 @@ function startGuidedWorkout() {
     return;
   }
   window.scrollTo(0, 0);
-  runGuidedWorkout(byId("workoutScreen"), session.workout, loadUnit(), () => {
+  guidedRun = runGuidedWorkout(byId("workoutScreen"), session.workout, loadUnit(), () => {
+    guidedRun = null;
     render();
     window.scrollTo(0, 0);
     showToast("Review your workout, then save it.");
