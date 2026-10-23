@@ -20,6 +20,29 @@ export function el(tag, attributes = {}, ...children) {
   return node;
 }
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+const ICON_SHAPES = {
+  back: { d: "M15 5l-7 7 7 7" },
+  forward: { d: "M9 5l7 7-7 7" },
+  close: { d: "M6 6l12 12M18 6L6 18" },
+  arrow: { d: "M5 12h14M13 6l6 6-6 6" },
+  play: { d: "M8 5v14l11-7z", filled: true },
+  pause: { d: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", filled: true },
+};
+
+// A small inline icon that takes the colour of the text around it.
+export function icon(name) {
+  const { d, filled } = ICON_SHAPES[name];
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", filled ? "icon icon-filled" : "icon");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("d", d);
+  svg.append(path);
+  return svg;
+}
+
 export function showToast(message) {
   const toast = el("div", { class: "toast", text: message });
   byId("toastHost").append(toast);

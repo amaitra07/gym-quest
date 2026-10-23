@@ -45,7 +45,12 @@ function showTab(name) {
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
-  renderScreens(workouts, loadDraft() !== null, editWorkout);
+  renderScreens(workouts, routines, loadDraft(), {
+    onOpenWorkout: editWorkout,
+    onStartRoutine: startRoutine,
+    onResume: resumeWorkout,
+    onOpenLog: () => showTab("log"),
+  });
   renderRoutines(routines, { onEdit: editRoutine, onCreate: createRoutine });
   renderProgress(workouts, loadUnit());
   renderLogPicker(routines, loadDraft(), {
@@ -194,10 +199,6 @@ async function onTabClick(target) {
 }
 
 byId("themeButton").addEventListener("click", toggleTheme);
-byId("startButton").addEventListener("click", () => {
-  if (loadDraft() !== null) resumeWorkout();
-  else showTab("log");
-});
 for (const tab of document.querySelectorAll(".tab")) {
   tab.addEventListener("click", () => onTabClick(tab.dataset.tab));
 }

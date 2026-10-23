@@ -1,6 +1,6 @@
 import { lineChart } from "./chart.js";
 import { formatDate } from "./dates.js";
-import { byId, el } from "./dom.js";
+import { byId, el, icon } from "./dom.js";
 import { describeSet } from "./exercises.js";
 import { exerciseSummary, listExercises, progressPoints } from "./records.js";
 
@@ -63,13 +63,12 @@ function renderDetail(workouts, unit, rerender) {
   const back = el("button", {
     class: "back-button",
     type: "button",
-    text: "← Progress",
     onclick: () => {
       selectedName = null;
       rerender();
       window.scrollTo(0, 0);
     },
-  });
+  }, icon("back"), "Progress");
   if (summary === null) {
     // The workout that held this lift was deleted or renamed, so go back to the list.
     selectedName = null;

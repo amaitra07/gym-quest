@@ -1,5 +1,5 @@
 import { createStopwatch, formatClock } from "./clock.js";
-import { confirmAction, el } from "./dom.js";
+import { confirmAction, el, icon } from "./dom.js";
 import { isSetFilled } from "./exercises.js";
 
 const TICK_MS = 250;
@@ -162,9 +162,8 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     return el("button", {
       class: "secondary-button",
       type: "button",
-      text: paused ? "▶ Continue" : "❚❚ Pause",
       onclick: togglePause,
-    });
+    }, icon(paused ? "play" : "pause"), paused ? "Continue" : "Pause");
   }
 
   function actionButton(text, onclick, className = "primary-button") {
@@ -211,7 +210,7 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     }
     actions.push(pauseButton());
     if (nextExerciseIndex(steps, index) !== -1) {
-      const skip = el("button", { class: "secondary-button", type: "button", text: "Next exercise →", onclick: skipExercise });
+      const skip = el("button", { class: "secondary-button", type: "button", onclick: skipExercise }, "Next exercise", icon("arrow"));
       skip.disabled = paused;
       actions.push(skip);
     }

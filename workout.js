@@ -1,5 +1,5 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, showToast } from "./dom.js";
+import { byId, confirmAction, el, icon, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
   cleanWorkout,
@@ -237,7 +237,7 @@ function screenTitle() {
 
 function renderTopBar(unit) {
   return el("div", { class: "top-bar" },
-    el("button", { class: "back-button", type: "button", text: "← Back", onclick: goBack }),
+    el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
     el("h2", { class: "screen-title", text: screenTitle() }),
     el("button", {
       class: "unit-button",
@@ -334,10 +334,9 @@ function renderSetRow(exercise, set, index, unit) {
     el("button", {
       class: "icon-button",
       type: "button",
-      text: "✕",
       "aria-label": `Remove set ${index + 1} of ${exercise.name}`,
       onclick: () => removeSet(exercise, index),
-    }));
+    }, icon("close")));
 }
 
 function renderExercise(exercise, unit) {
@@ -353,10 +352,9 @@ function renderExercise(exercise, unit) {
       el("button", {
         class: "icon-button",
         type: "button",
-        text: "✕",
         "aria-label": `Remove ${exercise.name}`,
         onclick: () => removeExercise(exercise),
-      })),
+      }, icon("close"))),
     lastText ? el("p", { class: "hint", text: lastText }) : null,
     el("label", { class: "field rest-field" },
       el("span", { text: "Rest between sets (seconds)" }),
@@ -431,9 +429,8 @@ function renderActionBar() {
       ? el("button", {
         class: "secondary-button start-guided",
         type: "button",
-        text: "▶ Start workout",
         onclick: startGuidedWorkout,
-      })
+      }, icon("play"), "Start workout")
       : null,
     el("button", {
       class: "primary-button",

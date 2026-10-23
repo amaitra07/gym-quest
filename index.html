@@ -13,49 +13,51 @@
   <title>Gym Quest</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="wrap">
     <main id="homeScreen">
-      <header class="hero">
+      <header class="home-top">
         <div>
-          <h1 class="brand">Gym Quest</h1>
-          <p class="tagline">Every session earns XP. Every streak builds a legend.</p>
+          <p class="home-date" id="homeDate"></p>
+          <h1 class="greeting" id="greeting">Hello</h1>
         </div>
         <button class="theme-toggle" id="themeButton" type="button" aria-label="Switch between light and dark theme"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none"/><path d="M12 4a8 8 0 0 1 0 16z" stroke="none"/></svg></button>
       </header>
 
-      <section class="panel level-card" aria-label="Your level">
-        <div class="ring" aria-hidden="true">
-          <svg width="78" height="78" viewBox="0 0 78 78">
-            <circle class="ring-track" cx="39" cy="39" r="33"></circle>
-            <circle class="ring-fill" id="ringFill" cx="39" cy="39" r="33"></circle>
-          </svg>
-          <div class="ring-label">
-            <span class="ring-caption">LEVEL</span>
-            <span class="ring-number" id="levelNumber">1</span>
+      <div class="bento">
+        <button class="tile tile-next" id="nextTile" type="button">
+          <span class="tag" id="nextTag">Up next</span>
+          <span class="tile-title" id="nextTitle"></span>
+          <span class="tile-meta" id="nextMeta"></span>
+          <span class="arrow-circle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </button>
+        <section class="tile tile-streak" aria-label="Day streak">
+          <span class="tile-number" id="streakNumber">0</span>
+          <span class="tile-label">day streak</span>
+        </section>
+        <section class="tile tile-total" aria-label="Workouts logged">
+          <span class="tile-number" id="workoutCount">0</span>
+          <span class="tile-label">workouts logged</span>
+        </section>
+        <section class="tile tile-level" aria-label="Your level">
+          <div class="level-text">
+            <p class="level-name" id="levelName">Level 1</p>
+            <p class="tile-label" id="levelDetail"></p>
           </div>
-        </div>
-        <div>
-          <p class="level-title" id="levelTitle">Fresh Start</p>
-          <p class="muted"><span id="xpIntoLevel">0</span> / <span id="xpForLevel">100</span> XP to next level</p>
-        </div>
-      </section>
-
-      <div class="stat-row">
-        <section class="panel stat" aria-label="Day streak">
-          <span class="stat-number streak" id="streakNumber">0</span>
-          <span class="muted">day streak</span>
+          <span class="level-percent" id="levelPercent">0%</span>
+          <div class="level-bar" aria-hidden="true"><span id="levelBarFill"></span></div>
         </section>
-        <section class="panel stat" aria-label="Workouts logged">
-          <span class="stat-number total" id="workoutCount">0</span>
-          <span class="muted">workouts logged</span>
-        </section>
+        <button class="tile tile-last" id="lastTile" type="button" hidden>
+          <span class="last-text">
+            <span class="last-name" id="lastName"></span>
+            <span class="tile-label" id="lastMeta"></span>
+          </span>
+          <span class="last-xp" id="lastXp"></span>
+        </button>
       </div>
-
-      <button class="primary-button start-button" id="startButton" type="button">Log workout</button>
     </main>
 
     <main id="logScreen" hidden>
@@ -94,9 +96,9 @@
       <h1 class="screen-title">History</h1>
       <section class="panel" aria-labelledby="calendarTitle">
         <div class="calendar-header">
-          <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month">‹</button>
+          <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
           <h2 id="calendarTitle"></h2>
-          <button class="calendar-nav" id="calendarNext" type="button" aria-label="Next month">›</button>
+          <button class="calendar-nav" id="calendarNext" type="button" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
       </section>
@@ -114,11 +116,11 @@
   </div>
 
   <nav class="tab-bar" id="tabBar" aria-label="Main">
-    <button class="tab" type="button" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><span>Home</span></button>
-    <button class="tab" type="button" data-tab="log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Log</span></button>
-    <button class="tab" type="button" data-tab="routines"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Workouts</span></button>
-    <button class="tab" type="button" data-tab="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3-3.5 3 2.5 5-6.5"/></svg><span>Progress</span></button>
-    <button class="tab" type="button" data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>History</span></button>
+    <button class="tab" type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><span>Home</span></button>
+    <button class="tab" type="button" data-tab="log" aria-label="Log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Log</span></button>
+    <button class="tab" type="button" data-tab="routines" aria-label="Workouts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Workouts</span></button>
+    <button class="tab" type="button" data-tab="progress" aria-label="Progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3-3.5 3 2.5 5-6.5"/></svg><span>Progress</span></button>
+    <button class="tab" type="button" data-tab="history" aria-label="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>History</span></button>
   </nav>
 
   <div class="toast-host" id="toastHost" aria-live="polite"></div>
