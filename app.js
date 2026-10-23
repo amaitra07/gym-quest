@@ -3,6 +3,7 @@ import { todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, chooseOption, confirmAction, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
+import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
 import { renderLogPicker, renderRoutines } from "./routines.js";
@@ -10,19 +11,26 @@ import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import {
   clearDraft,
   loadDraft,
+  loadProfile,
   loadRoutines,
   loadSchedule,
+  loadTheme,
   loadUnit,
   loadWorkouts,
+  saveProfile,
   saveRoutines,
   saveSchedule,
+  saveTheme,
+  saveUnit,
   saveWorkouts,
 } from "./storage.js";
+import { applyTheme } from "./theme.js";
 import { confirmLeaveWorkout, createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
 let routines = loadRoutines();
 let schedule = loadSchedule();
+let profile = loadProfile();
 
 const REST_DAY = "rest";
 
@@ -33,7 +41,7 @@ let onWorkoutScreen = false;
 // `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
 // the tab that the workout being edited belongs to.
 function showScreen(name, highlightedTab = name) {
-  for (const screen of [...TABS, "complete", "workout"]) {
+  for (const screen of [...TABS, "profile", "complete", "workout"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
   onWorkoutScreen = name === "workout";
@@ -50,7 +58,7 @@ function showTab(name) {
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
-  renderScreens(workouts, routines, schedule, loadDraft(), {
+  renderScreens(workouts, routines, schedule, profile, loadDraft(), {
     onOpenWorkout: editWorkout,
     onStartRoutine: startRoutine,
     onResume: resumeWorkout,
@@ -229,11 +237,37 @@ function deleteRoutine(id) {
   showToast("Saved workout deleted.");
 }
 
-function toggleTheme() {
-  const root = document.documentElement;
-  const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const current = root.dataset.theme || (systemPrefersDark ? "dark" : "light");
-  root.dataset.theme = current === "dark" ? "light" : "dark";
+// The profile and settings screen, opened from the circle on Home.
+function openProfile() {
+  currentTab = "home";
+  renderProfile(profile, loadUnit(), loadTheme(), {
+    onBack: () => showTab("home"),
+    onSave: saveProfileDetails,
+    onTheme: chooseTheme,
+    onUnit: chooseUnit,
+  });
+  showScreen("profile", "home");
+}
+
+function saveProfileDetails(nextProfile) {
+  if (!saveProfile(nextProfile)) {
+    showToast("Couldn't save. Your browser may be blocking or out of storage.");
+    return;
+  }
+  profile = nextProfile;
+  showTab("home");
+  showToast(profile.name ? `Saved. Nice to meet you, ${profile.name}!` : "Profile saved.");
+}
+
+function chooseTheme(theme) {
+  applyTheme(theme);
+  if (!saveTheme(theme)) showToast("Couldn't remember your choice on this device.");
+}
+
+// Switching units redraws the screen so height and weight show in the new unit.
+function chooseUnit(unit) {
+  if (!saveUnit(unit)) showToast("Couldn't remember your choice on this device.");
+  openProfile();
 }
 
 async function onTabClick(target) {
@@ -241,10 +275,11 @@ async function onTabClick(target) {
   showTab(target);
 }
 
-byId("themeButton").addEventListener("click", toggleTheme);
+byId("profileButton").addEventListener("click", openProfile);
 for (const tab of document.querySelectorAll(".tab")) {
   tab.addEventListener("click", () => onTabClick(tab.dataset.tab));
 }
+applyTheme(loadTheme());
 showTab("home");
 
 if ("serviceWorker" in navigator) {

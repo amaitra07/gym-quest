@@ -139,32 +139,60 @@ h3 {
 
 .greeting {
   margin: 0;
-  font-size: 42px;
+  line-height: 1;
+}
+
+.greeting-line {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-dim);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.greeting-name {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 46px;
   font-weight: 900;
   letter-spacing: -0.05em;
   line-height: 0.95;
 }
 
-.theme-toggle {
+.profile-button {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
   border: none;
+  border-radius: 50%;
   background: var(--panel);
   color: var(--text);
   cursor: pointer;
+  transition: transform 0.1s ease;
 }
 
-.theme-toggle svg {
-  width: 22px;
-  height: 22px;
-  fill: currentColor;
+.profile-button:active {
+  transform: scale(0.94);
+}
+
+.profile-initial {
+  color: var(--accent-text);
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.profile-button svg {
+  width: 26px;
+  height: 26px;
+  fill: none;
   stroke: currentColor;
   stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .bento {
@@ -955,6 +983,57 @@ select:focus-visible {
 
 #resumeCard .primary-button {
   margin-top: 4px;
+}
+
+/* ---------- Profile and settings ---------- */
+.profile-form {
+  display: grid;
+  gap: 14px;
+}
+
+.profile-form h2,
+.setting-label {
+  margin: 0;
+}
+
+.field-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.setting-label {
+  margin-top: 14px;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 20px;
+  background: var(--panel-2);
+}
+
+.segmented button {
+  min-height: 46px;
+  border: none;
+  border-radius: 16px;
+  background: none;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
 }
 
 /* ---------- Weekly plan ---------- */

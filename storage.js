@@ -2,6 +2,8 @@ const WORKOUTS_KEY = "gymquest.workouts";
 const DRAFT_KEY = "gymquest.draft";
 const ROUTINES_KEY = "gymquest.routines";
 const SCHEDULE_KEY = "gymquest.schedule";
+const PROFILE_KEY = "gymquest.profile";
+const THEME_KEY = "gymquest.theme";
 const UNIT_KEY = "gymquest.unit";
 
 function readJson(key) {
@@ -49,6 +51,25 @@ export function loadSchedule() {
 
 export function saveSchedule(schedule) {
   return writeJson(SCHEDULE_KEY, schedule);
+}
+
+// { name, age, heightCm, weightKg, goal }, or null before anything has been saved.
+export function loadProfile() {
+  const saved = readJson(PROFILE_KEY);
+  return saved !== null && typeof saved === "object" && !Array.isArray(saved) ? saved : null;
+}
+
+export function saveProfile(profile) {
+  return writeJson(PROFILE_KEY, profile);
+}
+
+export function loadTheme() {
+  const saved = readJson(THEME_KEY);
+  return saved === "light" || saved === "dark" ? saved : "system";
+}
+
+export function saveTheme(theme) {
+  return writeJson(THEME_KEY, theme);
 }
 
 export function loadDraft() {

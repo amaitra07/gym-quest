@@ -15,9 +15,15 @@ function greeting(now = new Date()) {
   return "Good evening";
 }
 
-function renderHeader() {
+// The greeting, date and profile circle (the first letter of your name, or a person icon).
+function renderHeader(profile) {
   const now = new Date();
-  byId("greeting").textContent = greeting(now);
+  const name = profile?.name?.trim() ?? "";
+  byId("greetingLine").textContent = greeting(now);
+  byId("greetingName").textContent = name || "Let's go";
+  byId("profileInitial").textContent = name.slice(0, 1).toUpperCase();
+  byId("profileInitial").hidden = name === "";
+  byId("profileIcon").style.display = name === "" ? "" : "none";
   byId("homeDate").textContent = now.toLocaleDateString(undefined, {
     weekday: "long",
     month: "long",
@@ -90,8 +96,8 @@ function renderLastWorkout(workouts, onOpenWorkout) {
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onStartRoutine,
 // onResume, onOpenLog }.
-export function renderScreens(workouts, routines, schedule, draft, actions) {
-  renderHeader();
+export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
+  renderHeader(profile);
   renderStats(workouts);
   renderNextTile(workouts, routines, schedule, draft, actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
