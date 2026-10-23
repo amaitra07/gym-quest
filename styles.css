@@ -769,6 +769,31 @@ h3 {
   }
 }
 
+/* ---------- Lists where each item is its own card ---------- */
+/* Once a list has items, its outer box goes away and every row becomes a separate card.
+   With no items the panel stays, so the "nothing yet" message still sits in a box. */
+.panel.card-list:has(li) {
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.card-list:has(li) > h2,
+.card-list:has(li) .list-header {
+  margin: 0 4px 10px;
+}
+
+.card-list .history li,
+.card-list .history li:last-child {
+  margin-bottom: 10px;
+  padding: 4px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
 /* ---------- Saved workouts and the Log picker ---------- */
 .screen-intro {
   margin: -8px 0 16px;

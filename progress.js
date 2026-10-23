@@ -46,7 +46,7 @@ function renderList(workouts, unit, rerender) {
     exercises.length === 0
       ? el("section", { class: "panel" },
         el("p", { class: "empty", text: "Your records and charts show up here after you log a workout. Every lift you do gets its own page." }))
-      : el("section", { class: "panel" },
+      : el("section", { class: "panel card-list" },
         el("h2", { text: "Your lifts" }),
         el("ul", { class: "history" }, ...rows)),
   ];

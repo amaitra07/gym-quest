@@ -61,7 +61,7 @@
     <main id="logScreen" hidden>
       <h1 class="screen-title">Log a workout</h1>
       <section class="panel" id="resumeCard" hidden></section>
-      <section class="panel" aria-labelledby="pickerHeading">
+      <section class="panel card-list" aria-labelledby="pickerHeading">
         <h2 id="pickerHeading">Pick a workout to start</h2>
         <ul class="history" id="pickerList"></ul>
         <div id="pickerEmpty" hidden>
@@ -76,7 +76,7 @@
       <h1 class="screen-title">Workouts</h1>
       <p class="muted screen-intro">Save workouts like Push day or Legs here. Start them from the Log tab.</p>
       <button class="primary-button" id="newRoutineButton" type="button">+ New workout</button>
-      <section class="panel routine-panel">
+      <section class="panel card-list routine-panel">
         <ul class="history" id="routineList"></ul>
         <p class="empty" id="routineEmpty" hidden>Nothing saved yet. Tap “New workout” to build your first one.</p>
       </section>
@@ -100,7 +100,7 @@
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
       </section>
-      <section class="panel" aria-labelledby="historyHeading">
+      <section class="panel card-list" aria-labelledby="historyHeading">
         <div class="list-header">
           <h2 id="historyHeading">All workouts</h2>
           <button class="link-button" id="showAllButton" type="button" hidden>Show all</button>
