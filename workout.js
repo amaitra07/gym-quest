@@ -19,9 +19,11 @@ import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
 
-// The workout being edited: { workout, isNew, isDirty, handlers }.
-// A new workout is saved as a draft after every change; an existing one is
-// edited as a copy and only replaces the original when saved.
+// The workout being edited: { workout, isNew, isDirty, handlers, kind }.
+// `kind` is "log" for a workout being logged or edited from history, or "routine" for a
+// saved workout (a reusable template with no date). A new logged workout is saved as a
+// draft after every change; anything else is edited as a copy and only replaces the
+// original when saved.
 let session = null;
 
 // The running guided workout, if any (see player.js).
@@ -35,16 +37,23 @@ export function createWorkout() {
   return { id: newId(), createdAt: Date.now(), name: "", date: todayIso(), exercises: [] };
 }
 
-export function openWorkout(workout, isNew, handlers) {
-  session = { workout, isNew, isDirty: false, handlers };
+const isRoutine = () => session.kind === "routine";
+
+// With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
+export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
+  session = { workout, isNew, isDirty: false, handlers, kind };
   guidedRun = null;
   generated = null;
   render();
+  if (autoStart) {
+    saveDraft(workout);
+    startGuidedWorkout();
+  }
 }
 
 function markChanged() {
   session.isDirty = true;
-  if (session.isNew) saveDraft(session.workout);
+  if (session.isNew && !isRoutine()) saveDraft(session.workout);
 }
 
 function pastWorkouts() {
@@ -54,14 +63,15 @@ function pastWorkouts() {
 /* ---------- Actions ---------- */
 
 // Asks before throwing anything away, then stops the guided workout if one is running.
-// A new workout needs no question: it stays saved as a draft. Resolves true if it is
-// fine to leave this screen.
+// A new logged workout needs no question: it stays saved as a draft. Resolves true if it
+// is fine to leave this screen.
 export async function confirmLeaveWorkout() {
   if (guidedRun?.isRunning()) {
     const message = "Leave now? The guided workout will end, but your workout stays as you logged it.";
     if (!(await confirmAction(message, "Leave"))) return false;
   }
-  if (!session.isNew && session.isDirty) {
+  const isOnlyCopy = !session.isNew || isRoutine();
+  if (isOnlyCopy && session.isDirty) {
     if (!(await confirmAction("Discard your changes to this workout?", "Discard changes"))) return false;
   }
   guidedRun?.stop();
@@ -167,7 +177,25 @@ function useGeneratedWorkout() {
   showToast("Workout added. Fill in your weights and adjust anything you like.");
 }
 
+function saveRoutine() {
+  const cleaned = cleanWorkout(session.workout);
+  const name = cleaned.name.trim();
+  if (!name) {
+    showToast("Give this workout a name first.");
+    return;
+  }
+  if (cleaned.exercises.length === 0) {
+    showToast("Add at least one exercise with a number in it first.");
+    return;
+  }
+  session.handlers.onSave({ ...cleaned, name }, session.isNew);
+}
+
 function finishWorkout() {
+  if (isRoutine()) {
+    saveRoutine();
+    return;
+  }
   const cleaned = cleanWorkout(session.workout);
   if (cleaned.exercises.length === 0) {
     showToast("Log at least one set with a number in it before finishing.");
@@ -184,10 +212,12 @@ async function discardOrDeleteWorkout() {
   if (isNew) {
     const message = "Discard this workout? Nothing you entered will be saved.";
     if (!(await confirmAction(message, "Discard workout"))) return;
-    clearDraft();
+    if (!isRoutine()) clearDraft();
     handlers.onClose();
   } else {
-    const message = `Delete "${workout.name}"? Its XP will be removed too.`;
+    const message = isRoutine()
+      ? `Delete the saved workout "${workout.name}"? Workouts you already logged are not affected.`
+      : `Delete "${workout.name}"? Its XP will be removed too.`;
     if (!(await confirmAction(message, "Delete workout"))) return;
     handlers.onDelete(workout.id);
   }
@@ -200,10 +230,15 @@ function toggleUnit() {
 
 /* ---------- Rendering ---------- */
 
+function screenTitle() {
+  if (isRoutine()) return session.isNew ? "New saved workout" : "Edit saved workout";
+  return session.isNew ? "Log workout" : "Edit workout";
+}
+
 function renderTopBar(unit) {
   return el("div", { class: "top-bar" },
     el("button", { class: "back-button", type: "button", text: "← Back", onclick: goBack }),
-    el("h2", { class: "screen-title", text: session.isNew ? "Log workout" : "Edit workout" }),
+    el("h2", { class: "screen-title", text: screenTitle() }),
     el("button", {
       class: "unit-button",
       type: "button",
@@ -238,7 +273,7 @@ function renderDetails() {
   });
   return el("section", { class: "panel details" },
     el("label", { class: "field" }, el("span", { text: "Workout name" }), nameInput),
-    el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
+    isRoutine() ? null : el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
 }
 
 function renderGenerator() {
@@ -388,8 +423,11 @@ function renderAddExercise() {
 
 function renderActionBar() {
   const { isNew } = session;
+  const startsGuided = isNew && !isRoutine();
+  const primaryText = isRoutine() ? "Save workout" : isNew ? "Finish workout" : "Save changes";
+  const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : "Delete workout";
   return el("div", { class: "action-bar" },
-    isNew
+    startsGuided
       ? el("button", {
         class: "secondary-button start-guided",
         type: "button",
@@ -400,13 +438,13 @@ function renderActionBar() {
     el("button", {
       class: "primary-button",
       type: "button",
-      text: isNew ? "Finish workout" : "Save changes",
+      text: primaryText,
       onclick: finishWorkout,
     }),
     el("button", {
       class: "text-button",
       type: "button",
-      text: isNew ? "Discard workout" : "Delete workout",
+      text: secondaryText,
       onclick: discardOrDeleteWorkout,
     }));
 }

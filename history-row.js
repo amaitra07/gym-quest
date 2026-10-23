@@ -1,7 +1,7 @@
 import { formatDate } from "./dates.js";
 import { el } from "./dom.js";
 
-function summarize(workout) {
+export function summarize(workout) {
   const setCount = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
   const exerciseWord = workout.exercises.length === 1 ? "exercise" : "exercises";
   const setWord = setCount === 1 ? "set" : "sets";

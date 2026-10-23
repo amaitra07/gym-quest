@@ -24,5 +24,4 @@ export function renderScreens(workouts, hasDraft, onOpenWorkout) {
   renderStats(workouts);
   renderHistory(workouts, onOpenWorkout);
   byId("startButton").textContent = hasDraft ? "Resume logging" : "Log workout";
-  byId("logTabLabel").textContent = hasDraft ? "Resume" : "Log";
 }

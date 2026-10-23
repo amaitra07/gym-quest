@@ -1,18 +1,28 @@
-import { byId, showToast } from "./dom.js";
+import { todayIso } from "./dates.js";
+import { byId, confirmAction, showToast } from "./dom.js";
+import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
+import { renderLogPicker, renderRoutines } from "./routines.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
-import { clearDraft, loadDraft, loadWorkouts, saveWorkouts } from "./storage.js";
+import {
+  clearDraft,
+  loadDraft,
+  loadRoutines,
+  loadWorkouts,
+  saveRoutines,
+  saveWorkouts,
+} from "./storage.js";
 import { confirmLeaveWorkout, createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
+let routines = loadRoutines();
 
-const TABS = ["home", "history"];
+const TABS = ["home", "log", "routines", "history"];
 let currentTab = "home";
 let onWorkoutScreen = false;
-let workoutIsNew = false;
 
 // `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
-// "log" while logging a new workout.
+// the tab that the workout being edited belongs to.
 function showScreen(name, highlightedTab = name) {
   for (const screen of [...TABS, "workout"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
@@ -30,6 +40,13 @@ function showScreen(name, highlightedTab = name) {
 function showTab(name) {
   currentTab = name;
   renderScreens(workouts, loadDraft() !== null, editWorkout);
+  renderRoutines(routines, { onEdit: editRoutine, onCreate: createRoutine });
+  renderLogPicker(routines, loadDraft(), {
+    onStart: startRoutine,
+    onResume: resumeWorkout,
+    onEmpty: startEmptyWorkout,
+    onCreate: createRoutine,
+  });
   showScreen(name);
 }
 
@@ -38,24 +55,52 @@ function showHome() {
   showTab(currentTab);
 }
 
-function openScreen(workout, isNew) {
+function openScreen(workout, isNew, { kind = "log", autoStart = false } = {}) {
   openWorkout(workout, isNew, {
     getWorkouts: () => workouts,
-    onSave: saveWorkout,
-    onDelete: deleteWorkout,
+    onSave: kind === "routine" ? saveRoutine : saveWorkout,
+    onDelete: kind === "routine" ? deleteRoutine : deleteWorkout,
     onClose: showHome,
-  });
-  workoutIsNew = isNew;
-  // Editing an old workout keeps its origin tab selected; a new one is the "Log" tab.
-  showScreen("workout", isNew ? "log" : currentTab);
+  }, { kind, autoStart });
+  // A workout being logged is the "Log" tab; a saved workout belongs to "Workouts".
+  const highlightedTab = kind === "routine" ? "routines" : isNew ? "log" : currentTab;
+  showScreen("workout", highlightedTab);
 }
 
-function startWorkout() {
+function resumeWorkout() {
   openScreen(loadDraft() ?? createWorkout(), true);
+}
+
+async function startEmptyWorkout() {
+  if (!(await confirmReplacingDraft())) return;
+  clearDraft();
+  openScreen(createWorkout(), true);
+}
+
+async function startRoutine(routine) {
+  if (!(await confirmReplacingDraft())) return;
+  const workout = workoutFromRoutine(routine, workouts, todayIso());
+  openScreen(workout, true, { autoStart: true });
+}
+
+// Starting something new would overwrite the unfinished workout, so ask first.
+async function confirmReplacingDraft() {
+  if (loadDraft() === null) return true;
+  const message = "Start a new workout? Your unfinished workout will be discarded.";
+  return confirmAction(message, "Start new");
 }
 
 function editWorkout(workout) {
   openScreen(structuredClone(workout), false);
+}
+
+function createRoutine() {
+  currentTab = "routines";
+  openScreen({ id: newId(), name: "", exercises: [] }, true, { kind: "routine" });
+}
+
+function editRoutine(routine) {
+  openScreen(structuredClone(routine), false, { kind: "routine" });
 }
 
 // Replaces the saved list only if it could be written, so the screen never
@@ -69,6 +114,15 @@ function persist(nextWorkouts) {
   return true;
 }
 
+function persistRoutines(nextRoutines) {
+  if (!saveRoutines(nextRoutines)) {
+    showToast("Couldn't save. Your browser may be blocking or out of storage.");
+    return false;
+  }
+  routines = nextRoutines;
+  return true;
+}
+
 function saveWorkout(workout, isNew) {
   const levelBefore = levelInfo(totalXp(workouts)).level;
   const nextWorkouts = isNew
@@ -76,8 +130,12 @@ function saveWorkout(workout, isNew) {
     : workouts.map((existing) => (existing.id === workout.id ? workout : existing));
   if (!persist(nextWorkouts)) return;
 
-  if (isNew) clearDraft();
-  showHome();
+  if (isNew) {
+    clearDraft();
+    showTab("home");
+  } else {
+    showHome();
+  }
   const levelAfter = levelInfo(totalXp(workouts)).level;
   showToast(
     levelAfter > levelBefore
@@ -92,6 +150,21 @@ function deleteWorkout(id) {
   showToast("Workout deleted.");
 }
 
+function saveRoutine(routine, isNew) {
+  const nextRoutines = isNew
+    ? [...routines, routine]
+    : routines.map((existing) => (existing.id === routine.id ? routine : existing));
+  if (!persistRoutines(nextRoutines)) return;
+  showTab("routines");
+  showToast(`Saved “${routine.name}”. Start it any time from the Log tab.`);
+}
+
+function deleteRoutine(id) {
+  if (!persistRoutines(routines.filter((routine) => routine.id !== id))) return;
+  showTab("routines");
+  showToast("Saved workout deleted.");
+}
+
 function toggleTheme() {
   const root = document.documentElement;
   const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
@@ -99,17 +172,16 @@ function toggleTheme() {
   root.dataset.theme = current === "dark" ? "light" : "dark";
 }
 
-byId("themeButton").addEventListener("click", toggleTheme);
-byId("startButton").addEventListener("click", startWorkout);
 async function onTabClick(target) {
-  if (onWorkoutScreen) {
-    if (target === "log" && workoutIsNew) return;
-    if (!(await confirmLeaveWorkout())) return;
-  }
-  if (target === "log") startWorkout();
-  else showTab(target);
+  if (onWorkoutScreen && !(await confirmLeaveWorkout())) return;
+  showTab(target);
 }
 
+byId("themeButton").addEventListener("click", toggleTheme);
+byId("startButton").addEventListener("click", () => {
+  if (loadDraft() !== null) resumeWorkout();
+  else showTab("log");
+});
 for (const tab of document.querySelectorAll(".tab")) {
   tab.addEventListener("click", () => onTabClick(tab.dataset.tab));
 }

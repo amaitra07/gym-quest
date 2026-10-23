@@ -55,6 +55,30 @@
       <button class="primary-button start-button" id="startButton" type="button">Log workout</button>
     </main>
 
+    <main id="logScreen" hidden>
+      <h1 class="screen-title">Log a workout</h1>
+      <section class="panel" id="resumeCard" hidden></section>
+      <section class="panel" aria-labelledby="pickerHeading">
+        <h2 id="pickerHeading">Pick a workout to start</h2>
+        <ul class="history" id="pickerList"></ul>
+        <div id="pickerEmpty" hidden>
+          <p class="empty">No saved workouts yet. Build one like Push day or Legs, then start it here in one tap with rest timers.</p>
+          <button class="secondary-button" id="createFromPickerButton" type="button">Create a saved workout</button>
+        </div>
+      </section>
+      <button class="secondary-button" id="emptyWorkoutButton" type="button">Empty workout (log as you go)</button>
+    </main>
+
+    <main id="routinesScreen" hidden>
+      <h1 class="screen-title">Workouts</h1>
+      <p class="muted screen-intro">Save workouts like Push day or Legs here. Start them from the Log tab.</p>
+      <button class="primary-button" id="newRoutineButton" type="button">+ New workout</button>
+      <section class="panel routine-panel">
+        <ul class="history" id="routineList"></ul>
+        <p class="empty" id="routineEmpty" hidden>Nothing saved yet. Tap “New workout” to build your first one.</p>
+      </section>
+    </main>
+
     <main id="historyScreen" hidden>
       <h1 class="screen-title">History</h1>
       <section class="panel" aria-labelledby="calendarTitle">
@@ -80,7 +104,8 @@
 
   <nav class="tab-bar" id="tabBar" aria-label="Main">
     <button class="tab" type="button" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><span>Home</span></button>
-    <button class="tab" type="button" data-tab="log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="logTabLabel">Log</span></button>
+    <button class="tab" type="button" data-tab="log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Log</span></button>
+    <button class="tab" type="button" data-tab="routines"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Workouts</span></button>
     <button class="tab" type="button" data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>History</span></button>
   </nav>
 

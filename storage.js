@@ -1,5 +1,6 @@
 const WORKOUTS_KEY = "gymquest.workouts";
 const DRAFT_KEY = "gymquest.draft";
+const ROUTINES_KEY = "gymquest.routines";
 const UNIT_KEY = "gymquest.unit";
 
 function readJson(key) {
@@ -28,6 +29,15 @@ export function loadWorkouts() {
 
 export function saveWorkouts(workouts) {
   return writeJson(WORKOUTS_KEY, workouts);
+}
+
+export function loadRoutines() {
+  const saved = readJson(ROUTINES_KEY);
+  return Array.isArray(saved) ? saved : [];
+}
+
+export function saveRoutines(routines) {
+  return writeJson(ROUTINES_KEY, routines);
 }
 
 export function loadDraft() {

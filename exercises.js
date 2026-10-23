@@ -128,6 +128,25 @@ export function nextSetDefaults(type, lastSets, ownSets) {
   return set;
 }
 
+// A fresh workout to log from a saved one. Reps, minutes and rest come from the saved
+// workout; strength weights come from the last time each exercise was done, falling
+// back to the weight saved with the workout.
+export function workoutFromRoutine(routine, pastWorkouts, date) {
+  const exercises = routine.exercises.map((exercise) => {
+    const last = lastPerformance(pastWorkouts, exercise.name, null);
+    const sets = [];
+    for (const savedSet of exercise.sets) {
+      const set = { ...savedSet };
+      if (exercise.type === "strength" && last) {
+        set.weight = nextSetDefaults(exercise.type, last.sets, sets).weight ?? savedSet.weight;
+      }
+      sets.push(set);
+    }
+    return { ...exercise, id: newId(), sets };
+  });
+  return { id: newId(), createdAt: Date.now(), name: routine.name, date, exercises };
+}
+
 export function describeSet(type, set, unit) {
   if (type === "strength") return `${set.weight ?? 0}${unit} × ${set.reps}`;
   if (type === "cardio") {

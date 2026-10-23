@@ -753,6 +753,27 @@ h3 {
   }
 }
 
+/* ---------- Saved workouts and the Log picker ---------- */
+.screen-intro {
+  margin: -8px 0 16px;
+}
+
+.routine-panel {
+  margin-top: 14px;
+}
+
+#logScreen > .secondary-button {
+  margin-bottom: 14px;
+}
+
+#pickerEmpty .secondary-button {
+  margin-top: 12px;
+}
+
+#resumeCard .primary-button {
+  margin-top: 4px;
+}
+
 /* ---------- Bottom tab bar ---------- */
 .screen-title {
   margin: 0;
