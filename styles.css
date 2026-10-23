@@ -903,6 +903,150 @@ select:focus-visible {
   cursor: default;
 }
 
+/* ---------- Guided workout progress ---------- */
+.progress-summary {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 20px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.progress-summary:active {
+  transform: scale(0.98);
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.progress-count {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.progress-link {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.progress-track {
+  display: block;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+.overview-dialog {
+  max-height: min(82vh, 680px);
+  overflow-y: auto;
+}
+
+.overview-total {
+  margin-bottom: 8px;
+}
+
+.overview-list {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.overview-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.overview-row:last-child {
+  border-bottom: none;
+}
+
+.overview-main,
+.overview-side {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.overview-side {
+  align-items: flex-end;
+}
+
+.overview-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.overview-row.is-current .overview-name {
+  color: var(--accent-text);
+}
+
+.overview-count {
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.overview-status {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.overview-status.is-done {
+  background: var(--panel-2);
+  color: var(--accent-text);
+}
+
+.set-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.set-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--panel-2);
+}
+
+.set-dot.is-done {
+  background: var(--accent);
+}
+
 /* ---------- Confirm dialog ---------- */
 .dialog-overlay {
   position: fixed;

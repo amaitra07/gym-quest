@@ -34,6 +34,25 @@ export function nextExerciseIndex(steps, index) {
   return steps.findIndex((step, position) => position > index && step.exercise !== current);
 }
 
+// How far through the workout you are. `completed` holds the indexes of the sets you
+// finished (skipped sets do not count). Returns the totals plus one entry per exercise,
+// in workout order, with its finished and total sets and whether it is the one in progress.
+export function progressSummary(steps, completed, currentIndex, finished = false) {
+  const byExercise = new Map();
+  steps.forEach((step, position) => {
+    const entry = byExercise.get(step.exercise) ?? { name: step.exercise.name, done: 0, total: 0, isCurrent: false };
+    entry.total += 1;
+    if (completed.has(position)) entry.done += 1;
+    if (!finished && position === currentIndex) entry.isCurrent = true;
+    byExercise.set(step.exercise, entry);
+  });
+  return {
+    done: completed.size,
+    total: steps.length,
+    exercises: [...byExercise.values()].map((entry) => ({ ...entry, isDone: entry.done === entry.total })),
+  };
+}
+
 // Timed holds and cardio count down; strength sets wait for "Done with set".
 function workDurationSeconds(step) {
   if (step.exercise.type === "timed") return step.set.seconds;
@@ -68,6 +87,8 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
   let phase = "work";
   let paused = false;
   let finished = false;
+  const completed = new Set();
+  let overview = null;
   let totalNode = null;
   let countdownNode = null;
   let wakeLock = null;
@@ -97,6 +118,7 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
   }
 
   function completeSet() {
+    completed.add(index);
     const next = afterSet(steps, index);
     if (next === null) finish();
     else enterPhase(next.index, next.phase);
@@ -148,6 +170,7 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
 
   const timer = setInterval(tick, TICK_MS);
   function stop() {
+    closeOverview();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
   }
@@ -156,7 +179,83 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     if (finished) lock.release().catch(() => {});
   }).catch(() => {});
 
+  /* ---------- All exercises sheet ---------- */
+
+  function overviewRow(entry) {
+    const dots = Array.from({ length: entry.total }, (_, position) =>
+      el("i", { class: position < entry.done ? "set-dot is-done" : "set-dot" }));
+    const status = entry.isCurrent ? "Now" : entry.isDone ? "Done" : "";
+    return el("li", { class: entry.isCurrent ? "overview-row is-current" : "overview-row" },
+      el("span", { class: "overview-main" },
+        el("span", { class: "overview-name", text: entry.name }),
+        el("span", { class: "set-dots", "aria-hidden": "true" }, ...dots)),
+      el("span", { class: "overview-side" },
+        el("span", { class: "overview-count", text: `${entry.done} of ${entry.total} ${entry.total === 1 ? "set" : "sets"}` }),
+        status ? el("span", { class: entry.isDone ? "overview-status is-done" : "overview-status", text: status }) : null));
+  }
+
+  // Redraws the sheet if it is open, so it stays in step as sets are finished.
+  function renderOverview() {
+    if (overview === null) return;
+    const summary = progressSummary(steps, completed, index, finished);
+    overview.content.replaceChildren(
+      el("p", { class: "muted overview-total", text: `${summary.done} of ${summary.total} sets done` }),
+      el("ul", { class: "overview-list" }, ...summary.exercises.map(overviewRow)));
+  }
+
+  function closeOverview() {
+    if (overview === null) return;
+    overview.overlay.remove();
+    overview.previousFocus?.focus?.();
+    overview = null;
+  }
+
+  function openOverview() {
+    const previousFocus = document.activeElement;
+    const content = el("div", {});
+    const closeButton = el("button", { class: "secondary-button", type: "button", text: "Close", onclick: closeOverview });
+    const overlay = el("div", {
+      class: "dialog-overlay",
+      onclick: (event) => {
+        if (event.target === overlay) closeOverview();
+      },
+      onkeydown: (event) => {
+        if (event.key === "Escape") closeOverview();
+      },
+    },
+      el("div", { class: "dialog overview-dialog", role: "dialog", "aria-modal": "true", "aria-label": "All exercises" },
+        el("h2", { text: "All exercises" }),
+        content,
+        closeButton));
+    overview = { overlay, content, previousFocus };
+    document.body.append(overlay);
+    renderOverview();
+    closeButton.focus();
+  }
+
   /* ---------- Rendering ---------- */
+
+  // How many sets are done, as a bar. Tapping it opens the list of all exercises.
+  function progressBar() {
+    const { done, total } = progressSummary(steps, completed, index, finished);
+    const percent = Math.round((done / total) * 100);
+    return el("button", {
+      class: "progress-summary",
+      type: "button",
+      "aria-label": `${done} of ${total} sets done. Show all exercises.`,
+      onclick: openOverview,
+    },
+    el("span", { class: "progress-row" },
+      el("span", { class: "progress-count", text: `${done} of ${total} sets` }),
+      el("span", { class: "progress-link" }, "All exercises", icon("forward"))),
+    el("span", {
+      class: "progress-track",
+      role: "progressbar",
+      "aria-valuemin": "0",
+      "aria-valuemax": "100",
+      "aria-valuenow": String(percent),
+    }, el("span", { class: "progress-fill", style: `width: ${percent}%` })));
+  }
 
   function pauseButton() {
     return el("button", {
@@ -235,7 +334,11 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
       el("span", { class: "muted", text: finished ? "Done" : `Exercise ${exerciseNumber} of ${workout.exercises.length}` }),
       totalNode,
       finished ? el("span", {}) : el("button", { class: "text-button", type: "button", text: "End", onclick: endEarly }));
-    container.replaceChildren(el("div", { class: "player" }, header, ...(finished ? renderDone() : renderStep())));
+    container.replaceChildren(el("div", { class: "player" },
+      header,
+      finished ? null : progressBar(),
+      ...(finished ? renderDone() : renderStep())));
+    renderOverview();
     tick();
   }
 
