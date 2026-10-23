@@ -1,6 +1,5 @@
 import { toIsoDate, todayIso } from "./dates.js";
 import { byId, el } from "./dom.js";
-import { workoutRow } from "./history-row.js";
 
 const WEEKDAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
 
@@ -9,6 +8,14 @@ const today = new Date();
 let viewYear = today.getFullYear();
 let viewMonth = today.getMonth();
 let selectedDate = null;
+
+export function getSelectedDate() {
+  return selectedDate;
+}
+
+export function clearSelectedDate() {
+  selectedDate = null;
+}
 
 // One entry per week-row cell: an ISO date, or null for the blanks before the
 // 1st and after the last day of the month.
@@ -31,7 +38,7 @@ export function workoutsByDate(workouts) {
   return byDate;
 }
 
-function longDate(isoDate) {
+export function longDate(isoDate) {
   const [year, month, day] = isoDate.split("-").map(Number);
   return new Date(year, month - 1, day).toLocaleDateString(undefined, {
     weekday: "long",
@@ -40,34 +47,17 @@ function longDate(isoDate) {
   });
 }
 
-function changeMonth(delta, rerender) {
+function changeMonth(delta, onChange) {
   const next = new Date(viewYear, viewMonth + delta, 1);
   viewYear = next.getFullYear();
   viewMonth = next.getMonth();
   selectedDate = null;
-  rerender();
+  onChange();
 }
 
-function renderDetails(byDate, onOpenWorkout) {
-  const details = byId("calendarDetails");
-  details.replaceChildren();
-  if (selectedDate === null) {
-    details.append(el("p", { class: "empty", text: "Tap a day to see what you did." }));
-    return;
-  }
-  details.append(el("h3", { class: "calendar-day-title", text: longDate(selectedDate) }));
-  const dayWorkouts = byDate.get(selectedDate) ?? [];
-  if (dayWorkouts.length === 0) {
-    details.append(el("p", { class: "empty", text: "No workout logged this day." }));
-    return;
-  }
-  const list = el("ul", { class: "history" });
-  list.append(...dayWorkouts.map((workout) => workoutRow(workout, onOpenWorkout)));
-  details.append(list);
-}
-
-export function renderCalendar(workouts, onOpenWorkout) {
-  const rerender = () => renderCalendar(workouts, onOpenWorkout);
+// Draws the month grid. Tapping a day (or changing month) updates the selection and calls
+// onChange, which should redraw the calendar along with anything that depends on the selection.
+export function renderCalendar(workouts, onChange) {
   const byDate = workoutsByDate(workouts);
   const todayDate = todayIso();
 
@@ -77,8 +67,8 @@ export function renderCalendar(workouts, onOpenWorkout) {
   );
   const showingCurrentMonth = viewYear === today.getFullYear() && viewMonth === today.getMonth();
   byId("calendarNext").disabled = showingCurrentMonth;
-  byId("calendarPrev").onclick = () => changeMonth(-1, rerender);
-  byId("calendarNext").onclick = () => changeMonth(1, rerender);
+  byId("calendarPrev").onclick = () => changeMonth(-1, onChange);
+  byId("calendarNext").onclick = () => changeMonth(1, onChange);
 
   const grid = byId("calendarGrid");
   grid.replaceChildren(
@@ -103,11 +93,10 @@ export function renderCalendar(workouts, onOpenWorkout) {
         "aria-pressed": String(isoDate === selectedDate),
         text: String(Number(isoDate.slice(8))),
         onclick: () => {
-          selectedDate = isoDate;
-          rerender();
+          selectedDate = isoDate === selectedDate ? null : isoDate;
+          onChange();
         },
       }),
     );
   }
-  renderDetails(byDate, onOpenWorkout);
 }

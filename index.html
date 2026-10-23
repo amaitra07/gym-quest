@@ -55,8 +55,8 @@
       <button class="primary-button start-button" id="startButton" type="button">Log workout</button>
     </main>
 
-    <main id="calendarScreen" hidden>
-      <h1 class="screen-title">Calendar</h1>
+    <main id="historyScreen" hidden>
+      <h1 class="screen-title">History</h1>
       <section class="panel" aria-labelledby="calendarTitle">
         <div class="calendar-header">
           <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month">‹</button>
@@ -64,14 +64,12 @@
           <button class="calendar-nav" id="calendarNext" type="button" aria-label="Next month">›</button>
         </div>
         <div class="calendar-grid" id="calendarGrid"></div>
-        <div id="calendarDetails" aria-live="polite"></div>
       </section>
-    </main>
-
-    <main id="historyScreen" hidden>
-      <h1 class="screen-title">History</h1>
       <section class="panel" aria-labelledby="historyHeading">
-        <h2 id="historyHeading">All workouts</h2>
+        <div class="list-header">
+          <h2 id="historyHeading">All workouts</h2>
+          <button class="link-button" id="showAllButton" type="button" hidden>Show all</button>
+        </div>
         <ul class="history" id="historyList"></ul>
         <p class="empty" id="historyEmpty" hidden>No workouts yet. Tap “Log” below when you’re ready to log your first one.</p>
       </section>
@@ -83,7 +81,6 @@
   <nav class="tab-bar" id="tabBar" aria-label="Main">
     <button class="tab" type="button" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><span>Home</span></button>
     <button class="tab" type="button" data-tab="log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span id="logTabLabel">Log</span></button>
-    <button class="tab" type="button" data-tab="calendar"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Calendar</span></button>
     <button class="tab" type="button" data-tab="history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>History</span></button>
   </nav>
 

@@ -1,6 +1,5 @@
-import { renderCalendar } from "./calendar.js";
 import { byId } from "./dom.js";
-import { workoutRow } from "./history-row.js";
+import { renderHistory } from "./history.js";
 import { currentStreak, levelInfo, titleForLevel, totalXp } from "./stats.js";
 
 const RING_RADIUS = 33;
@@ -21,21 +20,8 @@ function renderStats(workouts) {
   ring.style.strokeDashoffset = (circumference * (1 - into / needed)).toFixed(1);
 }
 
-function renderHistory(workouts, onOpenWorkout) {
-  const list = byId("historyList");
-  list.replaceChildren();
-  byId("historyEmpty").hidden = workouts.length > 0;
-
-  const newestFirst = [...workouts].sort((a, b) =>
-    a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1,
-  );
-
-  list.append(...newestFirst.map((workout) => workoutRow(workout, onOpenWorkout)));
-}
-
 export function renderScreens(workouts, hasDraft, onOpenWorkout) {
   renderStats(workouts);
-  renderCalendar(workouts, onOpenWorkout);
   renderHistory(workouts, onOpenWorkout);
   byId("startButton").textContent = hasDraft ? "Resume logging" : "Log workout";
   byId("logTabLabel").textContent = hasDraft ? "Resume" : "Log";

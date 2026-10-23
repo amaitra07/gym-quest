@@ -6,7 +6,7 @@ import { createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
 
-const TABS = ["home", "calendar", "history"];
+const TABS = ["home", "history"];
 let currentTab = "home";
 
 function showScreen(name) {
