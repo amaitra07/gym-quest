@@ -1,6 +1,7 @@
 const WORKOUTS_KEY = "gymquest.workouts";
 const DRAFT_KEY = "gymquest.draft";
 const ROUTINES_KEY = "gymquest.routines";
+const SCHEDULE_KEY = "gymquest.schedule";
 const UNIT_KEY = "gymquest.unit";
 
 function readJson(key) {
@@ -38,6 +39,16 @@ export function loadRoutines() {
 
 export function saveRoutines(routines) {
   return writeJson(ROUTINES_KEY, routines);
+}
+
+// Which saved workout is planned for each weekday: { 0: routineId, ... } with 0 as Sunday.
+export function loadSchedule() {
+  const saved = readJson(SCHEDULE_KEY);
+  return saved !== null && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+}
+
+export function saveSchedule(schedule) {
+  return writeJson(SCHEDULE_KEY, schedule);
 }
 
 export function loadDraft() {

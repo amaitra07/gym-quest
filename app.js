@@ -1,6 +1,6 @@
 import { renderComplete } from "./complete.js";
-import { todayIso } from "./dates.js";
-import { byId, confirmAction, showToast } from "./dom.js";
+import { todayIso, WEEKDAY_NAMES } from "./dates.js";
+import { byId, chooseOption, confirmAction, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
 import { renderProgress, resetProgress } from "./progress.js";
@@ -11,15 +11,20 @@ import {
   clearDraft,
   loadDraft,
   loadRoutines,
+  loadSchedule,
   loadUnit,
   loadWorkouts,
   saveRoutines,
+  saveSchedule,
   saveWorkouts,
 } from "./storage.js";
 import { confirmLeaveWorkout, createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
 let routines = loadRoutines();
+let schedule = loadSchedule();
+
+const REST_DAY = "rest";
 
 const TABS = ["home", "log", "routines", "progress", "history"];
 let currentTab = "home";
@@ -45,13 +50,20 @@ function showTab(name) {
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
-  renderScreens(workouts, routines, loadDraft(), {
+  renderScreens(workouts, routines, schedule, loadDraft(), {
     onOpenWorkout: editWorkout,
     onStartRoutine: startRoutine,
     onResume: resumeWorkout,
     onOpenLog: () => showTab("log"),
   });
-  renderRoutines(routines, { onEdit: editRoutine, onCreate: createRoutine });
+  renderRoutines(routines, {
+    schedule,
+    workouts,
+    today: todayIso(),
+    onPickDay: pickDayWorkout,
+    onEdit: editRoutine,
+    onCreate: createRoutine,
+  });
   renderProgress(workouts, loadUnit());
   renderLogPicker(routines, loadDraft(), {
     onStart: startRoutine,
@@ -142,6 +154,15 @@ function showComplete(workout, records, levelMessage) {
   showScreen("complete", "home");
 }
 
+function persistSchedule(nextSchedule) {
+  if (!saveSchedule(nextSchedule)) {
+    showToast("Couldn't save. Your browser may be blocking or out of storage.");
+    return false;
+  }
+  schedule = nextSchedule;
+  return true;
+}
+
 function saveWorkout(workout, isNew) {
   const levelBefore = levelInfo(totalXp(workouts)).level;
   const newRecords = isNew ? findNewRecords(workouts, workout) : [];
@@ -180,8 +201,30 @@ function saveRoutine(routine, isNew) {
   showToast(`Saved “${routine.name}”. Start it any time from the Log tab.`);
 }
 
+// Asks which saved workout (or a rest day) belongs to a weekday of the weekly plan.
+async function pickDayWorkout(weekday) {
+  if (routines.length === 0) {
+    showToast("Save a workout first, then plan its day here.");
+    return;
+  }
+  const dayName = WEEKDAY_NAMES[weekday];
+  const choice = await chooseOption(`What are you doing on ${dayName}?`, [
+    ...routines.map((routine) => ({ label: routine.name, value: routine.id, isPrimary: schedule[weekday] === routine.id })),
+    { label: "Rest day", value: REST_DAY },
+  ]);
+  if (choice === null) return;
+  const others = Object.fromEntries(Object.entries(schedule).filter(([day]) => Number(day) !== weekday));
+  const nextSchedule = choice === REST_DAY ? others : { ...others, [weekday]: choice };
+  if (!persistSchedule(nextSchedule)) return;
+  showTab("routines");
+  showToast(choice === REST_DAY ? `${dayName} is a rest day.` : `${dayName}: ${routines.find((routine) => routine.id === choice).name}`);
+}
+
 function deleteRoutine(id) {
   if (!persistRoutines(routines.filter((routine) => routine.id !== id))) return;
+  // A deleted workout leaves the weekly plan too.
+  const keptDays = Object.entries(schedule).filter(([, routineId]) => routineId !== id);
+  persistSchedule(Object.fromEntries(keptDays));
   showTab("routines");
   showToast("Saved workout deleted.");
 }

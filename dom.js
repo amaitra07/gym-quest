@@ -88,3 +88,37 @@ export function confirmAction(message, confirmLabel) {
     cancelButton.focus();
   });
 }
+
+// A dialog that asks the user to pick one option. Resolves to the chosen option's `value`,
+// or null if they cancel.
+export function chooseOption(title, options) {
+  return new Promise((resolve) => {
+    const previousFocus = document.activeElement;
+    const close = (answer) => {
+      overlay.remove();
+      previousFocus?.focus?.();
+      resolve(answer);
+    };
+    const buttons = options.map((option) => el("button", {
+      class: option.isPrimary ? "primary-button" : "secondary-button",
+      type: "button",
+      text: option.label,
+      onclick: () => close(option.value),
+    }));
+    const overlay = el("div", {
+      class: "dialog-overlay",
+      onclick: (event) => {
+        if (event.target === overlay) close(null);
+      },
+      onkeydown: (event) => {
+        if (event.key === "Escape") close(null);
+      },
+    },
+      el("div", { class: "dialog", role: "dialog", "aria-modal": "true", "aria-label": title },
+        el("p", { class: "dialog-message", text: title }),
+        el("div", { class: "choice-list" }, ...buttons),
+        el("button", { class: "text-button choice-cancel", type: "button", text: "Cancel", onclick: () => close(null) })));
+    document.body.append(overlay);
+    buttons[0]?.focus();
+  });
+}

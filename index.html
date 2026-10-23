@@ -76,7 +76,12 @@
 
     <main id="routinesScreen" hidden>
       <h1 class="screen-title">Workouts</h1>
-      <p class="muted screen-intro">Save workouts like Push day or Legs here. Start them from the Log tab.</p>
+      <p class="muted screen-intro">Save workouts like Push day or Legs, then plan which day each one is for.</p>
+      <section class="panel week-panel" aria-labelledby="weekHeading">
+        <h2 id="weekHeading">This week</h2>
+        <div class="week-strip" id="weekStrip"></div>
+        <p class="muted week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
+      </section>
       <button class="primary-button" id="newRoutineButton" type="button">+ New workout</button>
       <section class="panel card-list routine-panel">
         <ul class="history" id="routineList"></ul>

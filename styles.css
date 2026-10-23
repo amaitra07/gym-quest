@@ -957,6 +957,100 @@ select:focus-visible {
   margin-top: 4px;
 }
 
+/* ---------- Weekly plan ---------- */
+.week-panel {
+  padding-inline: 12px;
+}
+
+.week-panel h2,
+.week-panel .week-hint {
+  padding-inline: 8px;
+}
+
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.week-day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px 1px 8px;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+
+.week-day:active {
+  transform: scale(0.96);
+}
+
+.week-day.is-today {
+  border-color: var(--accent-text);
+}
+
+.week-letter {
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.week-number {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.week-plan {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 2px 4px;
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.week-day.is-planned .week-plan {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.week-done {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-text);
+}
+
+.week-hint {
+  margin-top: 12px;
+}
+
+.choice-list {
+  display: grid;
+  gap: 8px;
+}
+
+.choice-cancel {
+  display: block;
+  margin: 10px auto 0;
+}
+
 /* ---------- Progress, records and the finished-workout screen ---------- */
 .record-cards {
   display: grid;

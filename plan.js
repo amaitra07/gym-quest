@@ -1,3 +1,5 @@
+import { addDays, weekdayOf } from "./dates.js";
+
 // What to suggest doing next, and roughly how long a workout takes.
 
 const SECONDS_PER_SET = 45;
@@ -37,4 +39,36 @@ export function nextRoutine(routines, workouts) {
   const latest = newestFirst.find((workout) => names.includes(normalize(workout.name)));
   if (!latest) return routines[0];
   return routines[(names.indexOf(normalize(latest.name)) + 1) % routines.length];
+}
+
+const DAYS_IN_WEEK = 7;
+
+// The seven days of the week containing `today` (an ISO date), Sunday first. `weekday` is
+// 0 for Sunday, the same number the weekly schedule uses as its key.
+export function weekOf(today) {
+  const sunday = addDays(today, -weekdayOf(today));
+  return Array.from({ length: DAYS_IN_WEEK }, (_, weekday) => {
+    const iso = addDays(sunday, weekday);
+    return { iso, weekday, isToday: iso === today };
+  });
+}
+
+// What to do next and when. `schedule` maps a weekday number to a saved workout's id.
+// With a schedule: today's workout until you have trained today, then the next scheduled
+// day (up to a week ahead). Without one: the rotation in nextRoutine. `daysAhead` is 0 for
+// today, 1 for tomorrow and so on, or null when there is no schedule.
+export function upNext(routines, schedule, workouts, today) {
+  const scheduledOn = (isoDate) => routines.find((routine) => routine.id === schedule[weekdayOf(isoDate)]) ?? null;
+  const hasSchedule = Array.from({ length: DAYS_IN_WEEK }, (_, day) =>
+    routines.some((routine) => routine.id === schedule[day])).some(Boolean);
+  if (!hasSchedule) {
+    const routine = nextRoutine(routines, workouts);
+    return routine === null ? null : { routine, daysAhead: null };
+  }
+  const trainedToday = workouts.some((workout) => workout.date === today);
+  for (let daysAhead = trainedToday ? 1 : 0; daysAhead <= DAYS_IN_WEEK; daysAhead += 1) {
+    const routine = scheduledOn(addDays(today, daysAhead));
+    if (routine !== null) return { routine, daysAhead };
+  }
+  return null;
 }

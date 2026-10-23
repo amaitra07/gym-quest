@@ -1,7 +1,7 @@
-import { formatDate } from "./dates.js";
+import { addDays, formatDate, todayIso } from "./dates.js";
 import { byId } from "./dom.js";
 import { renderHistory } from "./history.js";
-import { estimateMinutes, nextRoutine } from "./plan.js";
+import { estimateMinutes, upNext } from "./plan.js";
 import { summarize } from "./history-row.js";
 import { currentStreak, levelInfo, titleForLevel, totalXp } from "./stats.js";
 
@@ -37,25 +37,35 @@ function renderStats(workouts) {
   byId("levelBarFill").style.width = `${percent}%`;
 }
 
+// "Today", "Tomorrow", a weekday name, or "Next Friday" when it is a week away.
+function whenLabel(daysAhead) {
+  if (daysAhead === 0) return "Today";
+  if (daysAhead === 1) return "Tomorrow";
+  const [year, month, day] = addDays(todayIso(), daysAhead).split("-").map(Number);
+  const weekday = new Date(year, month - 1, day).toLocaleDateString(undefined, { weekday: "long" });
+  return daysAhead === 7 ? `Next ${weekday}` : weekday;
+}
+
 function plural(count, word) {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
-// The big lime tile: finish what you started, otherwise the next saved workout in your
-// rotation, otherwise a nudge to start logging.
-function renderNextTile(workouts, routines, draft, actions) {
+// The big lime tile: finish what you started, otherwise the next workout in your weekly
+// plan (or your rotation if you have no plan), otherwise a nudge to start logging.
+function renderNextTile(workouts, routines, schedule, draft, actions) {
   const tile = byId("nextTile");
-  const next = nextRoutine(routines, workouts);
+  const plan = upNext(routines, schedule, workouts, todayIso());
   if (draft !== null) {
     byId("nextTag").textContent = "In progress";
     byId("nextTitle").textContent = draft.name.trim() || "Your workout";
     byId("nextMeta").textContent = "Tap to pick it back up";
     tile.onclick = actions.onResume;
-  } else if (next !== null) {
-    byId("nextTag").textContent = "Up next";
-    byId("nextTitle").textContent = next.name;
-    byId("nextMeta").textContent = `${plural(next.exercises.length, "exercise")} · about ${estimateMinutes(next)} min`;
-    tile.onclick = () => actions.onStartRoutine(next);
+  } else if (plan !== null) {
+    const { routine, daysAhead } = plan;
+    byId("nextTag").textContent = daysAhead === null ? "Up next" : `Up next · ${whenLabel(daysAhead)}`;
+    byId("nextTitle").textContent = routine.name;
+    byId("nextMeta").textContent = `${plural(routine.exercises.length, "exercise")} · about ${estimateMinutes(routine)} min`;
+    tile.onclick = () => actions.onStartRoutine(routine);
   } else {
     byId("nextTag").textContent = workouts.length === 0 ? "Get started" : "Ready when you are";
     byId("nextTitle").textContent = "Log a workout";
@@ -80,10 +90,10 @@ function renderLastWorkout(workouts, onOpenWorkout) {
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onStartRoutine,
 // onResume, onOpenLog }.
-export function renderScreens(workouts, routines, draft, actions) {
+export function renderScreens(workouts, routines, schedule, draft, actions) {
   renderHeader();
   renderStats(workouts);
-  renderNextTile(workouts, routines, draft, actions);
+  renderNextTile(workouts, routines, schedule, draft, actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
   renderHistory(workouts, actions.onOpenWorkout);
 }

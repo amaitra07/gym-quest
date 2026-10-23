@@ -14,6 +14,24 @@ export function todayIso() {
   return daysAgoIso(0);
 }
 
+function parseIso(isoDate) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function addDays(isoDate, days) {
+  const date = parseIso(isoDate);
+  date.setDate(date.getDate() + days);
+  return toIsoDate(date);
+}
+
+export const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+// 0 is Sunday, matching the calendar.
+export function weekdayOf(isoDate) {
+  return parseIso(isoDate).getDay();
+}
+
 export function formatDate(isoDate) {
   if (isoDate === daysAgoIso(0)) return "Today";
   if (isoDate === daysAgoIso(1)) return "Yesterday";
