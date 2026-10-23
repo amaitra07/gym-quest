@@ -148,7 +148,9 @@ export function workoutFromRoutine(routine, pastWorkouts, date) {
 }
 
 export function describeSet(type, set, unit) {
-  if (type === "strength") return `${set.weight ?? 0}${unit} × ${set.reps}`;
+  if (type === "strength") {
+    return set.weight > 0 ? `${set.weight} ${unit} × ${set.reps}` : `${set.reps} reps`;
+  }
   if (type === "cardio") {
     return set.distance ? `${set.minutes} min, ${set.distance} dist` : `${set.minutes} min`;
   }

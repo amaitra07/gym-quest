@@ -1,13 +1,17 @@
+import { renderComplete } from "./complete.js";
 import { todayIso } from "./dates.js";
 import { byId, confirmAction, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
+import { renderProgress, resetProgress } from "./progress.js";
+import { findNewRecords } from "./records.js";
 import { renderLogPicker, renderRoutines } from "./routines.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import {
   clearDraft,
   loadDraft,
   loadRoutines,
+  loadUnit,
   loadWorkouts,
   saveRoutines,
   saveWorkouts,
@@ -17,14 +21,14 @@ import { confirmLeaveWorkout, createWorkout, openWorkout } from "./workout.js";
 let workouts = loadWorkouts();
 let routines = loadRoutines();
 
-const TABS = ["home", "log", "routines", "history"];
+const TABS = ["home", "log", "routines", "progress", "history"];
 let currentTab = "home";
 let onWorkoutScreen = false;
 
 // `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
 // the tab that the workout being edited belongs to.
 function showScreen(name, highlightedTab = name) {
-  for (const screen of [...TABS, "workout"]) {
+  for (const screen of [...TABS, "complete", "workout"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
   onWorkoutScreen = name === "workout";
@@ -38,9 +42,12 @@ function showScreen(name, highlightedTab = name) {
 }
 
 function showTab(name) {
+  // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
+  if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
   renderScreens(workouts, loadDraft() !== null, editWorkout);
   renderRoutines(routines, { onEdit: editRoutine, onCreate: createRoutine });
+  renderProgress(workouts, loadUnit());
   renderLogPicker(routines, loadDraft(), {
     onStart: startRoutine,
     onResume: resumeWorkout,
@@ -123,25 +130,34 @@ function persistRoutines(nextRoutines) {
   return true;
 }
 
+// The screen after finishing a new workout: XP, any new records, and the share card.
+function showComplete(workout, records, levelMessage) {
+  currentTab = "home";
+  renderComplete(workout, records, levelMessage, loadUnit(), () => showTab("home"));
+  showScreen("complete", "home");
+}
+
 function saveWorkout(workout, isNew) {
   const levelBefore = levelInfo(totalXp(workouts)).level;
+  const newRecords = isNew ? findNewRecords(workouts, workout) : [];
   const nextWorkouts = isNew
     ? [...workouts, workout]
     : workouts.map((existing) => (existing.id === workout.id ? workout : existing));
   if (!persist(nextWorkouts)) return;
 
+  const levelAfter = levelInfo(totalXp(workouts)).level;
+  const levelUpText = `Level up! Level ${levelAfter}: ${titleForLevel(levelAfter)}`;
   if (isNew) {
     clearDraft();
-    showTab("home");
-  } else {
-    showHome();
+    showComplete(
+      workout,
+      newRecords,
+      levelAfter > levelBefore ? `+${workout.xp} XP · ${levelUpText}` : null,
+    );
+    return;
   }
-  const levelAfter = levelInfo(totalXp(workouts)).level;
-  showToast(
-    levelAfter > levelBefore
-      ? `Level up! Level ${levelAfter}: ${titleForLevel(levelAfter)}`
-      : `Saved. +${workout.xp} XP`,
-  );
+  showHome();
+  showToast(levelAfter > levelBefore ? levelUpText : `Saved. +${workout.xp} XP`);
 }
 
 function deleteWorkout(id) {
