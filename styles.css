@@ -1,43 +1,43 @@
 :root {
-  --bg: #f3f4f6;
+  --bg: #f4f5f2;
   --panel: #ffffff;
-  --panel-2: #eef0f3;
-  --border: #e0e3e8;
-  --text: #15171b;
-  --text-dim: #5b6170;
-  --gold: #b8860b;
-  --ember: #d9502f;
-  --mint: #128f63;
-  --shadow: 0 1px 2px rgba(20, 20, 20, 0.06), 0 8px 24px rgba(20, 20, 20, 0.05);
-  --radius: 12px;
+  --panel-2: #eef0ea;
+  --border: #e3e5df;
+  --text: #111113;
+  --text-dim: #6b6e76;
+  /* Lime fills (buttons, calendar days) work on both themes; lime text needs a darker
+     shade on light backgrounds, so text and strokes use --accent-text. */
+  --accent: #c8f542;
+  --accent-ink: #0a0a0c;
+  --accent-text: #4d7c0f;
+  --danger: #e5484d;
+  --shadow: 0 1px 2px rgba(17, 17, 19, 0.04), 0 8px 24px rgba(17, 17, 19, 0.06);
+  --radius: 18px;
+  --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #121316;
-    --panel: #1b1d22;
-    --panel-2: #212429;
-    --border: #2b2e35;
-    --text: #f1f2f4;
-    --text-dim: #9096a2;
-    --gold: #f2b705;
-    --ember: #ff5f45;
-    --mint: #3ddc97;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.35);
+    --bg: #0a0a0c;
+    --panel: #16161a;
+    --panel-2: #1e1e24;
+    --border: #26262d;
+    --text: #f4f4f5;
+    --text-dim: #8e8e98;
+    --accent-text: #c8f542;
+    --shadow: none;
   }
 }
 
 :root[data-theme="dark"] {
-  --bg: #121316;
-  --panel: #1b1d22;
-  --panel-2: #212429;
-  --border: #2b2e35;
-  --text: #f1f2f4;
-  --text-dim: #9096a2;
-  --gold: #f2b705;
-  --ember: #ff5f45;
-  --mint: #3ddc97;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 28px rgba(0, 0, 0, 0.35);
+  --bg: #0a0a0c;
+  --panel: #16161a;
+  --panel-2: #1e1e24;
+  --border: #26262d;
+  --text: #f4f4f5;
+  --text-dim: #8e8e98;
+  --accent-text: #c8f542;
+  --shadow: none;
 }
 
 * {
@@ -48,7 +48,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
@@ -72,7 +72,7 @@ body {
   margin: 0;
   font-size: 34px;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: -0.03em;
   line-height: 1;
 }
 
@@ -83,6 +83,9 @@ body {
 }
 
 .theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
   width: 48px;
   height: 48px;
@@ -90,8 +93,15 @@ body {
   border: 1px solid var(--border);
   background: var(--panel);
   color: var(--text);
-  font-size: 20px;
   cursor: pointer;
+}
+
+.theme-toggle svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 2;
 }
 
 .panel {
@@ -99,7 +109,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 16px 18px;
+  padding: 18px;
   margin-bottom: 14px;
 }
 
@@ -138,7 +148,7 @@ body {
 }
 
 .ring-fill {
-  stroke: var(--gold);
+  stroke: var(--accent-text);
   stroke-linecap: round;
   transition: stroke-dashoffset 0.5s ease;
 }
@@ -162,7 +172,7 @@ body {
   font-size: 26px;
   font-weight: 800;
   line-height: 1;
-  color: var(--gold);
+  color: var(--accent-text);
 }
 
 .level-title {
@@ -187,17 +197,18 @@ body {
 }
 
 .stat-number {
-  font-size: 40px;
+  font-size: 44px;
   font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1.1;
 }
 
 .stat-number.streak {
-  color: var(--ember);
+  color: var(--accent-text);
 }
 
 .stat-number.total {
-  color: var(--mint);
+  color: var(--text);
 }
 
 /* ---------- Buttons ---------- */
@@ -206,9 +217,9 @@ body {
   width: 100%;
   min-height: 60px;
   border: none;
-  border-radius: var(--radius);
-  background: var(--gold);
-  color: #1a1200;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
   font: inherit;
   font-size: 19px;
   font-weight: 800;
@@ -228,9 +239,9 @@ body {
 
 .secondary-button {
   width: 100%;
-  min-height: 48px;
+  min-height: 52px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--panel-2);
   color: var(--text);
   font: inherit;
@@ -267,21 +278,22 @@ body {
 }
 
 .icon-button:hover {
-  color: var(--ember);
+  color: var(--danger);
   border-color: var(--border);
 }
 
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid var(--accent-text);
   outline-offset: 2px;
 }
 
 /* ---------- History ---------- */
 h2 {
   margin: 0 0 8px;
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .history {
@@ -291,7 +303,7 @@ h2 {
 }
 
 .history li {
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px solid var(--border);
 }
 
 .history li:last-child {
@@ -337,7 +349,7 @@ h2 {
 }
 
 .history .xp {
-  color: var(--gold);
+  color: var(--accent-text);
   font-size: 13px;
   font-weight: 700;
   white-space: nowrap;
@@ -365,7 +377,7 @@ h2 {
   justify-content: space-between;
   gap: 12px;
   padding: 10px 0;
-  border-bottom: 1px dashed var(--border);
+  border-bottom: 1px solid var(--border);
   font-weight: 600;
 }
 
@@ -374,7 +386,7 @@ h2 {
 }
 
 .generated-target {
-  color: var(--gold);
+  color: var(--accent-text);
   white-space: nowrap;
 }
 
@@ -425,7 +437,7 @@ h2 {
   position: relative;
   min-height: 44px;
   border: 1px solid transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--panel-2);
   color: var(--text);
   font: inherit;
@@ -434,8 +446,8 @@ h2 {
 }
 
 .calendar-day.has-workout {
-  background: var(--gold);
-  color: #15171b;
+  background: var(--accent);
+  color: var(--accent-ink);
   font-weight: 700;
 }
 
@@ -444,7 +456,7 @@ h2 {
 }
 
 .calendar-day.is-selected {
-  outline: 3px solid var(--mint);
+  outline: 2px solid var(--text);
   outline-offset: 1px;
 }
 
@@ -465,7 +477,7 @@ h2 {
   padding: 0 4px;
   border: none;
   background: none;
-  color: var(--mint);
+  color: var(--accent-text);
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -496,10 +508,12 @@ h2 {
   cursor: pointer;
 }
 
-.screen-title {
+.top-bar .screen-title {
   flex: 1;
   margin: 0;
+  padding-bottom: 0;
   font-size: 20px;
+  letter-spacing: -0.01em;
 }
 
 .unit-button {
@@ -534,10 +548,10 @@ h2 {
 .text-input,
 .number-input {
   width: 100%;
-  min-height: 48px;
-  padding: 0 12px;
+  min-height: 52px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--panel-2);
   color: var(--text);
   font: inherit;
@@ -639,7 +653,7 @@ h3 {
 
 .player-label {
   margin: 24px 0 0;
-  color: var(--gold);
+  color: var(--accent-text);
   font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -648,7 +662,8 @@ h3 {
 
 .player-exercise {
   margin: 0;
-  font-size: 28px;
+  font-size: 30px;
+  letter-spacing: -0.02em;
 }
 
 .player-center {
@@ -657,8 +672,9 @@ h3 {
 
 .player-countdown {
   margin: 8px 0;
-  font-size: 80px;
+  font-size: 96px;
   font-weight: 800;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -670,7 +686,7 @@ h3 {
 }
 
 .player-actions .primary-button {
-  min-height: 72px;
+  min-height: 76px;
   font-size: 20px;
 }
 
@@ -717,7 +733,7 @@ h3 {
   min-height: 48px;
   border: none;
   border-radius: var(--radius);
-  background: var(--ember);
+  background: var(--danger);
   color: #ffffff;
   font: inherit;
   font-weight: 700;
@@ -738,8 +754,8 @@ h3 {
 
 .toast {
   background: var(--panel);
-  border: 1px solid var(--gold);
-  border-radius: 10px;
+  border: 1px solid var(--accent-text);
+  border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 12px 16px;
   font-size: 14px;
@@ -778,9 +794,9 @@ h3 {
 .screen-title {
   margin: 0;
   padding-bottom: 20px;
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.03em;
 }
 
 .tab-bar {
@@ -825,5 +841,5 @@ h3 {
 }
 
 .tab.active {
-  color: var(--gold);
+  color: var(--accent-text);
 }
