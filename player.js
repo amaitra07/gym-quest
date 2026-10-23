@@ -177,13 +177,13 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     const lines = [];
     for (const exercise of workout.exercises) {
       const done = exercise.sets.filter((set) => isSetFilled(exercise.type, set)).length;
-      if (done > 0) lines.push(el("li", {}, el("span", { text: exercise.name }), el("span", { class: "generated-target", text: `${done} ${done === 1 ? "set" : "sets"}` })));
+      if (done > 0) lines.push(el("li", {}, el("span", { text: exercise.name }), el("span", { class: "summary-target", text: `${done} ${done === 1 ? "set" : "sets"}` })));
     }
     return [
       el("p", { class: "player-label", text: "Workout complete" }),
       el("p", { class: "player-countdown", text: total }),
       el("p", { class: "muted player-center", text: "Total time" }),
-      el("ul", { class: "generated-list" }, ...lines),
+      el("ul", { class: "summary-list" }, ...lines),
       el("button", { class: "primary-button", type: "button", text: "Review and save", onclick: onExit }),
     ];
   }

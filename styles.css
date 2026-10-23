@@ -593,23 +593,14 @@ select:focus-visible {
   font-size: 14px;
 }
 
-/* ---------- Generator ---------- */
-.generator {
-  display: grid;
-  gap: 10px;
-}
-
-.generator h3 {
-  font-size: 16px;
-}
-
-.generated-list {
+/* ---------- Guided workout summary ---------- */
+.summary-list {
   margin: 0 0 12px;
   padding: 0;
   list-style: none;
 }
 
-.generated-list li {
+.summary-list li {
   display: flex;
   justify-content: space-between;
   gap: 12px;
@@ -618,11 +609,11 @@ select:focus-visible {
   font-weight: 600;
 }
 
-.generated-list li:last-child {
+.summary-list li:last-child {
   border-bottom: none;
 }
 
-.generated-target {
+.summary-target {
   color: var(--accent-text);
   white-space: nowrap;
 }

@@ -11,7 +11,6 @@ import {
   newId,
   nextSetDefaults,
 } from "./exercises.js";
-import { WORKOUT_KINDS, describeTarget, generateWorkout } from "./generator.js";
 import { runGuidedWorkout } from "./player.js";
 import { computeXp } from "./stats.js";
 import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
@@ -29,10 +28,6 @@ let session = null;
 // The running guided workout, if any (see player.js).
 let guidedRun = null;
 
-// The generator panel's choice and its current suggestion (not saved with the workout).
-let generatorKind = "push";
-let generated = null;
-
 export function createWorkout() {
   return { id: newId(), createdAt: Date.now(), name: "", date: todayIso(), exercises: [] };
 }
@@ -43,7 +38,6 @@ const isRoutine = () => session.kind === "routine";
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
   session = { workout, isNew, isDirty: false, handlers, kind };
   guidedRun = null;
-  generated = null;
   render();
   if (autoStart) {
     saveDraft(workout);
@@ -147,36 +141,6 @@ function startGuidedWorkout() {
   });
 }
 
-function generate() {
-  generated = { kind: generatorKind, exercises: generateWorkout(generatorKind) };
-  render();
-}
-
-// Adds the suggested exercises with their sets prefilled: weights come from the
-// last time each exercise was done, reps/minutes/seconds from the suggestion.
-function useGeneratedWorkout() {
-  const { workout } = session;
-  for (const suggestion of generated.exercises) {
-    const last = lastPerformance(pastWorkouts(), suggestion.name, workout.id);
-    const sets = [];
-    for (let index = 0; index < suggestion.sets; index += 1) {
-      sets.push({ ...nextSetDefaults(suggestion.type, last?.sets, sets), ...suggestion.target });
-    }
-    workout.exercises.push({
-      id: newId(),
-      name: suggestion.name,
-      type: suggestion.type,
-      restSeconds: suggestion.rest,
-      sets,
-    });
-  }
-  if (!workout.name.trim()) workout.name = WORKOUT_KINDS[generated.kind].label;
-  generated = null;
-  markChanged();
-  render();
-  showToast("Workout added. Fill in your weights and adjust anything you like.");
-}
-
 function saveRoutine() {
   const cleaned = cleanWorkout(session.workout);
   const name = cleaned.name.trim();
@@ -274,43 +238,6 @@ function renderDetails() {
   return el("section", { class: "panel details" },
     el("label", { class: "field" }, el("span", { text: "Workout name" }), nameInput),
     isRoutine() ? null : el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
-}
-
-function renderGenerator() {
-  const kindSelect = el("select", {
-    class: "text-input",
-    "aria-label": "Workout type",
-    onchange: (event) => {
-      generatorKind = event.target.value;
-    },
-  }, ...Object.entries(WORKOUT_KINDS).map(([key, kind]) =>
-    el("option", { value: key, text: kind.label })));
-  kindSelect.value = generatorKind;
-
-  const preview = generated
-    ? el("div", { class: "generated" },
-      el("ul", { class: "generated-list" },
-        ...generated.exercises.map((suggestion) => el("li", {},
-          el("span", { text: suggestion.name }),
-          el("span", { class: "generated-target", text: describeTarget(suggestion) })))),
-      el("button", {
-        class: "primary-button",
-        type: "button",
-        text: "Use this workout",
-        onclick: useGeneratedWorkout,
-      }))
-    : null;
-
-  return el("section", { class: "panel generator" },
-    el("h3", { text: "Need ideas? Generate a workout" }),
-    kindSelect,
-    el("button", {
-      class: "secondary-button",
-      type: "button",
-      text: generated ? "Generate another" : "Generate",
-      onclick: generate,
-    }),
-    preview);
 }
 
 function renderSetRow(exercise, set, index, unit) {
@@ -452,7 +379,6 @@ function render() {
   byId("workoutScreen").replaceChildren(
     renderTopBar(unit),
     renderDetails(),
-    session.isNew ? renderGenerator() : null,
     ...exercises,
     renderAddExercise(),
     renderActionBar());
