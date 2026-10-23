@@ -712,6 +712,20 @@ select:focus-visible {
   cursor: pointer;
 }
 
+.title-group {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.top-bar .title-group .screen-title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .top-bar .screen-title {
   flex: 1;
   padding-bottom: 0;

@@ -1,5 +1,5 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, icon, showToast } from "./dom.js";
+import { byId, confirmAction, el, fillContainer, icon, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
   cleanWorkout,
@@ -18,11 +18,12 @@ import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
 
-// The workout being edited: { workout, isNew, isDirty, handlers, kind }.
+// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming }.
 // `kind` is "log" for a workout being logged or edited from history, or "routine" for a
 // saved workout (a reusable template with no date). A new logged workout is saved as a
 // draft after every change; anything else is edited as a copy and only replaces the
-// original when saved.
+// original when saved. A new saved workout starts on the "name" step (just a name field),
+// then moves to the "build" step where exercises are added, with the name as the title.
 let session = null;
 
 // The running guided workout, if any (see player.js).
@@ -36,7 +37,8 @@ const isRoutine = () => session.kind === "routine";
 
 // With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
-  session = { workout, isNew, isDirty: false, handlers, kind };
+  const step = kind === "routine" && isNew ? "name" : "build";
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false };
   guidedRun = null;
   render();
   if (autoStart) {
@@ -75,6 +77,12 @@ export async function confirmLeaveWorkout() {
 
 async function goBack() {
   if (await confirmLeaveWorkout()) session.handlers.onClose();
+}
+
+function startRename() {
+  session.step = "name";
+  session.renaming = true;
+  render();
 }
 
 function addExercise(name, type) {
@@ -194,15 +202,25 @@ function toggleUnit() {
 
 /* ---------- Rendering ---------- */
 
-function screenTitle() {
-  if (isRoutine()) return session.isNew ? "New saved workout" : "Edit saved workout";
-  return session.isNew ? "Log workout" : "Edit workout";
+// A saved workout's title is its name, with a pencil to rename it.
+function renderTitle() {
+  if (!isRoutine()) {
+    return el("h2", { class: "screen-title", text: session.isNew ? "Log workout" : "Edit workout" });
+  }
+  return el("div", { class: "title-group" },
+    el("h2", { class: "screen-title", text: session.workout.name }),
+    el("button", {
+      class: "icon-button",
+      type: "button",
+      "aria-label": "Rename this workout",
+      onclick: startRename,
+    }, icon("edit")));
 }
 
 function renderTopBar(unit) {
   return el("div", { class: "top-bar" },
     el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
-    el("h2", { class: "screen-title", text: screenTitle() }),
+    renderTitle(),
     el("button", {
       class: "unit-button",
       type: "button",
@@ -212,7 +230,61 @@ function renderTopBar(unit) {
     }));
 }
 
+// The first step of a new saved workout, and the rename screen: just a name field.
+function renderNameStep() {
+  const { workout } = session;
+  const nameInput = el("input", {
+    class: "text-input",
+    type: "text",
+    maxlength: "40",
+    placeholder: "Push day, Leg day, Morning run…",
+    value: workout.name,
+  });
+  const confirmName = () => {
+    const name = nameInput.value.trim();
+    if (name === "") {
+      showToast("Give this workout a name first.");
+      nameInput.focus();
+      return;
+    }
+    if (name !== workout.name) {
+      workout.name = name;
+      markChanged();
+    }
+    session.step = "build";
+    session.renaming = false;
+    render();
+  };
+  // Backing out of a rename returns to the exercises; backing out of a new workout leaves.
+  const goBackFromName = () => {
+    if (!session.renaming) {
+      goBack();
+      return;
+    }
+    session.step = "build";
+    session.renaming = false;
+    render();
+  };
+  byId("workoutScreen").replaceChildren(
+    el("div", { class: "top-bar" },
+      el("button", { class: "back-button", type: "button", onclick: goBackFromName }, icon("back"), "Back"),
+      el("h2", { class: "screen-title", text: session.renaming ? "Rename workout" : "New saved workout" })),
+    el("form", {
+      class: "panel details",
+      onsubmit: (event) => {
+        event.preventDefault();
+        confirmName();
+      },
+    },
+    el("label", { class: "field" }, el("span", { text: "What's this workout called?" }), nameInput),
+    el("button", { class: "primary-button", type: "submit", text: "Continue" })));
+  nameInput.focus();
+}
+
+// The name and date fields of a logged workout. A saved workout shows its name as the
+// title instead.
 function renderDetails() {
+  if (isRoutine()) return null;
   const { workout } = session;
   const nameInput = el("input", {
     class: "text-input",
@@ -237,7 +309,7 @@ function renderDetails() {
   });
   return el("section", { class: "panel details" },
     el("label", { class: "field" }, el("span", { text: "Workout name" }), nameInput),
-    isRoutine() ? null : el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
+    el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
 }
 
 function renderSetRow(exercise, set, index, unit) {
@@ -374,9 +446,14 @@ function renderActionBar() {
 }
 
 function render() {
+  if (isRoutine() && session.step === "name") {
+    renderNameStep();
+    return;
+  }
   const unit = loadUnit();
   const exercises = session.workout.exercises.map((exercise) => renderExercise(exercise, unit));
-  byId("workoutScreen").replaceChildren(
+  fillContainer(
+    byId("workoutScreen"),
     renderTopBar(unit),
     renderDetails(),
     ...exercises,

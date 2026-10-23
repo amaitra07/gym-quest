@@ -1,4 +1,4 @@
-import { byId, el, showToast } from "./dom.js";
+import { byId, el, fillContainer, showToast } from "./dom.js";
 import { describeSet } from "./exercises.js";
 import { workoutSummary } from "./records.js";
 import { drawShareCard } from "./share-card.js";
@@ -30,7 +30,8 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
   const preview = el("div", { class: "share-preview-frame" }, el("p", { class: "muted", text: "Making your card…" }));
   const actions = el("div", { class: "complete-actions" });
 
-  byId("completeContent").replaceChildren(
+  fillContainer(
+    byId("completeContent"),
     el("h1", { class: "screen-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
     el("p", { class: "complete-xp", text: levelMessage ?? `+${summary.xp} XP` }),
     records.length > 0

@@ -20,11 +20,18 @@ export function el(tag, attributes = {}, ...children) {
   return node;
 }
 
+// Puts `children` into `container`, skipping nulls. replaceChildren on its own would turn a
+// null into the text "null", so screens with optional sections use this instead.
+export function fillContainer(container, ...children) {
+  container.replaceChildren(...children.filter((child) => child !== null));
+}
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 const ICON_SHAPES = {
   back: { d: "M15 5l-7 7 7 7" },
   forward: { d: "M9 5l7 7-7 7" },
   close: { d: "M6 6l12 12M18 6L6 18" },
+  edit: { d: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" },
   arrow: { d: "M5 12h14M13 6l6 6-6 6" },
   play: { d: "M8 5v14l11-7z", filled: true },
   pause: { d: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", filled: true },
