@@ -79,3 +79,9 @@ function toggleTheme() {
 byId("themeButton").addEventListener("click", toggleTheme);
 byId("startButton").addEventListener("click", startWorkout);
 showHome();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js").catch((error) => {
+    console.warn("Offline mode unavailable:", error.message);
+  });
+}
