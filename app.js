@@ -1,20 +1,39 @@
 import { byId, showToast } from "./dom.js";
-import { renderHome } from "./home.js";
+import { renderScreens } from "./home.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import { clearDraft, loadDraft, loadWorkouts, saveWorkouts } from "./storage.js";
 import { createWorkout, openWorkout } from "./workout.js";
 
 let workouts = loadWorkouts();
 
+const TABS = ["home", "calendar", "history"];
+let currentTab = "home";
+
 function showScreen(name) {
-  byId("homeScreen").hidden = name !== "home";
-  byId("workoutScreen").hidden = name !== "workout";
+  for (const screen of [...TABS, "workout"]) {
+    byId(`${screen}Screen`).hidden = name !== screen;
+  }
+  // The log screen has its own Save and Discard bar, so the tab bar steps aside.
+  byId("tabBar").hidden = name === "workout";
+  document.body.classList.toggle("has-tab-bar", name !== "workout");
+  for (const tab of document.querySelectorAll(".tab")) {
+    const isCurrent = tab.dataset.tab === name;
+    tab.classList.toggle("active", isCurrent);
+    if (isCurrent) tab.setAttribute("aria-current", "page");
+    else tab.removeAttribute("aria-current");
+  }
   window.scrollTo(0, 0);
 }
 
+function showTab(name) {
+  currentTab = name;
+  renderScreens(workouts, loadDraft() !== null, editWorkout);
+  showScreen(name);
+}
+
+// Closing a workout returns to the tab it was opened from.
 function showHome() {
-  renderHome(workouts, loadDraft() !== null, editWorkout);
-  showScreen("home");
+  showTab(currentTab);
 }
 
 function openScreen(workout, isNew) {
@@ -78,7 +97,13 @@ function toggleTheme() {
 
 byId("themeButton").addEventListener("click", toggleTheme);
 byId("startButton").addEventListener("click", startWorkout);
-showHome();
+for (const tab of document.querySelectorAll(".tab")) {
+  tab.addEventListener("click", () => {
+    if (tab.dataset.tab === "log") startWorkout();
+    else showTab(tab.dataset.tab);
+  });
+}
+showTab("home");
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").catch((error) => {

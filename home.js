@@ -4,7 +4,6 @@ import { workoutRow } from "./history-row.js";
 import { currentStreak, levelInfo, titleForLevel, totalXp } from "./stats.js";
 
 const RING_RADIUS = 33;
-const MAX_VISIBLE_WORKOUTS = 8;
 
 function renderStats(workouts) {
   const { level, into, needed } = levelInfo(totalXp(workouts));
@@ -27,16 +26,17 @@ function renderHistory(workouts, onOpenWorkout) {
   list.replaceChildren();
   byId("historyEmpty").hidden = workouts.length > 0;
 
-  const recent = [...workouts]
-    .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1))
-    .slice(0, MAX_VISIBLE_WORKOUTS);
+  const newestFirst = [...workouts].sort((a, b) =>
+    a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1,
+  );
 
-  list.append(...recent.map((workout) => workoutRow(workout, onOpenWorkout)));
+  list.append(...newestFirst.map((workout) => workoutRow(workout, onOpenWorkout)));
 }
 
-export function renderHome(workouts, hasDraft, onOpenWorkout) {
+export function renderScreens(workouts, hasDraft, onOpenWorkout) {
   renderStats(workouts);
   renderCalendar(workouts, onOpenWorkout);
   renderHistory(workouts, onOpenWorkout);
   byId("startButton").textContent = hasDraft ? "Resume logging" : "Log workout";
+  byId("logTabLabel").textContent = hasDraft ? "Resume" : "Log";
 }
