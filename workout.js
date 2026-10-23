@@ -12,18 +12,21 @@ import {
   nextSetDefaults,
 } from "./exercises.js";
 import { runGuidedWorkout } from "./player.js";
+import { workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
 import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
 
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
 
-// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming }.
+// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, fromReview }.
 // `kind` is "log" for a workout being logged or edited from history, or "routine" for a
 // saved workout (a reusable template with no date). A new logged workout is saved as a
 // draft after every change; anything else is edited as a copy and only replaces the
 // original when saved. A new saved workout starts on the "name" step (just a name field),
 // then moves to the "build" step where exercises are added, with the name as the title.
+// After a guided workout, a logged workout opens on the read-only "review" step first;
+// "Edit" there switches to "build", and Back from that returns to the review.
 let session = null;
 
 // The running guided workout, if any (see player.js).
@@ -38,7 +41,7 @@ const isRoutine = () => session.kind === "routine";
 // With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
   const step = kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false };
   guidedRun = null;
   render();
   if (autoStart) {
@@ -76,7 +79,19 @@ export async function confirmLeaveWorkout() {
 }
 
 async function goBack() {
+  if (session.step === "build" && session.fromReview) {
+    session.step = "review";
+    render();
+    window.scrollTo(0, 0);
+    return;
+  }
   if (await confirmLeaveWorkout()) session.handlers.onClose();
+}
+
+function startEditing() {
+  session.step = "build";
+  render();
+  window.scrollTo(0, 0);
 }
 
 function startRename() {
@@ -143,9 +158,10 @@ function startGuidedWorkout() {
   window.scrollTo(0, 0);
   guidedRun = runGuidedWorkout(byId("workoutScreen"), session.workout, loadUnit(), () => {
     guidedRun = null;
+    session.step = "review";
+    session.fromReview = true;
     render();
     window.scrollTo(0, 0);
-    showToast("Review your workout, then save it.");
   });
 }
 
@@ -445,7 +461,51 @@ function renderActionBar() {
     }));
 }
 
+// A read-only look at the finished workout, as it will be saved, with an Edit button for
+// fixing anything that is wrong.
+function renderReview() {
+  const unit = loadUnit();
+  const cleaned = cleanWorkout(session.workout);
+  const summary = workoutSummary(cleaned, []);
+  const name = session.workout.name.trim() || DEFAULT_WORKOUT_NAME;
+  const stat = (label, value) => el("div", { class: "record-card" },
+    el("span", { class: "muted", text: label }),
+    el("strong", { text: value }));
+
+  const exerciseCards = cleaned.exercises.map((exercise) => el("section", { class: "panel" },
+    el("h3", { text: exercise.name }),
+    el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label }),
+    el("ul", { class: "history" }, ...exercise.sets.map((set, position) => el("li", { class: "session-row" },
+      el("span", { class: "session-date", text: `Set ${position + 1}` }),
+      el("span", { class: "session-sets", text: describeSet(exercise.type, set, unit) }))))));
+
+  fillContainer(
+    byId("workoutScreen"),
+    el("div", { class: "top-bar" },
+      el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
+      el("h2", { class: "screen-title", text: "Review workout" }),
+      el("button", { class: "pill-button", type: "button", onclick: startEditing }, icon("edit"), "Edit")),
+    el("section", { class: "panel" },
+      el("h2", { class: "review-name", text: name }),
+      el("p", { class: "muted", text: formatDate(session.workout.date) })),
+    cleaned.exercises.length > 0
+      ? el("div", { class: "record-cards" },
+        stat("Exercises", String(summary.exerciseCount)),
+        stat("Sets", String(summary.setCount)),
+        stat(`${unit} lifted`, summary.volume.toLocaleString()))
+      : el("section", { class: "panel" },
+        el("p", { class: "empty", text: "Nothing is logged yet. Tap Edit to add your sets." })),
+    ...exerciseCards,
+    el("div", { class: "action-bar" },
+      el("button", { class: "primary-button", type: "button", text: "Finish workout", onclick: finishWorkout }),
+      el("button", { class: "text-button", type: "button", text: "Discard workout", onclick: discardOrDeleteWorkout })));
+}
+
 function render() {
+  if (session.step === "review") {
+    renderReview();
+    return;
+  }
   if (isRoutine() && session.step === "name") {
     renderNameStep();
     return;

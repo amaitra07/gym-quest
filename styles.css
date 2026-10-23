@@ -1185,6 +1185,37 @@ select:focus-visible {
   color: var(--accent-ink);
 }
 
+/* ---------- Review before saving ---------- */
+.pill-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pill-button .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.review-name {
+  margin: 0 0 4px;
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
 /* ---------- Weekly plan ---------- */
 .week-panel {
   padding-inline: 12px;
