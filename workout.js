@@ -19,7 +19,7 @@ import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
 
-// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, fromReview }.
+// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, fromReview, isAddingExercise }.
 // `kind` is "log" for a workout being logged or edited from history, or "routine" for a
 // saved workout (a reusable template with no date). A new logged workout is saved as a
 // draft after every change; anything else is edited as a copy and only replaces the
@@ -41,7 +41,7 @@ const isRoutine = () => session.kind === "routine";
 // With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
   const step = kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false };
   guidedRun = null;
   render();
   if (autoStart) {
@@ -105,6 +105,7 @@ function addExercise(name, type) {
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
   addSet(exercise, false);
   session.workout.exercises.push(exercise);
+  session.isAddingExercise = false;
   markChanged();
   render();
 }
@@ -391,7 +392,24 @@ function renderExercise(exercise, unit) {
     }));
 }
 
+function openAddExercise() {
+  session.isAddingExercise = true;
+  render();
+  byId("workoutScreen").querySelector(".add-exercise input")?.focus();
+}
+
+// A small plus button below the exercises. It opens the form, which closes again once an
+// exercise is added. With no exercises yet the form is open from the start.
 function renderAddExercise() {
+  const hasExercises = session.workout.exercises.length > 0;
+  if (hasExercises && !session.isAddingExercise) {
+    return el("button", {
+      class: "add-exercise-button",
+      type: "button",
+      "aria-label": "Add an exercise",
+      onclick: openAddExercise,
+    }, icon("plus"));
+  }
   const nameInput = el("input", {
     class: "text-input",
     type: "text",
@@ -427,7 +445,19 @@ function renderAddExercise() {
       addExercise(knownName ?? name, typeSelect.value);
     },
   },
-    el("h3", { text: "Add an exercise" }),
+    el("div", { class: "exercise-head" },
+      el("h3", { text: "Add an exercise" }),
+      hasExercises
+        ? el("button", {
+          class: "icon-button",
+          type: "button",
+          "aria-label": "Cancel adding an exercise",
+          onclick: () => {
+            session.isAddingExercise = false;
+            render();
+          },
+        }, icon("close"))
+        : null),
     nameOptions,
     nameInput,
     typeSelect,

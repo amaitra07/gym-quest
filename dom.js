@@ -31,6 +31,7 @@ const ICON_SHAPES = {
   back: { d: "M15 5l-7 7 7 7" },
   forward: { d: "M9 5l7 7-7 7" },
   close: { d: "M6 6l12 12M18 6L6 18" },
+  plus: { d: "M12 5v14M5 12h14" },
   edit: { d: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" },
   arrow: { d: "M5 12h14M13 6l6 6-6 6" },
   play: { d: "M8 5v14l11-7z", filled: true },

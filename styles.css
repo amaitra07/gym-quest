@@ -829,6 +829,26 @@ select:focus-visible {
   gap: 10px;
 }
 
+.add-exercise-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  width: 56px;
+  height: 56px;
+  margin: 4px auto;
+  border: none;
+  border-radius: 50%;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.add-exercise-button .icon {
+  width: 24px;
+  height: 24px;
+}
+
 .action-bar {
   display: flex;
   flex-direction: column;
