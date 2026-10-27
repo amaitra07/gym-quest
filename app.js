@@ -11,6 +11,7 @@ import { buildSampleData } from "./sample-data.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import {
   clearDraft,
+  clearWorkoutData,
   loadDraft,
   loadProfile,
   loadRoutines,
@@ -247,6 +248,7 @@ function openProfile() {
     onTheme: chooseTheme,
     onUnit: chooseUnit,
     onLoadSample: loadSampleData,
+    onClearData: clearAllWorkoutData,
   });
   showScreen("profile", "home");
 }
@@ -286,6 +288,19 @@ async function loadSampleData() {
   schedule = sample.schedule;
   showTab("home");
   showToast("Sample Push / Pull / Legs data loaded.");
+}
+
+async function clearAllWorkoutData() {
+  if (!(await confirmAction("Delete every workout, saved workout and your weekly plan? This can't be undone.", "Delete everything"))) return;
+  if (!clearWorkoutData()) {
+    showToast("Couldn't clear. Your browser may be blocking storage.");
+    return;
+  }
+  workouts = [];
+  routines = [];
+  schedule = {};
+  showTab("home");
+  showToast("All workout data cleared.");
 }
 
 async function onTabClick(target) {

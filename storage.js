@@ -89,6 +89,16 @@ export function clearDraft() {
   }
 }
 
+// Removes workouts, saved workouts, the weekly plan and any draft; profile and settings stay.
+export function clearWorkoutData() {
+  try {
+    for (const key of [WORKOUTS_KEY, ROUTINES_KEY, SCHEDULE_KEY, DRAFT_KEY]) localStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function loadUnit() {
   return readJson(UNIT_KEY) === "kg" ? "kg" : "lb";
 }

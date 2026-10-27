@@ -112,7 +112,7 @@ function segmented(label, choices, current, onPick) {
   return el("div", { class: "segmented", role: "group", "aria-label": label }, ...buttons);
 }
 
-// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onLoadSample }.
+// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onLoadSample, onClearData }.
 export function renderProfile(profile, unit, theme, actions) {
   const saved = profile ?? {};
   const imperial = unit === "lb";
@@ -174,6 +174,8 @@ export function renderProfile(profile, unit, theme, actions) {
     el("section", { class: "panel" },
       el("h2", { text: "Try it out" }),
       el("p", { class: "muted", text: "Fill the app with a Push / Pull / Legs plan and four weeks of sample history to test with." }),
-      el("button", { class: "secondary-button", type: "button", text: "Load sample workouts", onclick: actions.onLoadSample })));
+      el("button", { class: "secondary-button", type: "button", text: "Load sample workouts", onclick: actions.onLoadSample }),
+      el("p", { class: "muted", text: "Or start over: this deletes every workout, saved workout and your weekly plan. Your profile and settings stay." }),
+      el("button", { class: "danger-button", type: "button", text: "Clear workout data", onclick: actions.onClearData })));
   window.scrollTo(0, 0);
 }
