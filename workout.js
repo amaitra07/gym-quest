@@ -41,7 +41,7 @@ const isRoutine = () => session.kind === "routine";
 // With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
   const step = kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false };
   guidedRun = null;
   render();
   if (autoStart) {
@@ -298,11 +298,14 @@ function renderNameStep() {
   nameInput.focus();
 }
 
-// The name and date fields of a logged workout. A saved workout shows its name as the
-// title instead.
+// The name and date of a logged workout, folded away so the sets stay near the top. The
+// summary line shows what is currently set; tapping it opens the fields. A saved workout
+// shows its name as the title instead.
 function renderDetails() {
   if (isRoutine()) return null;
   const { workout } = session;
+  const summaryText = () => `${workout.name.trim() || DEFAULT_WORKOUT_NAME} · ${formatDate(workout.date)}`;
+  const summaryLabel = el("span", { class: "details-summary-text", text: summaryText() });
   const nameInput = el("input", {
     class: "text-input",
     type: "text",
@@ -311,6 +314,7 @@ function renderDetails() {
     value: workout.name,
     onInput: (event) => {
       workout.name = event.target.value;
+      summaryLabel.textContent = summaryText();
       markChanged();
     },
   });
@@ -321,12 +325,21 @@ function renderDetails() {
     value: workout.date,
     onInput: (event) => {
       workout.date = event.target.value || todayIso();
+      summaryLabel.textContent = summaryText();
       markChanged();
     },
   });
-  return el("section", { class: "panel details" },
+  return el("details", {
+    class: "panel details",
+    ...(session.isDetailsOpen ? { open: "" } : {}),
+    onToggle: (event) => {
+      session.isDetailsOpen = event.target.open;
+    },
+  },
+  el("summary", {}, summaryLabel, el("span", { class: "details-summary-action", text: "Name and date" })),
+  el("div", { class: "details-fields" },
     el("label", { class: "field" }, el("span", { text: "Workout name" }), nameInput),
-    el("label", { class: "field" }, el("span", { text: "Date" }), dateInput));
+    el("label", { class: "field" }, el("span", { text: "Date" }), dateInput)));
 }
 
 function renderSetRow(exercise, set, index, unit) {
@@ -372,7 +385,14 @@ function renderExercise(exercise, unit) {
         onclick: () => removeExercise(exercise),
       }, icon("close"))),
     lastText ? el("p", { class: "hint", text: lastText }) : null,
-    el("label", { class: "field rest-field" },
+    ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, unit)),
+    el("button", {
+      class: "secondary-button",
+      type: "button",
+      text: "+ Add set",
+      onclick: () => addSet(exercise),
+    }),
+    el("label", { class: "rest-row" },
       el("span", { text: "Rest between sets (seconds)" }),
       el("input", {
         class: "number-input",
@@ -382,14 +402,7 @@ function renderExercise(exercise, unit) {
         step: "5",
         value: exercise.restSeconds ?? "",
         onInput: (event) => updateRest(exercise, event.target.value),
-      })),
-    ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, unit)),
-    el("button", {
-      class: "secondary-button",
-      type: "button",
-      text: "+ Add set",
-      onclick: () => addSet(exercise),
-    }));
+      })));
 }
 
 function openAddExercise() {
@@ -464,6 +477,20 @@ function renderAddExercise() {
     el("button", { class: "secondary-button", type: "submit", text: "+ Add exercise" }));
 }
 
+// One short line saying what to do next on the screen, which changes as the workout fills in.
+function guidanceText() {
+  const hasExercises = session.workout.exercises.length > 0;
+  if (isRoutine()) {
+    return hasExercises
+      ? "Set the reps for each set. Tap Save workout when you're done."
+      : "Add your first exercise below.";
+  }
+  if (!session.isNew) return "Fix anything that's wrong, then tap Save changes.";
+  return hasExercises
+    ? "Fill in each set as you do it. When you're done, tap Finish workout."
+    : "Add your first exercise below, for example Squat.";
+}
+
 function renderActionBar() {
   const { isNew } = session;
   const startsGuided = isNew && !isRoutine();
@@ -475,7 +502,9 @@ function renderActionBar() {
         class: "secondary-button start-guided",
         type: "button",
         onclick: startGuidedWorkout,
-      }, icon("play"), "Start workout")
+      }, icon("play"), el("span", { class: "button-text" },
+        "Start workout",
+        el("span", { class: "button-note", text: "One set at a time, with rest timers" })))
       : null,
     el("button", {
       class: "primary-button",
@@ -545,6 +574,7 @@ function render() {
   fillContainer(
     byId("workoutScreen"),
     renderTopBar(unit),
+    el("p", { class: "guide", text: guidanceText() }),
     renderDetails(),
     ...exercises,
     renderAddExercise(),
