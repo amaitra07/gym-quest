@@ -7,6 +7,7 @@ import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
 import { renderLogPicker, renderRoutines } from "./routines.js";
+import { buildSampleData } from "./sample-data.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import {
   clearDraft,
@@ -245,6 +246,7 @@ function openProfile() {
     onSave: saveProfileDetails,
     onTheme: chooseTheme,
     onUnit: chooseUnit,
+    onLoadSample: loadSampleData,
   });
   showScreen("profile", "home");
 }
@@ -268,6 +270,22 @@ function chooseTheme(theme) {
 function chooseUnit(unit) {
   if (!saveUnit(unit)) showToast("Couldn't remember your choice on this device.");
   openProfile();
+}
+
+// Replaces saved workouts, the weekly plan and history with the sample Push / Pull / Legs data.
+async function loadSampleData() {
+  const hasData = workouts.length > 0 || routines.length > 0;
+  if (hasData && !(await confirmAction("Replace your saved workouts, weekly plan and history with sample data?", "Replace"))) return;
+  const sample = buildSampleData(todayIso());
+  if (!saveWorkouts(sample.workouts) || !saveRoutines(sample.routines) || !saveSchedule(sample.schedule)) {
+    showToast("Couldn't save. Your browser may be blocking or out of storage.");
+    return;
+  }
+  workouts = sample.workouts;
+  routines = sample.routines;
+  schedule = sample.schedule;
+  showTab("home");
+  showToast("Sample Push / Pull / Legs data loaded.");
 }
 
 async function onTabClick(target) {

@@ -112,7 +112,7 @@ function segmented(label, choices, current, onPick) {
   return el("div", { class: "segmented", role: "group", "aria-label": label }, ...buttons);
 }
 
-// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit) }.
+// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onLoadSample }.
 export function renderProfile(profile, unit, theme, actions) {
   const saved = profile ?? {};
   const imperial = unit === "lb";
@@ -170,6 +170,10 @@ export function renderProfile(profile, unit, theme, actions) {
       el("p", { class: "muted setting-label", text: "Appearance" }),
       segmented("Appearance", THEME_CHOICES, theme, actions.onTheme),
       el("p", { class: "muted setting-label", text: "Units for weight and height" }),
-      segmented("Units", UNIT_CHOICES, unit, actions.onUnit)));
+      segmented("Units", UNIT_CHOICES, unit, actions.onUnit)),
+    el("section", { class: "panel" },
+      el("h2", { text: "Try it out" }),
+      el("p", { class: "muted", text: "Fill the app with a Push / Pull / Legs plan and four weeks of sample history to test with." }),
+      el("button", { class: "secondary-button", type: "button", text: "Load sample workouts", onclick: actions.onLoadSample })));
   window.scrollTo(0, 0);
 }
