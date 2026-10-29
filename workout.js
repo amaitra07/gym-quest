@@ -455,6 +455,7 @@ function renderExercise(exercise, unit) {
 
 function openAddExercise() {
   session.isAddingExercise = true;
+  session.openExerciseId = null;
   render();
   byId("workoutScreen").querySelector(".add-exercise input")?.focus();
 }
