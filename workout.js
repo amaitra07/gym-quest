@@ -342,24 +342,35 @@ function renderDetails() {
     el("label", { class: "field" }, el("span", { text: "Date" }), dateInput)));
 }
 
+// The labels sit in one header above all of an exercise's sets, so each row is just the
+// set number and its boxes. The boxes keep their own labels for screen readers.
+function setFieldLabel(field, unit) {
+  return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
+}
+
+function renderSetHeader(exercise, unit) {
+  const fields = EXERCISE_TYPES[exercise.type].fields;
+  return el("div", { class: "set-grid set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
+    el("span", { text: "Set" }),
+    ...fields.map((field) => el("span", { text: setFieldLabel(field, unit) })),
+    el("span"));
+}
+
 function renderSetRow(exercise, set, index, unit) {
-  const fields = EXERCISE_TYPES[exercise.type].fields.map((field) => {
-    const label = field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
-    return el("label", { class: "set-field" },
-      el("span", { text: label }),
-      el("input", {
-        class: "number-input",
-        type: "number",
-        inputmode: field.step === "1" ? "numeric" : "decimal",
-        min: "0",
-        step: field.step,
-        value: set[field.key] ?? "",
-        onInput: (event) => updateSetValue(set, field.key, event.target.value),
-      }));
-  });
-  return el("div", { class: "set-row" },
-    el("span", { class: "set-number", text: `Set ${index + 1}` }),
-    ...fields,
+  const fields = EXERCISE_TYPES[exercise.type].fields;
+  const inputs = fields.map((field) => el("input", {
+    class: "number-input",
+    type: "number",
+    inputmode: field.step === "1" ? "numeric" : "decimal",
+    min: "0",
+    step: field.step,
+    value: set[field.key] ?? "",
+    "aria-label": `${setFieldLabel(field, unit)}, set ${index + 1}`,
+    onInput: (event) => updateSetValue(set, field.key, event.target.value),
+  }));
+  return el("div", { class: "set-grid set-row", style: `--fields: ${fields.length}` },
+    el("span", { class: "set-number", text: String(index + 1) }),
+    ...inputs,
     el("button", {
       class: "icon-button",
       type: "button",
@@ -385,6 +396,7 @@ function renderExercise(exercise, unit) {
         onclick: () => removeExercise(exercise),
       }, icon("close"))),
     lastText ? el("p", { class: "hint", text: lastText }) : null,
+    exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
     ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, unit)),
     el("button", {
       class: "secondary-button",
