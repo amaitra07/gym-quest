@@ -11,6 +11,7 @@ import {
   newId,
   nextSetDefaults,
 } from "./exercises.js";
+import { summarize } from "./history-row.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
 import { workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
@@ -38,18 +39,15 @@ export function createWorkout() {
 
 const isRoutine = () => session.kind === "routine";
 
-// With `autoStart`, the guided workout begins straight away (used when picking a saved
-// workout). With `resumeGuided`, a guided workout that was running when the app was closed
+// With `autoStart` (used when picking a saved workout), the screen first lists the
+// exercises, and the guided workout begins when "Begin workout" is tapped. With `resumeGuided`, a guided workout that was running when the app was closed
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
-  const step = kind === "routine" && isNew ? "name" : "build";
+  const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
   session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
   render();
-  if (autoStart) {
-    saveDraft(workout);
-    startGuidedWorkout();
-  } else if (resumeGuided) {
+  if (!autoStart && resumeGuided) {
     const resumeFrom = restoreGuidedState(loadGuidedRun(), workout);
     if (resumeFrom) startGuidedWorkout(resumeFrom);
     else clearGuidedRun();
@@ -85,6 +83,10 @@ export async function confirmLeaveWorkout() {
 }
 
 async function goBack() {
+  if (session.step === "preview") {
+    session.handlers.onClose();
+    return;
+  }
   if (session.step === "build" && session.fromReview) {
     session.step = "review";
     render();
@@ -92,6 +94,14 @@ async function goBack() {
     return;
   }
   if (await confirmLeaveWorkout()) session.handlers.onClose();
+}
+
+// Leaving the preview starts the workout; it only becomes an unfinished workout (the
+// Resume card) from here, so backing out of the preview leaves nothing behind.
+function beginFromPreview() {
+  saveDraft(session.workout);
+  session.step = "build";
+  startGuidedWorkout();
 }
 
 function startEditing() {
@@ -615,7 +625,34 @@ function renderReview() {
       el("button", { class: "text-button", type: "button", text: "Discard workout", onclick: discardOrDeleteWorkout })));
 }
 
+// The exercises of a saved workout, shown before its first set begins.
+function renderPreview() {
+  const unit = loadUnit();
+  const cleaned = cleanWorkout(session.workout);
+  const rows = cleaned.exercises.map((exercise) => {
+    const count = exercise.sets.length;
+    const detail = `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`;
+    return el("li", {}, el("span", { text: exercise.name }), el("span", { class: "summary-target", text: detail }));
+  });
+  fillContainer(
+    byId("workoutScreen"),
+    el("div", { class: "top-bar" },
+      el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
+      el("h2", { class: "screen-title", text: "Get ready" })),
+    el("p", { class: "guide", text: "Look over today's exercises, then tap Begin workout." }),
+    el("section", { class: "panel" },
+      el("h2", { class: "review-name", text: session.workout.name.trim() || DEFAULT_WORKOUT_NAME }),
+      el("p", { class: "muted", text: summarize(cleaned) })),
+    el("section", { class: "panel" }, el("ul", { class: "summary-list" }, ...rows)),
+    el("div", { class: "action-bar" },
+      el("button", { class: "primary-button", type: "button", text: "Begin workout", onclick: beginFromPreview })));
+}
+
 function render() {
+  if (session.step === "preview") {
+    renderPreview();
+    return;
+  }
   if (session.step === "review") {
     renderReview();
     return;
