@@ -1,5 +1,6 @@
 const WORKOUTS_KEY = "gymquest.workouts";
 const DRAFT_KEY = "gymquest.draft";
+const GUIDED_KEY = "gymquest.guided";
 const ROUTINES_KEY = "gymquest.routines";
 const SCHEDULE_KEY = "gymquest.schedule";
 const PROFILE_KEY = "gymquest.profile";
@@ -81,7 +82,27 @@ export function saveDraft(draft) {
   return writeJson(DRAFT_KEY, draft);
 }
 
+// Where a guided workout had got to, so it can be picked up after the app is closed.
+export function loadGuidedRun() {
+  const saved = readJson(GUIDED_KEY);
+  return saved !== null && typeof saved === "object" && !Array.isArray(saved) ? saved : null;
+}
+
+export function saveGuidedRun(state) {
+  return writeJson(GUIDED_KEY, state);
+}
+
+export function clearGuidedRun() {
+  try {
+    localStorage.removeItem(GUIDED_KEY);
+  } catch {
+    // Nothing to clear if storage is unavailable.
+  }
+}
+
+// A discarded or finished workout takes its guided position with it.
 export function clearDraft() {
+  clearGuidedRun();
   try {
     localStorage.removeItem(DRAFT_KEY);
   } catch {
@@ -92,7 +113,7 @@ export function clearDraft() {
 // Removes workouts, saved workouts, the weekly plan and any draft; profile and settings stay.
 export function clearWorkoutData() {
   try {
-    for (const key of [WORKOUTS_KEY, ROUTINES_KEY, SCHEDULE_KEY, DRAFT_KEY]) localStorage.removeItem(key);
+    for (const key of [WORKOUTS_KEY, ROUTINES_KEY, SCHEDULE_KEY, DRAFT_KEY, GUIDED_KEY]) localStorage.removeItem(key);
     return true;
   } catch {
     return false;

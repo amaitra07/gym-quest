@@ -1,7 +1,8 @@
 // A stopwatch that takes the current time as an argument, so it can be tested
-// and keeps correct time even if the page is throttled in the background.
-export function createStopwatch() {
-  let accumulatedMs = 0;
+// and keeps correct time even if the page is throttled in the background. It can start
+// with time already on it, to pick up where a previous session left off.
+export function createStopwatch(initialMs = 0) {
+  let accumulatedMs = initialMs;
   let startedAt = null;
   return {
     start(now) {

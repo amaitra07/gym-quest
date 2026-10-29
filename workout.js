@@ -11,10 +11,10 @@ import {
   newId,
   nextSetDefaults,
 } from "./exercises.js";
-import { runGuidedWorkout } from "./player.js";
+import { restoreGuidedState, runGuidedWorkout } from "./player.js";
 import { workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
-import { clearDraft, loadUnit, saveDraft, saveUnit } from "./storage.js";
+import { clearDraft, clearGuidedRun, loadGuidedRun, loadUnit, saveDraft, saveGuidedRun, saveUnit } from "./storage.js";
 
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
@@ -38,8 +38,10 @@ export function createWorkout() {
 
 const isRoutine = () => session.kind === "routine";
 
-// With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
-export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
+// With `autoStart`, the guided workout begins straight away (used when picking a saved
+// workout). With `resumeGuided`, a guided workout that was running when the app was closed
+// opens again, paused where it left off, if its saved position still fits this workout.
+export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = kind === "routine" && isNew ? "name" : "build";
   session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
@@ -47,6 +49,10 @@ export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart 
   if (autoStart) {
     saveDraft(workout);
     startGuidedWorkout();
+  } else if (resumeGuided) {
+    const resumeFrom = restoreGuidedState(loadGuidedRun(), workout);
+    if (resumeFrom) startGuidedWorkout(resumeFrom);
+    else clearGuidedRun();
   }
 }
 
@@ -151,7 +157,7 @@ function updateRest(exercise, rawValue) {
 
 // Runs the workout as it is on screen (unsaved numbers included); when it ends
 // the log screen comes back so the user can review and save.
-function startGuidedWorkout() {
+function startGuidedWorkout(resumeFrom = null) {
   const hasLoggedSet = session.workout.exercises.some((exercise) =>
     exercise.sets.some((set) => isSetFilled(exercise.type, set)));
   if (!hasLoggedSet) {
@@ -165,7 +171,7 @@ function startGuidedWorkout() {
     session.fromReview = true;
     render();
     window.scrollTo(0, 0);
-  });
+  }, { resumeFrom, onProgress: (state) => (state === null ? clearGuidedRun() : saveGuidedRun(state)) });
 }
 
 function saveRoutine() {

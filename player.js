@@ -79,15 +79,33 @@ function setLabel(step) {
 // Walks through the workout one set at a time with a total clock and rest
 // countdowns. It never changes the workout; `onExit` returns to the log screen.
 // Returns { stop, isRunning } so the caller can end it when the user navigates away.
-export function runGuidedWorkout(container, workout, unit, onExit) {
+// Checks a saved guided position against the workout it came from. Returns the position to
+// pick up from, or null if it belongs to another workout or does not make sense.
+export function restoreGuidedState(saved, workout) {
+  if (saved === null || typeof saved !== "object" || saved.workoutId !== workout.id) return null;
+  const stepCount = buildSteps(workout).length;
+  const isStepNumber = (value) => Number.isInteger(value) && value >= 0 && value < stepCount;
+  const isDuration = (value) => Number.isFinite(value) && value >= 0;
+  const isValid = isStepNumber(saved.index)
+    && (saved.phase === "work" || saved.phase === "rest")
+    && Array.isArray(saved.completed) && saved.completed.every(isStepNumber)
+    && isDuration(saved.totalMs) && isDuration(saved.phaseMs);
+  return isValid ? saved : null;
+}
+
+// `options.resumeFrom` is a position checked by restoreGuidedState: the run then opens
+// paused where it left off. `options.onProgress(state)` is called every second with where
+// the run has got to, and with null once it is over.
+export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom = null, onProgress = () => {} } = {}) {
   const steps = buildSteps(workout);
-  const totalClock = createStopwatch();
-  const phaseClock = createStopwatch();
-  let index = 0;
-  let phase = "work";
-  let paused = false;
+  const totalClock = createStopwatch(resumeFrom?.totalMs ?? 0);
+  const phaseClock = createStopwatch(resumeFrom?.phaseMs ?? 0);
+  let index = resumeFrom?.index ?? 0;
+  let phase = resumeFrom?.phase ?? "work";
+  let paused = resumeFrom !== null;
   let finished = false;
-  const completed = new Set();
+  let stopped = false;
+  const completed = new Set(resumeFrom?.completed ?? []);
   let overview = null;
   let totalNode = null;
   let countdownNode = null;
@@ -152,8 +170,20 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     onExit();
   }
 
+  function saveProgress() {
+    onProgress({
+      workoutId: workout.id,
+      index,
+      phase,
+      completed: [...completed],
+      totalMs: totalClock.elapsedMs(now()),
+      phaseMs: phaseClock.elapsedMs(now()),
+    });
+  }
+
   function tick() {
-    if (finished) return;
+    if (finished || stopped) return;
+    saveProgress();
     totalNode.textContent = formatClock(totalClock.elapsedMs(now()) / 1000);
     const seconds = currentCountdownSeconds();
     if (countdownNode && seconds !== null) {
@@ -170,6 +200,8 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
 
   const timer = setInterval(tick, TICK_MS);
   function stop() {
+    stopped = true;
+    onProgress(null);
     closeOverview();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
@@ -342,8 +374,10 @@ export function runGuidedWorkout(container, workout, unit, onExit) {
     tick();
   }
 
-  totalClock.start(now());
-  phaseClock.start(now());
+  if (!paused) {
+    totalClock.start(now());
+    phaseClock.start(now());
+  }
   render();
   return { stop, isRunning: () => !finished };
 }

@@ -89,20 +89,20 @@ function showHome() {
   showTab(currentTab);
 }
 
-function openScreen(workout, isNew, { kind = "log", autoStart = false } = {}) {
+function openScreen(workout, isNew, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   openWorkout(workout, isNew, {
     getWorkouts: () => workouts,
     onSave: kind === "routine" ? saveRoutine : saveWorkout,
     onDelete: kind === "routine" ? deleteRoutine : deleteWorkout,
     onClose: showHome,
-  }, { kind, autoStart });
+  }, { kind, autoStart, resumeGuided });
   // A workout being logged is the "Log" tab; a saved workout belongs to "Workouts".
   const highlightedTab = kind === "routine" ? "routines" : isNew ? "log" : currentTab;
   showScreen("workout", highlightedTab);
 }
 
 function resumeWorkout() {
-  openScreen(loadDraft() ?? createWorkout(), true);
+  openScreen(loadDraft() ?? createWorkout(), true, { resumeGuided: true });
 }
 
 async function startEmptyWorkout() {
