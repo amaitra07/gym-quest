@@ -65,19 +65,16 @@ function pastWorkouts() {
 
 /* ---------- Actions ---------- */
 
-// Asks before throwing anything away, then stops the guided workout if one is running.
-// A new logged workout needs no question: it stays saved as a draft. Resolves true if it
-// is fine to leave this screen.
+// Asks before throwing anything away. A running guided workout is not thrown away: it is
+// paused and kept where it is, so Resume brings it back. A new logged workout needs no
+// question either: it stays saved as a draft. Resolves true if it is fine to leave this screen.
 export async function confirmLeaveWorkout() {
-  if (guidedRun?.isRunning()) {
-    const message = "Leave now? The guided workout will end, but your workout stays as you logged it.";
-    if (!(await confirmAction(message, "Leave"))) return false;
-  }
   const isOnlyCopy = !session.isNew || isRoutine();
   if (isOnlyCopy && session.isDirty) {
     if (!(await confirmAction("Discard your changes to this workout?", "Discard changes"))) return false;
   }
-  guidedRun?.stop();
+  if (guidedRun?.isRunning()) guidedRun.suspend();
+  else guidedRun?.stop();
   guidedRun = null;
   return true;
 }

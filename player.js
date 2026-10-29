@@ -199,9 +199,10 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   }
 
   const timer = setInterval(tick, TICK_MS);
-  function stop() {
+  // Ends the run. With `keepPlace`, its position stays saved so it can be picked up again.
+  function stop(keepPlace = false) {
     stopped = true;
-    onProgress(null);
+    if (!keepPlace) onProgress(null);
     closeOverview();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
@@ -379,5 +380,13 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     phaseClock.start(now());
   }
   render();
-  return { stop, isRunning: () => !finished };
+  // Pauses the run where it is and leaves it saved, for when the person goes to another screen.
+  function suspend() {
+    totalClock.pause(now());
+    phaseClock.pause(now());
+    saveProgress();
+    stop(true);
+  }
+
+  return { stop, suspend, isRunning: () => !finished };
 }
