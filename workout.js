@@ -41,7 +41,7 @@ const isRoutine = () => session.kind === "routine";
 // With `autoStart`, the guided workout begins straight away (used when picking a saved workout).
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false } = {}) {
   const step = kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
   render();
   if (autoStart) {
@@ -105,6 +105,7 @@ function addExercise(name, type) {
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
   addSet(exercise, false);
   session.workout.exercises.push(exercise);
+  session.openExerciseId = exercise.id;
   session.isAddingExercise = false;
   markChanged();
   render();
@@ -128,6 +129,7 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
+  if (session.openExerciseId === exercise.id) session.openExerciseId = undefined;
   markChanged();
   render();
 }
@@ -379,22 +381,56 @@ function renderSetRow(exercise, set, index, unit) {
     }, icon("close")));
 }
 
-function renderExercise(exercise, unit) {
-  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  const lastText = last
-    ? `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}`
-    : null;
-  return el("section", { class: "panel exercise" },
-    el("div", { class: "exercise-head" },
-      el("div", {},
-        el("h3", { text: exercise.name }),
-        el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label })),
-      el("button", {
+// Only one exercise shows its sets at a time; the others fold into a single line. Until one
+// is picked, the first is open. `null` means the person folded them all.
+function openExercise() {
+  const { openExerciseId, workout } = session;
+  if (openExerciseId === null) return null;
+  return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? workout.exercises[0] ?? null;
+}
+
+function toggleExercise(exercise) {
+  session.openExerciseId = openExercise() === exercise ? null : exercise.id;
+  render();
+}
+
+function setCountText(exercise) {
+  const count = exercise.sets.length;
+  return `${EXERCISE_TYPES[exercise.type].label} · ${count} ${count === 1 ? "set" : "sets"}`;
+}
+
+function renderExerciseHead(exercise, isOpen) {
+  return el("div", { class: "exercise-head" },
+    el("button", {
+      class: "exercise-toggle",
+      type: "button",
+      "aria-expanded": String(isOpen),
+      "aria-label": `${exercise.name}, ${setCountText(exercise)}. ${isOpen ? "Tap to fold." : "Tap to open."}`,
+      onclick: () => toggleExercise(exercise),
+    },
+    el("span", { class: "exercise-title" },
+      el("h3", { text: exercise.name }),
+      el("p", { class: "muted", text: setCountText(exercise) })),
+    icon("forward")),
+    isOpen
+      ? el("button", {
         class: "icon-button",
         type: "button",
         "aria-label": `Remove ${exercise.name}`,
         onclick: () => removeExercise(exercise),
-      }, icon("close"))),
+      }, icon("close"))
+      : null);
+}
+
+function renderExercise(exercise, unit) {
+  const isOpen = openExercise() === exercise;
+  if (!isOpen) return el("section", { class: "panel exercise is-folded" }, renderExerciseHead(exercise, false));
+  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
+  const lastText = last
+    ? `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}`
+    : null;
+  return el("section", { class: "panel exercise is-open" },
+    renderExerciseHead(exercise, true),
     lastText ? el("p", { class: "hint", text: lastText }) : null,
     exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
     ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, unit)),
