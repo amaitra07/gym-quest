@@ -1,3 +1,4 @@
+import { createActivity, isActivity, openActivity } from "./activity.js";
 import { renderComplete } from "./complete.js";
 import { todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, chooseOption, confirmAction, showToast } from "./dom.js";
@@ -43,7 +44,7 @@ let onWorkoutScreen = false;
 // `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
 // the tab that the workout being edited belongs to.
 function showScreen(name, highlightedTab = name) {
-  for (const screen of [...TABS, "profile", "complete", "workout"]) {
+  for (const screen of [...TABS, "profile", "complete", "workout", "activity"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
   onWorkoutScreen = name === "workout";
@@ -79,6 +80,7 @@ function showTab(name) {
     onStart: startRoutine,
     onResume: resumeWorkout,
     onEmpty: startEmptyWorkout,
+    onActivity: startActivity,
     onCreate: createRoutine,
   });
   showScreen(name);
@@ -125,7 +127,38 @@ async function confirmReplacingDraft() {
 }
 
 function editWorkout(workout) {
-  openScreen(structuredClone(workout), false);
+  if (isActivity(workout)) openActivityScreen(structuredClone(workout), false);
+  else openScreen(structuredClone(workout), false);
+}
+
+// Logging an activity does not touch an unfinished workout, so nothing needs confirming.
+function startActivity() {
+  openActivityScreen(createActivity(), true);
+}
+
+function openActivityScreen(activity, isNew) {
+  openActivity(activity, isNew, {
+    onSave: saveActivity,
+    onDelete: deleteActivity,
+    onClose: showHome,
+  });
+  showScreen("activity", isNew ? "log" : currentTab);
+}
+
+function saveActivity(activity, isNew) {
+  const nextWorkouts = isNew
+    ? [...workouts, activity]
+    : workouts.map((existing) => (existing.id === activity.id ? activity : existing));
+  if (!persist(nextWorkouts)) return;
+  if (isNew) showTab("home");
+  else showHome();
+  showToast(`Saved ${activity.name}. +${activity.xp} XP`);
+}
+
+function deleteActivity(id) {
+  if (!persist(workouts.filter((workout) => workout.id !== id))) return;
+  showHome();
+  showToast("Activity deleted.");
 }
 
 function createRoutine() {

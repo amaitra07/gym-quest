@@ -1,7 +1,9 @@
+import { activitySummary } from "./activity.js";
 import { formatDate } from "./dates.js";
 import { el } from "./dom.js";
 
 export function summarize(workout) {
+  if (workout.kind === "activity") return activitySummary(workout);
   const setCount = workout.exercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
   const exerciseWord = workout.exercises.length === 1 ? "exercise" : "exercises";
   const setWord = setCount === 1 ? "set" : "sets";

@@ -58,7 +58,7 @@ export function renderRoutines(routines, { schedule, workouts, today, onPickDay,
 }
 
 // The "Log" tab: pick a saved workout to start it, resume an unfinished one, or start empty.
-export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, onCreate }) {
+export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, onActivity, onCreate }) {
   const resume = byId("resumeCard");
   resume.hidden = draft === null;
   if (draft !== null) {
@@ -76,5 +76,6 @@ export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, o
   byId("pickerHeading").hidden = routines.length === 0;
   byId("pickerEmpty").hidden = routines.length > 0;
   byId("emptyWorkoutButton").onclick = onEmpty;
+  byId("activityButton").onclick = onActivity;
   byId("createFromPickerButton").onclick = onCreate;
 }

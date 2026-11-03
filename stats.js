@@ -14,8 +14,9 @@ const XP_PER_TIMED_SET = 6;
 const XP_PER_CARDIO_MINUTE = 1;
 
 // XP comes from the work actually logged: strength and timed sets earn a fixed
-// amount each, and cardio earns per minute.
+// amount each, and cardio and logged activities earn per minute.
 export function computeXp(workout) {
+  if (workout.kind === "activity") return Math.round(workout.minutes) * XP_PER_CARDIO_MINUTE;
   let xp = 0;
   for (const exercise of workout.exercises) {
     for (const set of exercise.sets) {
