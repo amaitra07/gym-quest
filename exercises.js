@@ -156,3 +156,9 @@ export function describeSet(type, set, unit) {
   }
   return `${set.seconds}s`;
 }
+
+// The text on a set chip in the saved-workout editor. A set with nothing typed yet reads
+// "Set 2" instead of showing blanks.
+export function setChipText(type, set, unit, index) {
+  return isSetFilled(type, set) ? describeSet(type, set, unit) : `Set ${index + 1}`;
+}

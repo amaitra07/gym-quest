@@ -783,41 +783,6 @@ select:focus-visible {
   gap: 8px;
 }
 
-.exercise-toggle {
-  display: flex;
-  flex: 1;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-  min-height: 44px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.exercise-toggle .icon {
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-  color: var(--text-dim);
-  transition: transform 0.15s ease;
-}
-
-.exercise.is-open .exercise-toggle .icon {
-  transform: rotate(90deg);
-}
-
-.exercise.is-folded {
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-
 .hint {
   margin: 8px 0 4px;
   padding: 8px 12px;
@@ -902,6 +867,75 @@ select:focus-visible {
 
 .start-guided {
   margin-bottom: 8px;
+}
+
+/* ---------- Workout editor: exercise cards of set chips ---------- */
+.exercise-card {
+  display: grid;
+  gap: 14px;
+}
+
+.exercise-card .exercise-head {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.exercise-card .exercise-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.exercise-tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--violet-bg);
+  color: var(--violet-text);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.set-chip {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.set-chip.is-selected {
+  border-color: var(--accent);
+}
+
+.set-chip.is-add {
+  border: 2px dashed var(--text-dim);
+  background: none;
+  color: var(--accent-text);
+}
+
+.set-chip.is-rest {
+  color: var(--text-dim);
+}
+
+.chip-editor {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
 }
 
 /* ---------- Log and edit workout screen: easier to read ---------- */

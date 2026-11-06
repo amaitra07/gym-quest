@@ -10,6 +10,7 @@ import {
   lastPerformance,
   newId,
   nextSetDefaults,
+  setChipText,
 } from "./exercises.js";
 import { summarize } from "./history-row.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
@@ -44,7 +45,7 @@ const isRoutine = () => session.kind === "routine";
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, editing: null };
   guidedRun = null;
   render();
   if (!autoStart && resumeGuided) {
@@ -118,7 +119,7 @@ function addExercise(name, type) {
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
   addSet(exercise, false);
   session.workout.exercises.push(exercise);
-  session.openExerciseId = exercise.id;
+  session.editing = { exerciseId: exercise.id, index: 0 };
   session.isAddingExercise = false;
   markChanged();
   render();
@@ -134,6 +135,7 @@ function addSet(exercise, shouldRender = true) {
 
 function removeSet(exercise, index) {
   exercise.sets.splice(index, 1);
+  session.editing = null;
   markChanged();
   render();
 }
@@ -142,7 +144,7 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
-  if (session.openExerciseId === exercise.id) session.openExerciseId = undefined;
+  if (session.editing?.exerciseId === exercise.id) session.editing = null;
   markChanged();
   render();
 }
@@ -394,81 +396,93 @@ function renderSetRow(exercise, set, index, unit) {
     }, icon("close")));
 }
 
-// Only one exercise shows its sets at a time; the others fold into a single line. Until one
-// is picked, the first is open. `null` means the person folded them all.
-function openExercise() {
-  const { openExerciseId, workout } = session;
-  if (openExerciseId === null) return null;
-  return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? workout.exercises[0] ?? null;
-}
-
-function toggleExercise(exercise) {
-  session.openExerciseId = openExercise() === exercise ? null : exercise.id;
+// Every workout editor (log, edit, saved workout) shows each exercise as a card of set chips ("135 lb × 8"). Tapping a chip
+// (or the rest chip) opens its fields under the chips; Done closes them again.
+function editChip(exercise, target) {
+  const isSame = session.editing?.exerciseId === exercise.id
+    && session.editing.index === target.index && session.editing.rest === target.rest;
+  session.editing = isSame ? null : { exerciseId: exercise.id, ...target };
   render();
 }
 
-function setCountText(exercise) {
-  const count = exercise.sets.length;
-  return `${EXERCISE_TYPES[exercise.type].label} · ${count} ${count === 1 ? "set" : "sets"}`;
+function addSetAndEdit(exercise) {
+  addSet(exercise, false);
+  session.editing = { exerciseId: exercise.id, index: exercise.sets.length - 1 };
+  markChanged();
+  render();
 }
 
-function renderExerciseHead(exercise, isOpen) {
-  return el("div", { class: "exercise-head" },
-    el("button", {
-      class: "exercise-toggle",
-      type: "button",
-      "aria-expanded": String(isOpen),
-      "aria-label": `${exercise.name}, ${setCountText(exercise)}. ${isOpen ? "Tap to fold." : "Tap to open."}`,
-      onclick: () => toggleExercise(exercise),
+function renderChipEditor(exercise, editing, unit) {
+  const done = el("button", {
+    class: "secondary-button",
+    type: "button",
+    text: "Done",
+    onclick: () => {
+      session.editing = null;
+      render();
     },
-    el("span", { class: "exercise-title" },
-      el("h3", { text: exercise.name }),
-      el("p", { class: "muted", text: setCountText(exercise) })),
-    icon("forward")),
-    isOpen
-      ? el("button", {
+  });
+  if (editing.rest) {
+    return el("div", { class: "chip-editor" },
+      el("label", { class: "rest-row" },
+        el("span", { text: "Rest between sets (seconds)" }),
+        el("input", {
+          class: "number-input",
+          type: "number",
+          inputmode: "numeric",
+          min: "0",
+          step: "5",
+          value: exercise.restSeconds ?? "",
+          onInput: (event) => updateRest(exercise, event.target.value),
+        })),
+      done);
+  }
+  const set = exercise.sets[editing.index];
+  return el("div", { class: "chip-editor" },
+    renderSetHeader(exercise, unit),
+    renderSetRow(exercise, set, editing.index, unit),
+    done);
+}
+
+function renderExercise(exercise, unit) {
+  const editing = session.editing?.exerciseId === exercise.id ? session.editing : null;
+  const chip = (text, label, isSelected, onclick, extraClass = "") => el("button", {
+    class: `set-chip ${extraClass} ${isSelected ? "is-selected" : ""}`.trim(),
+    type: "button",
+    "aria-label": label,
+    onclick,
+  }, text);
+  const setChips = exercise.sets.map((set, index) => {
+    const text = setChipText(exercise.type, set, unit, index);
+    return chip(text, `Edit set ${index + 1}: ${text}`, editing?.index === index, () => editChip(exercise, { index }));
+  });
+  const last = isRoutine() ? null : lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
+  const restText = exercise.restSeconds ? `Rest ${exercise.restSeconds}s` : "No rest";
+  return el("section", { class: "panel exercise exercise-card" },
+    el("div", { class: "exercise-head" },
+      el("span", { class: "exercise-tile", "aria-hidden": "true", text: exercise.name.charAt(0).toUpperCase() }),
+      el("span", { class: "exercise-title" },
+        el("h3", { text: exercise.name }),
+        el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label })),
+      el("button", {
         class: "icon-button",
         type: "button",
         "aria-label": `Remove ${exercise.name}`,
         onclick: () => removeExercise(exercise),
-      }, icon("close"))
-      : null);
-}
-
-function renderExercise(exercise, unit) {
-  const isOpen = openExercise() === exercise;
-  if (!isOpen) return el("section", { class: "panel exercise is-folded" }, renderExerciseHead(exercise, false));
-  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  const lastText = last
-    ? `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}`
-    : null;
-  return el("section", { class: "panel exercise is-open" },
-    renderExerciseHead(exercise, true),
-    lastText ? el("p", { class: "hint", text: lastText }) : null,
-    exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
-    ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, unit)),
-    el("button", {
-      class: "secondary-button",
-      type: "button",
-      text: "+ Add set",
-      onclick: () => addSet(exercise),
-    }),
-    el("label", { class: "rest-row" },
-      el("span", { text: "Rest between sets (seconds)" }),
-      el("input", {
-        class: "number-input",
-        type: "number",
-        inputmode: "numeric",
-        min: "0",
-        step: "5",
-        value: exercise.restSeconds ?? "",
-        onInput: (event) => updateRest(exercise, event.target.value),
-      })));
+      }, icon("close"))),
+    el("div", { class: "chip-row" },
+      ...setChips,
+      chip("+ Set", `Add a set to ${exercise.name}`, false, () => addSetAndEdit(exercise), "is-add"),
+      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, editing?.rest === true, () => editChip(exercise, { rest: true }), "is-rest")),
+    last
+      ? el("p", { class: "hint", text: `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}` })
+      : null,
+    editing ? renderChipEditor(exercise, editing, unit) : null);
 }
 
 function openAddExercise() {
   session.isAddingExercise = true;
-  session.openExerciseId = null;
+  session.editing = null;
   render();
   byId("workoutScreen").querySelector(".add-exercise input")?.focus();
 }
