@@ -1,7 +1,8 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, fillContainer, icon, openPopover, showToast } from "./dom.js";
+import { byId, confirmAction, el, fillContainer, icon, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
+  bumpValue,
   cleanWorkout,
   describeSet,
   exerciseNames,
@@ -10,7 +11,7 @@ import {
   lastPerformance,
   newId,
   nextSetDefaults,
-  setChipText,
+  setLineText,
 } from "./exercises.js";
 import { summarize } from "./history-row.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
@@ -45,7 +46,7 @@ const isRoutine = () => session.kind === "routine";
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, editing: null };
   guidedRun = null;
   render();
   if (!autoStart && resumeGuided) {
@@ -117,17 +118,23 @@ function startRename() {
 function addExercise(name, type) {
   const restSeconds = type === "cardio" ? 0 : DEFAULT_REST_SECONDS;
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
+  addSet(exercise);
   session.workout.exercises.push(exercise);
   session.isAddingExercise = false;
   markChanged();
   render();
-  const card = [...byId("workoutScreen").querySelectorAll(".exercise-card")].at(-1);
-  card.scrollIntoView({ block: "center" });
-  openSetPopover(exercise, null, card.querySelector(".is-add"));
+}
+
+// Adds a set that starts from last time's matching set (or the set before it) and opens it.
+function addSet(exercise) {
+  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
+  exercise.sets.push(nextSetDefaults(exercise.type, last?.sets, exercise.sets));
+  session.editing = { exerciseId: exercise.id, index: exercise.sets.length - 1 };
 }
 
 function removeSet(exercise, index) {
   exercise.sets.splice(index, 1);
+  session.editing = null;
   markChanged();
   render();
 }
@@ -136,6 +143,7 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
+  if (session.editing?.exerciseId === exercise.id) session.editing = null;
   markChanged();
   render();
 }
@@ -344,83 +352,97 @@ function setFieldLabel(field, unit) {
   return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
 }
 
-// Every workout editor (log, edit, saved workout) shows each exercise as a card of set chips
-// ("135 lb × 8"). Adding or tapping a set, or tapping the rest chip, opens a small popover
-// by that chip with just those numbers. A new set is only added when the popover is saved.
-function numberField(label, value, step, onValue) {
-  return el("label", { class: "popover-field" },
-    el("span", { text: label }),
-    el("input", {
-      class: "number-input",
-      type: "number",
-      inputmode: step === "1" || step === "5" ? "numeric" : "decimal",
-      min: "0",
-      step,
-      value: value ?? "",
-      onInput: (event) => onValue(parseNumber(event.target.value)),
+// Every workout editor (log, edit, saved workout) shows each exercise as a card of set lines
+// ("Set 1   135 lb × 8"). Tapping a line opens that set as big numbers with plus and minus
+// buttons (the numbers can also be typed); tapping the rest line does the same for rest time.
+function toggleEditing(exercise, target) {
+  const isSame = session.editing?.exerciseId === exercise.id
+    && session.editing.index === target.index && session.editing.rest === target.rest;
+  session.editing = isSame ? null : { exerciseId: exercise.id, ...target };
+  render();
+}
+
+// One big number with a minus and a plus. `onValue` receives the new number (or null if empty).
+function renderStepper(label, value, field, onValue) {
+  const input = el("input", {
+    class: "big-number",
+    type: "number",
+    inputmode: field.step === "1" || field.step === "5" ? "numeric" : "decimal",
+    min: "0",
+    step: field.step,
+    value: value ?? "",
+    "aria-label": label,
+    onInput: (event) => onValue(parseNumber(event.target.value)),
+  });
+  const bump = (direction) => {
+    const next = bumpValue(parseNumber(input.value), field.bump, direction);
+    input.value = next;
+    onValue(next);
+  };
+  return el("div", { class: "stepper" },
+    el("button", { class: "stepper-button", type: "button", "aria-label": `Less ${label}`, onclick: () => bump(-1) }, "−"),
+    el("label", { class: "stepper-value" }, input, el("span", { class: "stepper-label", text: label })),
+    el("button", { class: "stepper-button", type: "button", "aria-label": `More ${label}`, onclick: () => bump(1) }, "+"));
+}
+
+function renderDoneLink() {
+  return el("button", {
+    class: "text-link",
+    type: "button",
+    text: "Done",
+    onclick: () => {
+      session.editing = null;
+      render();
+    },
+  });
+}
+
+function renderActiveSet(exercise, index, unit) {
+  const set = exercise.sets[index];
+  return el("div", { class: "set-active" },
+    el("div", { class: "set-active-head" },
+      el("span", { class: "set-active-title", text: `Set ${index + 1}` }),
+      renderDoneLink()),
+    ...EXERCISE_TYPES[exercise.type].fields.map((field) =>
+      renderStepper(setFieldLabel(field, unit), set[field.key], field, (value) => {
+        set[field.key] = value;
+        markChanged();
+      })),
+    el("button", {
+      class: "text-link is-danger",
+      type: "button",
+      text: "Remove set",
+      onclick: () => removeSet(exercise, index),
     }));
 }
 
-// `index` is the set to edit, or null to add a new one.
-function openSetPopover(exercise, index, anchor) {
-  const unit = loadUnit();
-  const isNewSet = index === null;
-  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  const draft = isNewSet
-    ? nextSetDefaults(exercise.type, last?.sets, exercise.sets)
-    : { ...exercise.sets[index] };
-  const setNumber = isNewSet ? exercise.sets.length + 1 : index + 1;
-  openPopover({
-    anchor,
-    title: `${exercise.name} · Set ${setNumber}`,
-    fields: EXERCISE_TYPES[exercise.type].fields.map((field) =>
-      numberField(setFieldLabel(field, unit), draft[field.key], field.step, (value) => {
-        draft[field.key] = value;
-      })),
-    saveLabel: isNewSet ? "Add set" : "Save set",
-    onSave: () => {
-      if (isNewSet) exercise.sets.push(draft);
-      else Object.assign(exercise.sets[index], draft);
+function renderActiveRest(exercise) {
+  const field = { step: "5", bump: 5 };
+  return el("div", { class: "set-active" },
+    el("div", { class: "set-active-head" },
+      el("span", { class: "set-active-title", text: "Rest between sets" }),
+      renderDoneLink()),
+    renderStepper("Seconds", exercise.restSeconds, field, (value) => {
+      exercise.restSeconds = value;
       markChanged();
-      render();
-    },
-    removeLabel: "Remove set",
-    onRemove: isNewSet ? null : () => removeSet(exercise, index),
-  });
-}
-
-function openRestPopover(exercise, anchor) {
-  let restSeconds = exercise.restSeconds;
-  openPopover({
-    anchor,
-    title: `${exercise.name} · Rest`,
-    fields: [numberField("Rest between sets (seconds)", restSeconds, "5", (value) => {
-      restSeconds = value;
-    })],
-    onSave: () => {
-      exercise.restSeconds = restSeconds;
-      markChanged();
-      render();
-    },
-  });
+    }));
 }
 
 function renderExercise(exercise, unit) {
-  const chip = (text, label, onclick, extraClass = "") => el("button", {
-    class: `set-chip ${extraClass}`.trim(),
-    type: "button",
-    "aria-label": label,
-    onclick: (event) => onclick(event.currentTarget),
-  }, text);
-  const setChips = exercise.sets.map((set, index) => {
-    const text = setChipText(exercise.type, set, unit, index);
-    return chip(text, `Edit set ${index + 1}: ${text}`, (anchor) => openSetPopover(exercise, index, anchor));
-  });
+  const editing = session.editing?.exerciseId === exercise.id ? session.editing : null;
   const last = isRoutine() ? null : lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  const restText = exercise.restSeconds ? `Rest ${exercise.restSeconds}s` : "No rest";
+  const line = (label, value, onclick, extraClass = "") => el("button", {
+    class: `set-line ${extraClass}`.trim(),
+    type: "button",
+    "aria-label": `${label}: ${value}. Tap to change.`,
+    onclick,
+  }, el("span", { class: "set-line-label", text: label }), el("span", { class: "set-line-value", text: value }));
+  const setLines = exercise.sets.map((set, index) => editing?.index === index
+    ? renderActiveSet(exercise, index, unit)
+    : line(`Set ${index + 1}`, setLineText(exercise.type, set, unit), () => toggleEditing(exercise, { index })));
+  const restText = exercise.restSeconds ? `${exercise.restSeconds}s` : "None";
   return el("section", { class: "panel exercise exercise-card" },
     el("div", { class: "exercise-head" },
-      el("span", { class: "exercise-tile", "aria-hidden": "true", text: exercise.name.charAt(0).toUpperCase() }),
       el("span", { class: "exercise-title" },
         el("h3", { text: exercise.name }),
         el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label })),
@@ -430,17 +452,28 @@ function renderExercise(exercise, unit) {
         "aria-label": `Remove ${exercise.name}`,
         onclick: () => removeExercise(exercise),
       }, icon("close"))),
-    el("div", { class: "chip-row" },
-      ...setChips,
-      chip("+ Set", `Add a set to ${exercise.name}`, (anchor) => openSetPopover(exercise, null, anchor), "is-add"),
-      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, (anchor) => openRestPopover(exercise, anchor), "is-rest")),
     last
       ? el("p", { class: "hint", text: `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}` })
-      : null);
+      : null,
+    ...setLines,
+    el("button", {
+      class: "text-link",
+      type: "button",
+      text: "+ Add set",
+      onclick: () => {
+        addSet(exercise);
+        markChanged();
+        render();
+      },
+    }),
+    editing?.rest
+      ? renderActiveRest(exercise)
+      : line("Rest", restText, () => toggleEditing(exercise, { rest: true }), "is-rest"));
 }
 
 function openAddExercise() {
   session.isAddingExercise = true;
+  session.editing = null;
   render();
   byId("workoutScreen").querySelector(".add-exercise input")?.focus();
 }

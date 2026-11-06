@@ -32,7 +32,6 @@ const ICON_SHAPES = {
   forward: { d: "M9 5l7 7-7 7" },
   close: { d: "M6 6l12 12M18 6L6 18" },
   plus: { d: "M12 5v14M5 12h14" },
-  check: { d: "M5 12.5l4.5 4.5L19 7.5" },
   edit: { d: "M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" },
   arrow: { d: "M5 12h14M13 6l6 6-6 6" },
   play: { d: "M8 5v14l11-7z", filled: true },
@@ -130,60 +129,4 @@ export function chooseOption(title, options) {
     document.body.append(overlay);
     buttons[0]?.focus();
   });
-}
-
-// A small bubble next to `anchor` (the button that opened it) with a few form controls.
-// The rest of the screen is not dimmed. The check button runs `onSave` and closes; tapping
-// elsewhere, the X, or Escape closes it without saving. `onRemove`, when given, adds a
-// Remove link.
-export function openPopover({ anchor, title, fields, saveLabel = "Save", onSave, removeLabel, onRemove }) {
-  const previousFocus = document.activeElement;
-  const close = () => {
-    backdrop.remove();
-    popover.remove();
-    previousFocus?.focus?.();
-  };
-  const backdrop = el("div", { class: "popover-backdrop", onclick: close });
-  const popover = el("form", {
-    class: "popover",
-    role: "dialog",
-    "aria-label": title,
-    onkeydown: (event) => {
-      if (event.key === "Escape") close();
-    },
-    onsubmit: (event) => {
-      event.preventDefault();
-      close();
-      onSave();
-    },
-  },
-    el("div", { class: "popover-head" },
-      el("span", { class: "popover-title", text: title }),
-      el("button", { class: "icon-button", type: "button", "aria-label": "Close", onclick: close }, icon("close"))),
-    el("div", { class: "popover-row" },
-      ...fields,
-      el("button", { class: "popover-save", type: "submit", "aria-label": saveLabel }, icon("check"))),
-    onRemove
-      ? el("button", {
-        class: "popover-remove",
-        type: "button",
-        text: removeLabel,
-        onclick: () => {
-          close();
-          onRemove();
-        },
-      })
-      : null);
-  document.body.append(backdrop, popover);
-
-  const rect = anchor.getBoundingClientRect();
-  const margin = 12;
-  const width = Math.min(320, window.innerWidth - 2 * margin);
-  popover.style.width = `${width}px`;
-  const left = Math.min(Math.max(rect.left, margin), window.innerWidth - width - margin);
-  const fitsBelow = rect.bottom + 8 + popover.offsetHeight < window.innerHeight - margin;
-  const top = fitsBelow ? rect.bottom + 8 : rect.top - 8 - popover.offsetHeight;
-  popover.style.left = `${left + window.scrollX}px`;
-  popover.style.top = `${top + window.scrollY}px`;
-  popover.querySelector("input")?.focus({ preventScroll: true });
 }
