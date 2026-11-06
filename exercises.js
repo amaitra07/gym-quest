@@ -5,22 +5,22 @@ export const EXERCISE_TYPES = {
     label: "Strength",
     requiredField: "reps",
     fields: [
-      { key: "weight", label: "Weight", step: "0.5", bump: 5, usesWeightUnit: true },
-      { key: "reps", label: "Reps", step: "1", bump: 1 },
+      { key: "weight", label: "Weight", step: "0.5", usesWeightUnit: true },
+      { key: "reps", label: "Reps", step: "1" },
     ],
   },
   cardio: {
     label: "Cardio",
     requiredField: "minutes",
     fields: [
-      { key: "minutes", label: "Minutes", step: "1", bump: 1 },
-      { key: "distance", label: "Distance", step: "0.1", bump: 0.1 },
+      { key: "minutes", label: "Minutes", step: "1" },
+      { key: "distance", label: "Distance", step: "0.1" },
     ],
   },
   timed: {
     label: "Timed hold",
     requiredField: "seconds",
-    fields: [{ key: "seconds", label: "Seconds", step: "5", bump: 5 }],
+    fields: [{ key: "seconds", label: "Seconds", step: "5" }],
   },
 };
 
@@ -160,11 +160,4 @@ export function describeSet(type, set, unit) {
 // The text on a set's line in the editor. A set with nothing typed yet reads "Not filled in".
 export function setLineText(type, set, unit) {
   return isSetFilled(type, set) ? describeSet(type, set, unit) : "Not filled in";
-}
-
-// One tap of a plus (direction 1) or minus (direction -1) button. An empty value counts as
-// zero, and the result never goes below zero. Rounded so 0.1 + 0.2 stays 0.3.
-export function bumpValue(value, bump, direction) {
-  const next = (value ?? 0) + bump * direction;
-  return Math.max(0, Math.round(next * 100) / 100);
 }

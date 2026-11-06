@@ -2,7 +2,6 @@ import { formatDate, todayIso } from "./dates.js";
 import { byId, confirmAction, el, fillContainer, icon, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
-  bumpValue,
   cleanWorkout,
   describeSet,
   exerciseNames,
@@ -46,7 +45,7 @@ const isRoutine = () => session.kind === "routine";
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, editing: null };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
   render();
   if (!autoStart && resumeGuided) {
@@ -120,21 +119,20 @@ function addExercise(name, type) {
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
   addSet(exercise);
   session.workout.exercises.push(exercise);
+  session.openExerciseId = exercise.id;
   session.isAddingExercise = false;
   markChanged();
   render();
 }
 
-// Adds a set that starts from last time's matching set (or the set before it) and opens it.
+// Adds a set that starts from last time's matching set (or the set before it).
 function addSet(exercise) {
   const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
   exercise.sets.push(nextSetDefaults(exercise.type, last?.sets, exercise.sets));
-  session.editing = { exerciseId: exercise.id, index: exercise.sets.length - 1 };
 }
 
 function removeSet(exercise, index) {
   exercise.sets.splice(index, 1);
-  session.editing = null;
   markChanged();
   render();
 }
@@ -143,7 +141,7 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
-  if (session.editing?.exerciseId === exercise.id) session.editing = null;
+  if (session.openExerciseId === exercise.id) session.openExerciseId = undefined;
   markChanged();
   render();
 }
@@ -352,128 +350,131 @@ function setFieldLabel(field, unit) {
   return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
 }
 
-// Every workout editor (log, edit, saved workout) shows each exercise as a card of set lines
-// ("Set 1   135 lb × 8"). Tapping a line opens that set as big numbers with plus and minus
-// buttons (the numbers can also be typed); tapping the rest line does the same for rest time.
-function toggleEditing(exercise, target) {
-  const isSame = session.editing?.exerciseId === exercise.id
-    && session.editing.index === target.index && session.editing.rest === target.rest;
-  session.editing = isSame ? null : { exerciseId: exercise.id, ...target };
+// Only one exercise shows its sets at a time; the others fold into a single line. Until one
+// is picked, the first is open. `null` means the person folded them all.
+function openExercise() {
+  const { openExerciseId, workout } = session;
+  if (openExerciseId === null) return null;
+  return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? workout.exercises[0] ?? null;
+}
+
+function toggleExercise(exercise) {
+  session.openExerciseId = openExercise() === exercise ? null : exercise.id;
   render();
 }
 
-// One big number with a minus and a plus. `onValue` receives the new number (or null if empty).
-function renderStepper(label, value, field, onValue) {
-  const input = el("input", {
-    class: "big-number",
-    type: "number",
-    inputmode: field.step === "1" || field.step === "5" ? "numeric" : "decimal",
-    min: "0",
-    step: field.step,
-    value: value ?? "",
-    "aria-label": label,
-    onInput: (event) => onValue(parseNumber(event.target.value)),
-  });
-  const bump = (direction) => {
-    const next = bumpValue(parseNumber(input.value), field.bump, direction);
-    input.value = next;
-    onValue(next);
-  };
-  return el("div", { class: "stepper" },
-    el("button", { class: "stepper-button", type: "button", "aria-label": `Less ${label}`, onclick: () => bump(-1) }, "−"),
-    el("label", { class: "stepper-value" }, input, el("span", { class: "stepper-label", text: label })),
-    el("button", { class: "stepper-button", type: "button", "aria-label": `More ${label}`, onclick: () => bump(1) }, "+"));
+function setCountText(exercise) {
+  const count = exercise.sets.length;
+  return `${EXERCISE_TYPES[exercise.type].label} · ${count} ${count === 1 ? "set" : "sets"}`;
 }
 
-function renderDoneLink() {
-  return el("button", {
-    class: "text-link",
-    type: "button",
-    text: "Done",
-    onclick: () => {
-      session.editing = null;
-      render();
-    },
-  });
-}
-
-function renderActiveSet(exercise, index, unit) {
-  const set = exercise.sets[index];
-  return el("div", { class: "set-active" },
-    el("div", { class: "set-active-head" },
-      el("span", { class: "set-active-title", text: `Set ${index + 1}` }),
-      renderDoneLink()),
-    ...EXERCISE_TYPES[exercise.type].fields.map((field) =>
-      renderStepper(setFieldLabel(field, unit), set[field.key], field, (value) => {
-        set[field.key] = value;
-        markChanged();
-      })),
+function renderExerciseHead(exercise, isOpen) {
+  return el("div", { class: "exercise-head" },
     el("button", {
-      class: "text-link is-danger",
+      class: "exercise-toggle",
       type: "button",
-      text: "Remove set",
-      onclick: () => removeSet(exercise, index),
-    }));
-}
-
-function renderActiveRest(exercise) {
-  const field = { step: "5", bump: 5 };
-  return el("div", { class: "set-active" },
-    el("div", { class: "set-active-head" },
-      el("span", { class: "set-active-title", text: "Rest between sets" }),
-      renderDoneLink()),
-    renderStepper("Seconds", exercise.restSeconds, field, (value) => {
-      exercise.restSeconds = value;
-      markChanged();
-    }));
-}
-
-function renderExercise(exercise, unit) {
-  const editing = session.editing?.exerciseId === exercise.id ? session.editing : null;
-  const last = isRoutine() ? null : lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  const line = (label, value, onclick, extraClass = "") => el("button", {
-    class: `set-line ${extraClass}`.trim(),
-    type: "button",
-    "aria-label": `${label}: ${value}. Tap to change.`,
-    onclick,
-  }, el("span", { class: "set-line-label", text: label }), el("span", { class: "set-line-value", text: value }));
-  const setLines = exercise.sets.map((set, index) => editing?.index === index
-    ? renderActiveSet(exercise, index, unit)
-    : line(`Set ${index + 1}`, setLineText(exercise.type, set, unit), () => toggleEditing(exercise, { index })));
-  const restText = exercise.restSeconds ? `${exercise.restSeconds}s` : "None";
-  return el("section", { class: "panel exercise exercise-card" },
-    el("div", { class: "exercise-head" },
-      el("span", { class: "exercise-title" },
-        el("h3", { text: exercise.name }),
-        el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label })),
-      el("button", {
+      "aria-expanded": String(isOpen),
+      "aria-label": `${exercise.name}, ${setCountText(exercise)}. ${isOpen ? "Tap to fold." : "Tap to open."}`,
+      onclick: () => toggleExercise(exercise),
+    },
+    el("span", { class: "exercise-title" },
+      el("h3", { text: exercise.name }),
+      el("p", { class: "muted", text: setCountText(exercise) })),
+    icon("forward")),
+    isOpen
+      ? el("button", {
         class: "icon-button",
         type: "button",
         "aria-label": `Remove ${exercise.name}`,
         onclick: () => removeExercise(exercise),
-      }, icon("close"))),
-    last
-      ? el("p", { class: "hint", text: `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}` })
-      : null,
-    ...setLines,
+      }, icon("close"))
+      : null);
+}
+
+// Each open exercise is a grid: set number, what you did last time in that set, then one
+// box per number. A box turns lime when it beats the same box last time.
+function renderSetRow(exercise, set, index, lastSet, unit) {
+  const fields = EXERCISE_TYPES[exercise.type].fields;
+  const inputs = fields.map((field) => {
+    const lastValue = lastSet?.[field.key];
+    const isBetter = (value) => Number.isFinite(lastValue) && Number.isFinite(value) && value > lastValue;
+    const input = el("input", {
+      class: `number-input${isBetter(set[field.key]) ? " is-better" : ""}`,
+      type: "number",
+      inputmode: field.step === "1" || field.step === "5" ? "numeric" : "decimal",
+      min: "0",
+      step: field.step,
+      value: set[field.key] ?? "",
+      "aria-label": `${setFieldLabel(field, unit)}, set ${index + 1}`,
+      onInput: (event) => {
+        set[field.key] = parseNumber(event.target.value);
+        input.classList.toggle("is-better", isBetter(set[field.key]));
+        markChanged();
+      },
+    });
+    return input;
+  });
+  return el("div", { class: "set-grid set-row", style: `--fields: ${fields.length}` },
+    el("span", { class: "set-number", text: String(index + 1) }),
+    el("span", { class: "set-last", text: lastSet && isSetFilled(exercise.type, lastSet) ? describeSet(exercise.type, lastSet, unit) : "—" }),
+    ...inputs,
+    el("button", {
+      class: "icon-button",
+      type: "button",
+      "aria-label": `Remove set ${index + 1} of ${exercise.name}`,
+      onclick: () => removeSet(exercise, index),
+    }, icon("close")));
+}
+
+function renderSetHeader(exercise, unit) {
+  const fields = EXERCISE_TYPES[exercise.type].fields;
+  return el("div", { class: "set-grid set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
+    el("span", { text: "Set" }),
+    el("span", { text: "Last" }),
+    ...fields.map((field) => el("span", { text: setFieldLabel(field, unit) })),
+    el("span"));
+}
+
+function renderExercise(exercise, unit) {
+  if (openExercise() !== exercise) {
+    return el("section", { class: "panel exercise is-folded" }, renderExerciseHead(exercise, false));
+  }
+  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
+  return el("section", { class: "panel exercise is-open" },
+    renderExerciseHead(exercise, true),
+    exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
+    ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, last?.sets[index], unit)),
     el("button", {
       class: "text-link",
       type: "button",
-      text: "+ Add set",
+      text: "+ Set",
       onclick: () => {
         addSet(exercise);
         markChanged();
         render();
+        const rows = byId("workoutScreen").querySelectorAll(".exercise.is-open .set-row");
+        rows[rows.length - 1]?.querySelector("input")?.focus();
       },
     }),
-    editing?.rest
-      ? renderActiveRest(exercise)
-      : line("Rest", restText, () => toggleEditing(exercise, { rest: true }), "is-rest"));
+    el("label", { class: "rest-row" },
+      el("span", { text: "Rest between sets (seconds)" }),
+      el("input", {
+        class: "number-input",
+        type: "number",
+        inputmode: "numeric",
+        min: "0",
+        step: "5",
+        value: exercise.restSeconds ?? "",
+        onInput: (event) => {
+          exercise.restSeconds = parseNumber(event.target.value);
+          markChanged();
+        },
+      })));
 }
 
 function openAddExercise() {
   session.isAddingExercise = true;
-  session.editing = null;
+  session.openExerciseId = null;
   render();
   byId("workoutScreen").querySelector(".add-exercise input")?.focus();
 }
