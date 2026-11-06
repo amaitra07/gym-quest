@@ -130,3 +130,52 @@ export function chooseOption(title, options) {
     buttons[0]?.focus();
   });
 }
+
+// A panel that slides up from the bottom over a dimmed screen. `fields` are the form
+// controls to show; Save runs `onSave` and closes. `onRemove`, when given, adds a Remove
+// button. Tapping outside, the X, or Escape closes it without saving.
+export function openSheet({ title, fields, saveLabel = "Save", onSave, removeLabel, onRemove }) {
+  const previousFocus = document.activeElement;
+  const close = () => {
+    overlay.remove();
+    previousFocus?.focus?.();
+  };
+  const overlay = el("div", {
+    class: "sheet-overlay",
+    onclick: (event) => {
+      if (event.target === overlay) close();
+    },
+    onkeydown: (event) => {
+      if (event.key === "Escape") close();
+    },
+  },
+    el("form", {
+      class: "sheet",
+      role: "dialog",
+      "aria-modal": "true",
+      "aria-label": title,
+      onsubmit: (event) => {
+        event.preventDefault();
+        close();
+        onSave();
+      },
+    },
+      el("div", { class: "sheet-head" },
+        el("h2", { text: title }),
+        el("button", { class: "icon-button", type: "button", "aria-label": "Close", onclick: close }, icon("close"))),
+      ...fields,
+      el("button", { class: "primary-button", type: "submit", text: saveLabel }),
+      onRemove
+        ? el("button", {
+          class: "secondary-button",
+          type: "button",
+          text: removeLabel,
+          onclick: () => {
+            close();
+            onRemove();
+          },
+        })
+        : null));
+  document.body.append(overlay);
+  overlay.querySelector("input")?.focus();
+}

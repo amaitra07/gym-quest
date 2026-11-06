@@ -792,44 +792,12 @@ select:focus-visible {
   font-size: 13px;
 }
 
-.set-grid {
-  display: grid;
-  grid-template-columns: 32px repeat(var(--fields), minmax(0, 1fr)) 40px;
-  align-items: center;
-  gap: 8px;
-}
 
-.set-header {
-  margin-top: 12px;
-  color: var(--text);
-  font-size: 13px;
-  font-weight: 600;
-  text-align: center;
-}
 
-.set-header span:first-child {
-  text-align: left;
-}
 
-.set-row {
-  padding: 4px 0;
-}
 
-.set-number {
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 700;
-}
 
-.set-row .number-input {
-  min-height: 48px;
-}
 
-.set-row .icon-button {
-  width: 40px;
-  height: 40px;
-  opacity: 0.7;
-}
 
 .add-exercise {
   display: flex;
@@ -918,9 +886,6 @@ select:focus-visible {
   cursor: pointer;
 }
 
-.set-chip.is-selected {
-  border-color: var(--accent);
-}
 
 .set-chip.is-add {
   border: 2px dashed var(--text-dim);
@@ -932,11 +897,6 @@ select:focus-visible {
   color: var(--text-dim);
 }
 
-.chip-editor {
-  display: grid;
-  gap: 8px;
-  padding-top: 4px;
-}
 
 /* ---------- Log and edit workout screen: easier to read ---------- */
 .guide {
@@ -947,8 +907,7 @@ select:focus-visible {
   font-weight: 600;
 }
 
-#workoutScreen .field,
-#workoutScreen .rest-row {
+#workoutScreen .field {
   color: var(--text);
   font-size: 14px;
 }
@@ -997,20 +956,7 @@ select:focus-visible {
   margin-top: 14px;
 }
 
-.rest-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  margin-top: 12px;
-  font-weight: 600;
-}
 
-.rest-row .number-input {
-  width: 96px;
-  min-height: 46px;
-  flex-shrink: 0;
-}
 
 .button-text {
   display: flex;
@@ -1733,4 +1679,59 @@ select:focus-visible {
   margin: 0;
   color: var(--danger);
   font-weight: 600;
+}
+
+/* ---------- Bottom sheet (add or edit a set, edit rest) ---------- */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.sheet {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  max-width: 520px;
+  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  background: var(--panel);
+  animation: sheet-up 0.2s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.sheet-head h2 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.sheet-field {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.sheet-field .number-input {
+  min-height: 56px;
+  border: 2px solid color-mix(in srgb, var(--text) 30%, transparent);
+  font-size: 24px;
 }

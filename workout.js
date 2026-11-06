@@ -1,5 +1,5 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, fillContainer, icon, showToast } from "./dom.js";
+import { byId, confirmAction, el, fillContainer, icon, openSheet, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
   cleanWorkout,
@@ -45,7 +45,7 @@ const isRoutine = () => session.kind === "routine";
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, editing: null };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false };
   guidedRun = null;
   render();
   if (!autoStart && resumeGuided) {
@@ -117,25 +117,15 @@ function startRename() {
 function addExercise(name, type) {
   const restSeconds = type === "cardio" ? 0 : DEFAULT_REST_SECONDS;
   const exercise = { id: newId(), name, type, restSeconds, sets: [] };
-  addSet(exercise, false);
   session.workout.exercises.push(exercise);
-  session.editing = { exerciseId: exercise.id, index: 0 };
   session.isAddingExercise = false;
   markChanged();
   render();
-}
-
-function addSet(exercise, shouldRender = true) {
-  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  exercise.sets.push(nextSetDefaults(exercise.type, last?.sets, exercise.sets));
-  if (!shouldRender) return;
-  markChanged();
-  render();
+  openSetSheet(exercise, null);
 }
 
 function removeSet(exercise, index) {
   exercise.sets.splice(index, 1);
-  session.editing = null;
   markChanged();
   render();
 }
@@ -144,7 +134,6 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
-  if (session.editing?.exerciseId === exercise.id) session.editing = null;
   markChanged();
   render();
 }
@@ -152,16 +141,6 @@ async function removeExercise(exercise) {
 function parseNumber(rawValue) {
   const value = rawValue === "" ? null : Number(rawValue);
   return Number.isFinite(value) && value >= 0 ? value : null;
-}
-
-function updateSetValue(set, key, rawValue) {
-  set[key] = parseNumber(rawValue);
-  markChanged();
-}
-
-function updateRest(exercise, rawValue) {
-  exercise.restSeconds = parseNumber(rawValue);
-  markChanged();
 }
 
 // Runs the workout as it is on screen (unsaved numbers included); when it ends
@@ -359,102 +338,79 @@ function renderDetails() {
     el("label", { class: "field" }, el("span", { text: "Date" }), dateInput)));
 }
 
-// The labels sit in one header above all of an exercise's sets, so each row is just the
-// set number and its boxes. The boxes keep their own labels for screen readers.
 function setFieldLabel(field, unit) {
   return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
 }
 
-function renderSetHeader(exercise, unit) {
-  const fields = EXERCISE_TYPES[exercise.type].fields;
-  return el("div", { class: "set-grid set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
-    el("span", { text: "Set" }),
-    ...fields.map((field) => el("span", { text: setFieldLabel(field, unit) })),
-    el("span"));
+// Every workout editor (log, edit, saved workout) shows each exercise as a card of set chips
+// ("135 lb × 8"). Adding or tapping a set, or tapping the rest chip, opens a small bottom
+// sheet with just those numbers. A new set is only added when the sheet is saved.
+function numberField(label, value, step, onValue) {
+  return el("label", { class: "sheet-field" },
+    el("span", { text: label }),
+    el("input", {
+      class: "number-input",
+      type: "number",
+      inputmode: step === "1" || step === "5" ? "numeric" : "decimal",
+      min: "0",
+      step,
+      value: value ?? "",
+      onInput: (event) => onValue(parseNumber(event.target.value)),
+    }));
 }
 
-function renderSetRow(exercise, set, index, unit) {
-  const fields = EXERCISE_TYPES[exercise.type].fields;
-  const inputs = fields.map((field) => el("input", {
-    class: "number-input",
-    type: "number",
-    inputmode: field.step === "1" ? "numeric" : "decimal",
-    min: "0",
-    step: field.step,
-    value: set[field.key] ?? "",
-    "aria-label": `${setFieldLabel(field, unit)}, set ${index + 1}`,
-    onInput: (event) => updateSetValue(set, field.key, event.target.value),
-  }));
-  return el("div", { class: "set-grid set-row", style: `--fields: ${fields.length}` },
-    el("span", { class: "set-number", text: String(index + 1) }),
-    ...inputs,
-    el("button", {
-      class: "icon-button",
-      type: "button",
-      "aria-label": `Remove set ${index + 1} of ${exercise.name}`,
-      onclick: () => removeSet(exercise, index),
-    }, icon("close")));
+// `index` is the set to edit, or null to add a new one.
+function openSetSheet(exercise, index) {
+  const unit = loadUnit();
+  const isNewSet = index === null;
+  const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
+  const draft = isNewSet
+    ? nextSetDefaults(exercise.type, last?.sets, exercise.sets)
+    : { ...exercise.sets[index] };
+  const setNumber = isNewSet ? exercise.sets.length + 1 : index + 1;
+  openSheet({
+    title: `${exercise.name} · Set ${setNumber}`,
+    fields: EXERCISE_TYPES[exercise.type].fields.map((field) =>
+      numberField(setFieldLabel(field, unit), draft[field.key], field.step, (value) => {
+        draft[field.key] = value;
+      })),
+    saveLabel: isNewSet ? "Add set" : "Save set",
+    onSave: () => {
+      if (isNewSet) exercise.sets.push(draft);
+      else Object.assign(exercise.sets[index], draft);
+      markChanged();
+      render();
+    },
+    removeLabel: "Remove set",
+    onRemove: isNewSet ? null : () => removeSet(exercise, index),
+  });
 }
 
-// Every workout editor (log, edit, saved workout) shows each exercise as a card of set chips ("135 lb × 8"). Tapping a chip
-// (or the rest chip) opens its fields under the chips; Done closes them again.
-function editChip(exercise, target) {
-  const isSame = session.editing?.exerciseId === exercise.id
-    && session.editing.index === target.index && session.editing.rest === target.rest;
-  session.editing = isSame ? null : { exerciseId: exercise.id, ...target };
-  render();
-}
-
-function addSetAndEdit(exercise) {
-  addSet(exercise, false);
-  session.editing = { exerciseId: exercise.id, index: exercise.sets.length - 1 };
-  markChanged();
-  render();
-}
-
-function renderChipEditor(exercise, editing, unit) {
-  const done = el("button", {
-    class: "secondary-button",
-    type: "button",
-    text: "Done",
-    onclick: () => {
-      session.editing = null;
+function openRestSheet(exercise) {
+  let restSeconds = exercise.restSeconds;
+  openSheet({
+    title: `${exercise.name} · Rest`,
+    fields: [numberField("Rest between sets (seconds)", restSeconds, "5", (value) => {
+      restSeconds = value;
+    })],
+    onSave: () => {
+      exercise.restSeconds = restSeconds;
+      markChanged();
       render();
     },
   });
-  if (editing.rest) {
-    return el("div", { class: "chip-editor" },
-      el("label", { class: "rest-row" },
-        el("span", { text: "Rest between sets (seconds)" }),
-        el("input", {
-          class: "number-input",
-          type: "number",
-          inputmode: "numeric",
-          min: "0",
-          step: "5",
-          value: exercise.restSeconds ?? "",
-          onInput: (event) => updateRest(exercise, event.target.value),
-        })),
-      done);
-  }
-  const set = exercise.sets[editing.index];
-  return el("div", { class: "chip-editor" },
-    renderSetHeader(exercise, unit),
-    renderSetRow(exercise, set, editing.index, unit),
-    done);
 }
 
 function renderExercise(exercise, unit) {
-  const editing = session.editing?.exerciseId === exercise.id ? session.editing : null;
-  const chip = (text, label, isSelected, onclick, extraClass = "") => el("button", {
-    class: `set-chip ${extraClass} ${isSelected ? "is-selected" : ""}`.trim(),
+  const chip = (text, label, onclick, extraClass = "") => el("button", {
+    class: `set-chip ${extraClass}`.trim(),
     type: "button",
     "aria-label": label,
     onclick,
   }, text);
   const setChips = exercise.sets.map((set, index) => {
     const text = setChipText(exercise.type, set, unit, index);
-    return chip(text, `Edit set ${index + 1}: ${text}`, editing?.index === index, () => editChip(exercise, { index }));
+    return chip(text, `Edit set ${index + 1}: ${text}`, () => openSetSheet(exercise, index));
   });
   const last = isRoutine() ? null : lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
   const restText = exercise.restSeconds ? `Rest ${exercise.restSeconds}s` : "No rest";
@@ -472,17 +428,15 @@ function renderExercise(exercise, unit) {
       }, icon("close"))),
     el("div", { class: "chip-row" },
       ...setChips,
-      chip("+ Set", `Add a set to ${exercise.name}`, false, () => addSetAndEdit(exercise), "is-add"),
-      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, editing?.rest === true, () => editChip(exercise, { rest: true }), "is-rest")),
+      chip("+ Set", `Add a set to ${exercise.name}`, () => openSetSheet(exercise, null), "is-add"),
+      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, () => openRestSheet(exercise), "is-rest")),
     last
       ? el("p", { class: "hint", text: `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}` })
-      : null,
-    editing ? renderChipEditor(exercise, editing, unit) : null);
+      : null);
 }
 
 function openAddExercise() {
   session.isAddingExercise = true;
-  session.editing = null;
   render();
   byId("workoutScreen").querySelector(".add-exercise input")?.focus();
 }
