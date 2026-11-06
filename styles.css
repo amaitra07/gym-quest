@@ -1681,57 +1681,92 @@ select:focus-visible {
   font-weight: 600;
 }
 
-/* ---------- Bottom sheet (add or edit a set, edit rest) ---------- */
-.sheet-overlay {
+/* ---------- Popover by a set chip (add or edit a set, edit rest) ---------- */
+.popover-backdrop {
   position: fixed;
   inset: 0;
   z-index: 20;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.6);
 }
 
-.sheet {
+.popover {
+  position: absolute;
+  z-index: 21;
   display: grid;
-  gap: 14px;
-  width: 100%;
-  max-width: 520px;
-  padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
-  border-radius: 28px 28px 0 0;
-  background: var(--panel);
-  animation: sheet-up 0.2s ease-out;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--panel-2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
-@keyframes sheet-up {
-  from {
-    transform: translateY(24px);
-    opacity: 0;
-  }
-}
-
-.sheet-head {
+.popover-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
-.sheet-head h2 {
-  margin: 0;
-  font-size: 20px;
-  letter-spacing: -0.02em;
+.popover-title {
+  font-size: 13px;
+  font-weight: 700;
 }
 
-.sheet-field {
+.popover-head .icon-button {
+  width: 32px;
+  height: 32px;
+}
+
+.popover-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.popover-field {
   display: grid;
-  gap: 6px;
-  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
   font-weight: 600;
 }
 
-.sheet-field .number-input {
-  min-height: 56px;
+.popover-field .number-input {
+  min-height: 48px;
   border: 2px solid color-mix(in srgb, var(--text) 30%, transparent);
-  font-size: 24px;
+  background: var(--panel);
+  font-size: 20px;
+}
+
+.popover-save {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  border-radius: 16px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+
+.popover-save .icon {
+  width: 24px;
+  height: 24px;
+}
+
+.popover-remove {
+  justify-self: start;
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--danger);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
 }

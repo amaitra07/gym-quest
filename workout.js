@@ -1,5 +1,5 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, fillContainer, icon, openSheet, showToast } from "./dom.js";
+import { byId, confirmAction, el, fillContainer, icon, openPopover, showToast } from "./dom.js";
 import {
   EXERCISE_TYPES,
   cleanWorkout,
@@ -121,7 +121,9 @@ function addExercise(name, type) {
   session.isAddingExercise = false;
   markChanged();
   render();
-  openSetSheet(exercise, null);
+  const card = [...byId("workoutScreen").querySelectorAll(".exercise-card")].at(-1);
+  card.scrollIntoView({ block: "center" });
+  openSetPopover(exercise, null, card.querySelector(".is-add"));
 }
 
 function removeSet(exercise, index) {
@@ -343,10 +345,10 @@ function setFieldLabel(field, unit) {
 }
 
 // Every workout editor (log, edit, saved workout) shows each exercise as a card of set chips
-// ("135 lb × 8"). Adding or tapping a set, or tapping the rest chip, opens a small bottom
-// sheet with just those numbers. A new set is only added when the sheet is saved.
+// ("135 lb × 8"). Adding or tapping a set, or tapping the rest chip, opens a small popover
+// by that chip with just those numbers. A new set is only added when the popover is saved.
 function numberField(label, value, step, onValue) {
-  return el("label", { class: "sheet-field" },
+  return el("label", { class: "popover-field" },
     el("span", { text: label }),
     el("input", {
       class: "number-input",
@@ -360,7 +362,7 @@ function numberField(label, value, step, onValue) {
 }
 
 // `index` is the set to edit, or null to add a new one.
-function openSetSheet(exercise, index) {
+function openSetPopover(exercise, index, anchor) {
   const unit = loadUnit();
   const isNewSet = index === null;
   const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
@@ -368,7 +370,8 @@ function openSetSheet(exercise, index) {
     ? nextSetDefaults(exercise.type, last?.sets, exercise.sets)
     : { ...exercise.sets[index] };
   const setNumber = isNewSet ? exercise.sets.length + 1 : index + 1;
-  openSheet({
+  openPopover({
+    anchor,
     title: `${exercise.name} · Set ${setNumber}`,
     fields: EXERCISE_TYPES[exercise.type].fields.map((field) =>
       numberField(setFieldLabel(field, unit), draft[field.key], field.step, (value) => {
@@ -386,9 +389,10 @@ function openSetSheet(exercise, index) {
   });
 }
 
-function openRestSheet(exercise) {
+function openRestPopover(exercise, anchor) {
   let restSeconds = exercise.restSeconds;
-  openSheet({
+  openPopover({
+    anchor,
     title: `${exercise.name} · Rest`,
     fields: [numberField("Rest between sets (seconds)", restSeconds, "5", (value) => {
       restSeconds = value;
@@ -406,11 +410,11 @@ function renderExercise(exercise, unit) {
     class: `set-chip ${extraClass}`.trim(),
     type: "button",
     "aria-label": label,
-    onclick,
+    onclick: (event) => onclick(event.currentTarget),
   }, text);
   const setChips = exercise.sets.map((set, index) => {
     const text = setChipText(exercise.type, set, unit, index);
-    return chip(text, `Edit set ${index + 1}: ${text}`, () => openSetSheet(exercise, index));
+    return chip(text, `Edit set ${index + 1}: ${text}`, (anchor) => openSetPopover(exercise, index, anchor));
   });
   const last = isRoutine() ? null : lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
   const restText = exercise.restSeconds ? `Rest ${exercise.restSeconds}s` : "No rest";
@@ -428,8 +432,8 @@ function renderExercise(exercise, unit) {
       }, icon("close"))),
     el("div", { class: "chip-row" },
       ...setChips,
-      chip("+ Set", `Add a set to ${exercise.name}`, () => openSetSheet(exercise, null), "is-add"),
-      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, () => openRestSheet(exercise), "is-rest")),
+      chip("+ Set", `Add a set to ${exercise.name}`, (anchor) => openSetPopover(exercise, null, anchor), "is-add"),
+      chip(restText, `Edit rest time for ${exercise.name}: ${restText}`, (anchor) => openRestPopover(exercise, anchor), "is-rest")),
     last
       ? el("p", { class: "hint", text: `Last time (${formatDate(last.date)}): ${last.sets.map((set) => describeSet(exercise.type, set, unit)).join(", ")}` })
       : null);
