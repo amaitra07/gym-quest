@@ -1,5 +1,20 @@
 import { formatDate, todayIso } from "./dates.js";
-import { byId, confirmAction, el, fillContainer, icon, showToast } from "./dom.js";
+import {
+  button,
+  byId,
+  confirmAction,
+  detailRow,
+  el,
+  fieldRow,
+  fieldText,
+  fillContainer,
+  focusField,
+  icon,
+  insetList,
+  scrollToTop,
+  setHeader,
+  showToast,
+} from "./dom.js";
 import {
   EXERCISE_TYPES,
   cleanWorkout,
@@ -10,7 +25,6 @@ import {
   lastPerformance,
   newId,
   nextSetDefaults,
-  setLineText,
 } from "./exercises.js";
 import { summarize } from "./history-row.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
@@ -20,6 +34,8 @@ import { clearDraft, clearGuidedRun, loadGuidedRun, loadUnit, saveDraft, saveGui
 
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
+const MAX_SUGGESTIONS = 4;
+const DETAILS_SECTION = "details";
 
 // The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, fromReview, isAddingExercise }.
 // `kind` is "log" for a workout being logged or edited from history, or "routine" for a
@@ -88,7 +104,7 @@ async function goBack() {
   if (session.step === "build" && session.fromReview) {
     session.step = "review";
     render();
-    window.scrollTo(0, 0);
+    scrollToTop("workout");
     return;
   }
   if (await confirmLeaveWorkout()) session.handlers.onClose();
@@ -105,7 +121,7 @@ function beginFromPreview() {
 function startEditing() {
   session.step = "build";
   render();
-  window.scrollTo(0, 0);
+  scrollToTop("workout");
 }
 
 function startRename() {
@@ -160,13 +176,13 @@ function startGuidedWorkout(resumeFrom = null) {
     showToast("Add an exercise and fill in at least one set first.");
     return;
   }
-  window.scrollTo(0, 0);
-  guidedRun = runGuidedWorkout(byId("workoutScreen"), session.workout, loadUnit(), () => {
+  scrollToTop("workout");
+  guidedRun = runGuidedWorkout(byId("workoutContent"), session.workout, loadUnit(), () => {
     guidedRun = null;
     session.step = "review";
     session.fromReview = true;
     render();
-    window.scrollTo(0, 0);
+    scrollToTop("workout");
   }, { resumeFrom, onProgress: (state) => (state === null ? clearGuidedRun() : saveGuidedRun(state)) });
 }
 
@@ -223,49 +239,43 @@ function toggleUnit() {
 
 /* ---------- Rendering ---------- */
 
-// A saved workout's title is its name, with a pencil to rename it.
-function renderTitle() {
-  if (!isRoutine()) {
-    return el("h2", { class: "screen-title", text: session.isNew ? "Log workout" : "Edit workout" });
-  }
-  return el("div", { class: "title-group" },
-    el("h2", { class: "screen-title", text: session.workout.name }),
-    el("button", {
-      class: "icon-button",
-      type: "button",
-      "aria-label": "Rename this workout",
-      onclick: startRename,
-    }, icon("edit")));
+function backHeader(title, end = [], onBack = goBack) {
+  setHeader("workout", { title, onBack, end });
 }
 
-function renderTopBar(unit) {
-  return el("div", { class: "top-bar" },
-    el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
-    renderTitle(),
-    el("button", {
-      class: "unit-button",
-      type: "button",
+// A saved workout's title is its name, with a pencil to rename it. The unit button
+// switches every weight on the screen between lb and kg.
+function renderBuildHeader(unit) {
+  const title = isRoutine() ? session.workout.name : session.isNew ? "Log workout" : "Edit workout";
+  backHeader(title, [
+    isRoutine()
+      ? el("ion-button", { "aria-label": "Rename this workout", onclick: startRename }, icon("edit"))
+      : null,
+    el("ion-button", {
+      class: "unit-toggle",
       text: unit,
       "aria-label": `Weight unit is ${unit}. Tap to switch.`,
       onclick: toggleUnit,
-    }));
+    }),
+  ]);
 }
 
 // The first step of a new saved workout, and the rename screen: just a name field.
 function renderNameStep() {
   const { workout } = session;
-  const nameInput = el("input", {
-    class: "text-input",
+  const nameInput = el("ion-input", {
+    label: "What's this workout called?",
+    "label-placement": "stacked",
     type: "text",
     maxlength: "40",
     placeholder: "Push day, Leg day, Morning run…",
     value: workout.name,
   });
   const confirmName = () => {
-    const name = nameInput.value.trim();
+    const name = fieldText(nameInput).trim();
     if (name === "") {
       showToast("Give this workout a name first.");
-      nameInput.focus();
+      focusField(nameInput);
       return;
     }
     if (name !== workout.name) {
@@ -286,20 +296,17 @@ function renderNameStep() {
     session.renaming = false;
     render();
   };
-  byId("workoutScreen").replaceChildren(
-    el("div", { class: "top-bar" },
-      el("button", { class: "back-button", type: "button", onclick: goBackFromName }, icon("back"), "Back"),
-      el("h2", { class: "screen-title", text: session.renaming ? "Rename workout" : "New saved workout" })),
+  backHeader(session.renaming ? "Rename workout" : "New saved workout", [], goBackFromName);
+  byId("workoutContent").replaceChildren(
     el("form", {
-      class: "panel details",
       onsubmit: (event) => {
         event.preventDefault();
         confirmName();
       },
     },
-    el("label", { class: "field" }, el("span", { text: "What's this workout called?" }), nameInput),
-    el("button", { class: "primary-button", type: "submit", text: "Continue" })));
-  nameInput.focus();
+    insetList(fieldRow(nameInput)),
+    button("primary", { type: "submit", text: "Continue" })));
+  focusField(nameInput);
 }
 
 // The name and date of a logged workout, folded away so the sets stay near the top. The
@@ -309,41 +316,46 @@ function renderDetails() {
   if (isRoutine()) return null;
   const { workout } = session;
   const summaryText = () => `${workout.name.trim() || DEFAULT_WORKOUT_NAME} · ${formatDate(workout.date)}`;
-  const summaryLabel = el("span", { class: "details-summary-text", text: summaryText() });
-  const nameInput = el("input", {
-    class: "text-input",
+  const summaryLabel = el("ion-label", { text: summaryText() });
+  const nameInput = el("ion-input", {
+    label: "Workout name",
+    class: "value-end",
     type: "text",
     maxlength: "40",
-    placeholder: "Push day, Leg day, Morning run…",
+    placeholder: "Push day, Leg day…",
     value: workout.name,
-    onInput: (event) => {
-      workout.name = event.target.value;
+    onIonInput: (event) => {
+      workout.name = fieldText(event.target);
       summaryLabel.textContent = summaryText();
       markChanged();
     },
   });
-  const dateInput = el("input", {
-    class: "text-input",
+  const dateInput = el("ion-input", {
+    label: "Date",
+    class: "value-end",
     type: "date",
     max: todayIso(),
     value: workout.date,
-    onInput: (event) => {
-      workout.date = event.target.value || todayIso();
+    onIonInput: (event) => {
+      workout.date = fieldText(event.target) || todayIso();
       summaryLabel.textContent = summaryText();
       markChanged();
     },
   });
-  return el("details", {
-    class: "panel details",
-    ...(session.isDetailsOpen ? { open: "" } : {}),
-    onToggle: (event) => {
-      session.isDetailsOpen = event.target.open;
+  const group = el("ion-accordion-group", {
+    class: "details",
+    value: session.isDetailsOpen ? DETAILS_SECTION : undefined,
+    onIonChange: (event) => {
+      // The fields inside send the same event when they change; only the fold itself counts.
+      if (event.target === group) session.isDetailsOpen = event.detail.value === DETAILS_SECTION;
     },
   },
-  el("summary", {}, summaryLabel, el("span", { class: "details-summary-action", text: "Name and date" })),
-  el("div", { class: "details-fields" },
-    el("label", { class: "field" }, el("span", { text: "Workout name" }), nameInput),
-    el("label", { class: "field" }, el("span", { text: "Date" }), dateInput)));
+  el("ion-accordion", { value: DETAILS_SECTION },
+    el("ion-item", { slot: "header", lines: "none" },
+      summaryLabel,
+      el("ion-note", { slot: "end", text: "Name and date" })),
+    el("ion-list", { slot: "content", lines: "none" }, fieldRow(nameInput), fieldRow(dateInput))));
+  return group;
 }
 
 function setFieldLabel(field, unit) {
@@ -437,25 +449,25 @@ function renderSetHeader(exercise, unit) {
 
 function renderExercise(exercise, unit) {
   if (openExercise() !== exercise) {
-    return el("section", { class: "panel exercise is-folded" }, renderExerciseHead(exercise, false));
+    return el("section", { class: "card exercise is-folded" }, renderExerciseHead(exercise, false));
   }
   const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  return el("section", { class: "panel exercise is-open" },
+  return el("section", { class: "card exercise is-open" },
     renderExerciseHead(exercise, true),
     exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
     ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, last?.sets[index], unit)),
-    el("button", {
-      class: "text-link",
-      type: "button",
-      text: "+ Set",
+    el("ion-button", {
+      class: "add-set",
+      fill: "clear",
+      size: "small",
       onclick: () => {
         addSet(exercise);
         markChanged();
         render();
-        const rows = byId("workoutScreen").querySelectorAll(".exercise.is-open .set-row");
+        const rows = byId("workoutContent").querySelectorAll(".exercise.is-open .set-row");
         rows[rows.length - 1]?.querySelector("input")?.focus();
       },
-    }),
+    }, icon("plus", "start"), "Set"),
     el("label", { class: "rest-row" },
       el("span", { text: "Rest between sets (seconds)" }),
       el("input", {
@@ -476,54 +488,66 @@ function openAddExercise() {
   session.isAddingExercise = true;
   session.openExerciseId = null;
   render();
-  byId("workoutScreen").querySelector(".add-exercise input")?.focus();
+  focusField(byId("workoutContent").querySelector(".add-exercise ion-input"));
 }
 
-// A small plus button below the exercises. It opens the form, which closes again once an
-// exercise is added. With no exercises yet the form is open from the start.
+// Exercises you have done or that the app knows whose name contains what was typed, with
+// names that start with it first.
+function suggestNames(typed, knownNames) {
+  const query = typed.trim().toLowerCase();
+  if (query === "") return [];
+  const matches = knownNames.filter((name) => name.toLowerCase().includes(query) && name.toLowerCase() !== query);
+  const startsWithQuery = (name) => name.toLowerCase().startsWith(query);
+  return [...matches.filter(startsWithQuery), ...matches.filter((name) => !startsWithQuery(name))]
+    .slice(0, MAX_SUGGESTIONS);
+}
+
+// An "Add exercise" button below the exercises. It opens the form, which closes again once
+// an exercise is added. With no exercises yet the form is open from the start.
 function renderAddExercise() {
   const hasExercises = session.workout.exercises.length > 0;
   if (hasExercises && !session.isAddingExercise) {
-    return el("button", {
-      class: "add-exercise-button",
-      type: "button",
-      "aria-label": "Add an exercise",
-      onclick: openAddExercise,
-    }, icon("plus"));
+    return button("secondary", { class: "add-exercise-button", onclick: openAddExercise }, icon("plus", "start"), "Add exercise");
   }
-  const nameInput = el("input", {
-    class: "text-input",
+  const knownNames = exerciseNames(pastWorkouts());
+  const typeChoice = el("ion-segment", { "aria-label": "Exercise type", value: "strength" },
+    ...Object.entries(EXERCISE_TYPES).map(([key, type]) =>
+      el("ion-segment-button", { value: key }, el("ion-label", { text: type.label }))));
+  const suggestions = el("ion-list", { class: "suggestions", lines: "none", "aria-label": "Matching exercises" });
+
+  // Typing shows matching exercises to tap, and picks the type of one the app already knows.
+  const onNameTyped = () => {
+    const typed = fieldText(nameInput);
+    const knownType = exerciseTypeFor(typed, pastWorkouts());
+    if (knownType) typeChoice.value = knownType;
+    suggestions.replaceChildren(...suggestNames(typed, knownNames).map((name) =>
+      el("ion-item", {
+        button: "true",
+        detail: "false",
+        onclick: () => addExercise(name, exerciseTypeFor(name, pastWorkouts()) ?? typeChoice.value),
+      }, el("ion-label", { text: name }))));
+  };
+  const nameInput = el("ion-input", {
     type: "text",
     maxlength: "40",
-    list: "exerciseNames",
     autocomplete: "off",
     placeholder: "Exercise name (e.g. Squat)",
     "aria-label": "Exercise name",
-  });
-  const typeSelect = el("select", { class: "text-input", "aria-label": "Exercise type" },
-    ...Object.entries(EXERCISE_TYPES).map(([key, type]) => el("option", { value: key, text: type.label })));
-  const nameOptions = el("datalist", { id: "exerciseNames" },
-    ...exerciseNames(pastWorkouts()).map((name) => el("option", { value: name })));
-
-  nameInput.addEventListener("input", () => {
-    const knownType = exerciseTypeFor(nameInput.value, pastWorkouts());
-    if (knownType) typeSelect.value = knownType;
+    onIonInput: onNameTyped,
   });
 
   return el("form", {
-    class: "panel add-exercise",
+    class: "card add-exercise",
     onsubmit: (event) => {
       event.preventDefault();
-      const name = nameInput.value.trim();
+      const name = fieldText(nameInput).trim();
       if (!name) {
         showToast("Type an exercise name first.");
-        nameInput.focus();
+        focusField(nameInput);
         return;
       }
-      const knownName = exerciseNames(pastWorkouts()).find(
-        (candidate) => candidate.toLowerCase() === name.toLowerCase(),
-      );
-      addExercise(knownName ?? name, typeSelect.value);
+      const knownName = knownNames.find((candidate) => candidate.toLowerCase() === name.toLowerCase());
+      addExercise(knownName ?? name, typeChoice.value);
     },
   },
     el("div", { class: "exercise-head" },
@@ -539,10 +563,10 @@ function renderAddExercise() {
           },
         }, icon("close"))
         : null),
-    nameOptions,
-    nameInput,
-    typeSelect,
-    el("button", { class: "secondary-button", type: "submit", text: "+ Add exercise" }));
+    el("div", { class: "filled-field" }, nameInput),
+    suggestions,
+    typeChoice,
+    button("primary", { type: "submit" }, icon("plus", "start"), "Add exercise"));
 }
 
 // One short line saying what to do next on the screen, which changes as the workout fills in.
@@ -564,28 +588,22 @@ function renderActionBar() {
   const startsGuided = isNew && !isRoutine();
   const primaryText = isRoutine() ? "Save workout" : isNew ? "Finish workout" : "Save changes";
   const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : "Delete workout";
-  return el("div", { class: "action-bar" },
+  return el("div", { class: "button-stack action-bar" },
     startsGuided
-      ? el("button", {
-        class: "secondary-button start-guided",
-        type: "button",
-        onclick: startGuidedWorkout,
-      }, icon("play"), el("span", { class: "button-text" },
-        "Start workout",
-        el("span", { class: "button-note", text: "One set at a time, with rest timers" })))
+      ? button("secondary", { onclick: () => startGuidedWorkout() }, icon("play", "start"), "Start guided workout")
       : null,
-    el("button", {
-      class: "primary-button",
-      type: "button",
-      text: primaryText,
-      onclick: finishWorkout,
-    }),
-    el("button", {
-      class: "text-button",
-      type: "button",
-      text: secondaryText,
-      onclick: discardOrDeleteWorkout,
-    }));
+    startsGuided
+      ? el("p", { class: "muted button-note", text: "One set at a time, with rest timers" })
+      : null,
+    button("primary", { text: primaryText, onclick: finishWorkout }),
+    button("text", { color: "danger", text: secondaryText, onclick: discardOrDeleteWorkout }));
+}
+
+// The big name of the workout with one line under it, at the top of the review and preview.
+function renderHero(detail) {
+  return el("div", { class: "hero" },
+    el("h1", { class: "hero-title", text: session.workout.name.trim() || DEFAULT_WORKOUT_NAME }),
+    el("p", { class: "muted", text: detail }));
 }
 
 // A read-only look at the finished workout, as it will be saved, with an Edit button for
@@ -594,38 +612,31 @@ function renderReview() {
   const unit = loadUnit();
   const cleaned = cleanWorkout(session.workout);
   const summary = workoutSummary(cleaned, []);
-  const name = session.workout.name.trim() || DEFAULT_WORKOUT_NAME;
-  const stat = (label, value) => el("div", { class: "record-card" },
+  const stat = (label, value) => el("div", { class: "stat-card" },
     el("span", { class: "muted", text: label }),
     el("strong", { text: value }));
 
-  const exerciseCards = cleaned.exercises.map((exercise) => el("section", { class: "panel" },
-    el("h3", { text: exercise.name }),
-    el("p", { class: "muted", text: EXERCISE_TYPES[exercise.type].label }),
-    el("ul", { class: "history" }, ...exercise.sets.map((set, position) => el("li", { class: "session-row" },
-      el("span", { class: "session-date", text: `Set ${position + 1}` }),
-      el("span", { class: "session-sets", text: describeSet(exercise.type, set, unit) }))))));
+  const exerciseLists = cleaned.exercises.flatMap((exercise) => [
+    el("h2", { class: "section-title", text: exercise.name }),
+    insetList(...exercise.sets.map((set, position) =>
+      detailRow(`Set ${position + 1}`, describeSet(exercise.type, set, unit)))),
+  ]);
 
+  backHeader("Review workout", [el("ion-button", { onclick: startEditing }, icon("edit", "start"), "Edit")]);
   fillContainer(
-    byId("workoutScreen"),
-    el("div", { class: "top-bar" },
-      el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
-      el("h2", { class: "screen-title", text: "Review workout" }),
-      el("button", { class: "pill-button", type: "button", onclick: startEditing }, icon("edit"), "Edit")),
-    el("section", { class: "panel" },
-      el("h2", { class: "review-name", text: name }),
-      el("p", { class: "muted", text: formatDate(session.workout.date) })),
+    byId("workoutContent"),
+    renderHero(formatDate(session.workout.date)),
     cleaned.exercises.length > 0
-      ? el("div", { class: "record-cards" },
+      ? el("div", { class: "stat-cards" },
         stat("Exercises", String(summary.exerciseCount)),
         stat("Sets", String(summary.setCount)),
         stat(`${unit} lifted`, summary.volume.toLocaleString()))
-      : el("section", { class: "panel" },
+      : el("section", { class: "card" },
         el("p", { class: "empty", text: "Nothing is logged yet. Tap Edit to add your sets." })),
-    ...exerciseCards,
-    el("div", { class: "action-bar" },
-      el("button", { class: "primary-button", type: "button", text: "Finish workout", onclick: finishWorkout }),
-      el("button", { class: "text-button", type: "button", text: "Discard workout", onclick: discardOrDeleteWorkout })));
+    ...exerciseLists,
+    el("div", { class: "button-stack action-bar" },
+      button("primary", { text: "Finish workout", onclick: finishWorkout }),
+      button("text", { color: "danger", text: "Discard workout", onclick: discardOrDeleteWorkout })));
 }
 
 // The exercises of a saved workout, shown before its first set begins.
@@ -634,21 +645,16 @@ function renderPreview() {
   const cleaned = cleanWorkout(session.workout);
   const rows = cleaned.exercises.map((exercise) => {
     const count = exercise.sets.length;
-    const detail = `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`;
-    return el("li", {}, el("span", { text: exercise.name }), el("span", { class: "summary-target", text: detail }));
+    return detailRow(exercise.name, `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`);
   });
+  backHeader("Get ready");
   fillContainer(
-    byId("workoutScreen"),
-    el("div", { class: "top-bar" },
-      el("button", { class: "back-button", type: "button", onclick: goBack }, icon("back"), "Back"),
-      el("h2", { class: "screen-title", text: "Get ready" })),
+    byId("workoutContent"),
+    renderHero(summarize(cleaned)),
     el("p", { class: "guide", text: "Look over today's exercises, then tap Begin workout." }),
-    el("section", { class: "panel" },
-      el("h2", { class: "review-name", text: session.workout.name.trim() || DEFAULT_WORKOUT_NAME }),
-      el("p", { class: "muted", text: summarize(cleaned) })),
-    el("section", { class: "panel" }, el("ul", { class: "summary-list" }, ...rows)),
-    el("div", { class: "action-bar" },
-      el("button", { class: "primary-button", type: "button", text: "Begin workout", onclick: beginFromPreview })));
+    insetList(...rows),
+    el("div", { class: "button-stack action-bar" },
+      button("primary", { text: "Begin workout", onclick: beginFromPreview })));
 }
 
 function render() {
@@ -666,9 +672,9 @@ function render() {
   }
   const unit = loadUnit();
   const exercises = session.workout.exercises.map((exercise) => renderExercise(exercise, unit));
+  renderBuildHeader(unit);
   fillContainer(
-    byId("workoutScreen"),
-    renderTopBar(unit),
+    byId("workoutContent"),
     el("p", { class: "guide", text: guidanceText() }),
     renderDetails(),
     ...exercises,

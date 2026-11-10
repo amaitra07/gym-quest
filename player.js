@@ -1,5 +1,5 @@
 import { createStopwatch, formatClock } from "./clock.js";
-import { confirmAction, el, icon } from "./dom.js";
+import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
 import { isSetFilled } from "./exercises.js";
 
 const TICK_MS = 250;
@@ -237,33 +237,14 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   }
 
   function closeOverview() {
-    if (overview === null) return;
-    overview.overlay.remove();
-    overview.previousFocus?.focus?.();
-    overview = null;
+    overview?.close();
   }
 
   function openOverview() {
-    const previousFocus = document.activeElement;
-    const content = el("div", {});
-    const closeButton = el("button", { class: "secondary-button", type: "button", text: "Close", onclick: closeOverview });
-    const overlay = el("div", {
-      class: "dialog-overlay",
-      onclick: (event) => {
-        if (event.target === overlay) closeOverview();
-      },
-      onkeydown: (event) => {
-        if (event.key === "Escape") closeOverview();
-      },
-    },
-      el("div", { class: "dialog overview-dialog", role: "dialog", "aria-modal": "true", "aria-label": "All exercises" },
-        el("h2", { text: "All exercises" }),
-        content,
-        closeButton));
-    overview = { overlay, content, previousFocus };
-    document.body.append(overlay);
+    overview = openSheet("All exercises", () => {
+      overview = null;
+    });
     renderOverview();
-    closeButton.focus();
   }
 
   /* ---------- Rendering ---------- */
@@ -281,27 +262,18 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     el("span", { class: "progress-row" },
       el("span", { class: "progress-count", text: `${done} of ${total} sets` }),
       el("span", { class: "progress-link" }, "All exercises", icon("forward"))),
-    el("span", {
-      class: "progress-track",
-      role: "progressbar",
-      "aria-valuemin": "0",
-      "aria-valuemax": "100",
-      "aria-valuenow": String(percent),
-    }, el("span", { class: "progress-fill", style: `width: ${percent}%` })));
+    el("ion-progress-bar", { value: done / total, "aria-label": `${percent}% of sets done` }));
   }
 
   function pauseButton() {
-    return el("button", {
-      class: "secondary-button",
-      type: "button",
-      onclick: togglePause,
-    }, icon(paused ? "play" : "pause"), paused ? "Continue" : "Pause");
+    return button("secondary", { onclick: togglePause }, icon(paused ? "play" : "pause", "start"), paused ? "Continue" : "Pause");
   }
 
-  function actionButton(text, onclick, className = "primary-button") {
-    const button = el("button", { class: className, type: "button", text, onclick });
-    button.disabled = paused;
-    return button;
+  // The big button for the current step. It is switched off while the workout is paused.
+  function stepButton(text, onclick) {
+    const stepAction = button("primary", { class: "step-action", size: "large", text, onclick });
+    stepAction.disabled = paused;
+    return stepAction;
   }
 
   function renderDone() {
@@ -309,14 +281,14 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const lines = [];
     for (const exercise of workout.exercises) {
       const done = exercise.sets.filter((set) => isSetFilled(exercise.type, set)).length;
-      if (done > 0) lines.push(el("li", {}, el("span", { text: exercise.name }), el("span", { class: "summary-target", text: `${done} ${done === 1 ? "set" : "sets"}` })));
+      if (done > 0) lines.push(detailRow(exercise.name, `${done} ${done === 1 ? "set" : "sets"}`));
     }
     return [
       el("p", { class: "player-label", text: "Workout complete" }),
       el("p", { class: "player-countdown", text: total }),
       el("p", { class: "muted player-center", text: "Total time" }),
-      el("ul", { class: "summary-list" }, ...lines),
-      el("button", { class: "primary-button", type: "button", text: "Review and save", onclick: onExit }),
+      insetList(...lines),
+      button("primary", { text: "Review and save", onclick: onExit }),
     ];
   }
 
@@ -334,26 +306,27 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     ];
     const actions = [];
     if (phase === "rest") {
-      actions.push(actionButton("Skip rest", skipRest));
+      actions.push(stepButton("Skip rest", skipRest));
     } else if (hasCountdown) {
-      actions.push(actionButton("Done early", completeSet));
+      actions.push(stepButton("Done early", completeSet));
     } else {
-      actions.push(actionButton("Done with set", completeSet));
+      actions.push(stepButton("Done with set", completeSet));
     }
     actions.push(pauseButton());
     if (nextExerciseIndex(steps, index) !== -1) {
-      const skip = el("button", { class: "secondary-button", type: "button", onclick: skipExercise }, "Next exercise", icon("arrow"));
+      const skip = button("secondary", { onclick: skipExercise }, "Next exercise", icon("arrow", "end"));
       skip.disabled = paused;
       actions.push(skip);
     }
-    return [...common, el("div", { class: "player-actions" }, ...actions)];
+    return [...common, el("div", { class: "button-stack player-actions" }, ...actions)];
   }
 
   function render() {
     if (steps.length === 0) {
+      setHeader("workout", { title: "Workout" });
       container.replaceChildren(
         el("p", { class: "empty", text: "Add at least one set with a number in it first." }),
-        el("button", { class: "primary-button", type: "button", text: "Back", onclick: onExit }));
+        button("primary", { text: "Back", onclick: onExit }));
       stop();
       return;
     }
@@ -363,12 +336,13 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     });
     countdownNode = null;
     const exerciseNumber = workout.exercises.indexOf(steps[Math.min(index, steps.length - 1)].exercise) + 1;
-    const header = el("div", { class: "top-bar" },
-      el("span", { class: "muted", text: finished ? "Done" : `Exercise ${exerciseNumber} of ${workout.exercises.length}` }),
-      totalNode,
-      finished ? el("span", {}) : el("button", { class: "text-button", type: "button", text: "End", onclick: endEarly }));
+    // The toolbar holds the total clock and End; the rest of the screen is the current set.
+    setHeader("workout", {
+      title: totalNode,
+      end: finished ? [] : [el("ion-button", { color: "danger", text: "End", onclick: endEarly })],
+    });
     container.replaceChildren(el("div", { class: "player" },
-      header,
+      finished ? null : el("p", { class: "muted player-position", text: `Exercise ${exerciseNumber} of ${workout.exercises.length}` }),
       finished ? null : progressBar(),
       ...(finished ? renderDone() : renderStep())));
     renderOverview();

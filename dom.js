@@ -1,7 +1,19 @@
+// Small helpers for building the screens out of Ionic components (https://ionicframework.com),
+// which give the app its iPhone-style toolbars, lists, sheets and alerts.
+
 const TOAST_DURATION_MS = 2600;
+const CONFIRM_ROLE = "destructive";
+const SHEET_HEIGHTS = [0, 0.6, 1];
 
 export function byId(id) {
   return document.getElementById(id);
+}
+
+// Browser events are all lower case ("onclick", "onInput" both work); Ionic's are camel
+// case, so "onIonInput" listens for "ionInput".
+function eventName(key) {
+  const name = key.slice(2);
+  return name.startsWith("Ion") ? `ion${name.slice(3)}` : name.toLowerCase();
 }
 
 // Builds an element. `class`, `text`, `value` and `hidden` are set as properties,
@@ -13,7 +25,7 @@ export function el(tag, attributes = {}, ...children) {
     if (key === "class") node.className = value;
     else if (key === "text") node.textContent = value;
     else if (key === "value" || key === "hidden") node[key] = value;
-    else if (key.startsWith("on")) node.addEventListener(key.slice(2).toLowerCase(), value);
+    else if (key.startsWith("on")) node.addEventListener(eventName(key), value);
     else node.setAttribute(key, value);
   }
   node.append(...children.filter((child) => child !== null));
@@ -38,95 +50,156 @@ const ICON_SHAPES = {
   pause: { d: "M7 5h3.5v14H7zM13.5 5H17v14h-3.5z", filled: true },
 };
 
-// A small inline icon that takes the colour of the text around it.
-export function icon(name) {
+// A small inline icon that takes the colour of the text around it. Inside an Ionic button
+// that also has text, `slot` ("start" or "end") puts it before or after the text with a gap.
+export function icon(name, slot = null) {
   const { d, filled } = ICON_SHAPES[name];
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("viewBox", "0 0 24 24");
   svg.setAttribute("class", filled ? "icon icon-filled" : "icon");
   svg.setAttribute("aria-hidden", "true");
+  if (slot !== null) svg.setAttribute("slot", slot);
   const path = document.createElementNS(SVG_NS, "path");
   path.setAttribute("d", d);
   svg.append(path);
   return svg;
 }
 
+/* ---------- Buttons, rows and fields ---------- */
+
+const BUTTON_LOOKS = {
+  primary: { expand: "block", class: "primary-action" },
+  secondary: { expand: "block", class: "secondary-action" },
+  danger: { expand: "block", color: "danger" },
+  text: { expand: "block", fill: "clear", color: "medium" },
+};
+
+// A full-width button in one of the app's four looks: "primary" (lime), "secondary"
+// (grey), "danger" (red) or "text" (no background).
+export function button(look, attributes, ...children) {
+  const { class: lookClass = "", ...lookAttributes } = BUTTON_LOOKS[look];
+  const className = [lookClass, attributes.class ?? ""].join(" ").trim();
+  return el("ion-button", { ...lookAttributes, ...attributes, class: className }, ...children);
+}
+
+// One tappable row of a list: a bold title with a line under it, and up to two short
+// lines on the right. `label` is what a screen reader says for the whole row.
+export function listRow({ title, detail, sideTop = null, sideBottom = null, label, onTap }) {
+  return el("ion-item", { button: "true", detail: "false", "aria-label": label, onclick: onTap },
+    el("ion-label", {}, el("h2", { text: title }), el("p", { text: detail })),
+    el("div", { slot: "end", class: "row-side" },
+      sideTop ? el("span", { class: "row-when", text: sideTop }) : null,
+      sideBottom ? el("span", { class: "row-accent", text: sideBottom }) : null));
+}
+
+// A read-only row: a label on the left and its value on the right, with an optional badge.
+export function detailRow(label, value, badge = null) {
+  return el("ion-item", {},
+    el("ion-label", { text: label }),
+    el("ion-note", { slot: "end", class: "row-value", text: value }),
+    badge ? el("ion-badge", { slot: "end", text: badge }) : null);
+}
+
+// A group of rows in one rounded box, the way iPhone settings screens look.
+export function insetList(...rows) {
+  return el("ion-list", { inset: "true", lines: "none" }, ...rows);
+}
+
+// A labelled field as a list row. Returns the row; read or focus the field through `input`.
+export function fieldRow(input) {
+  return el("ion-item", {}, input);
+}
+
+// What is typed in an Ionic field, always as text.
+export function fieldText(input) {
+  return String(input.value ?? "");
+}
+
+// Puts the cursor in a field, whether it is an Ionic field or a plain one.
+export function focusField(input) {
+  if (typeof input?.setFocus === "function") input.setFocus();
+  else input?.focus?.();
+}
+
+/* ---------- Screens ---------- */
+
+// Fills a screen's toolbar: its title, an optional back button on the left, and optional
+// buttons on the right. `title` is text, or an element on a screen with one title.
+export function setHeader(screen, { title, backLabel = "Back", onBack = null, end = [] }) {
+  const page = byId(`${screen}Screen`);
+  for (const titleNode of page.querySelectorAll("[data-header='title']")) {
+    titleNode.replaceChildren(title);
+  }
+  fillContainer(page.querySelector("[data-header='start']"),
+    onBack ? el("ion-button", { onclick: onBack }, icon("back", "start"), backLabel) : null);
+  fillContainer(page.querySelector("[data-header='end']"), ...end);
+}
+
+export function scrollToTop(screen) {
+  byId(`${screen}Screen`).querySelector("ion-content").scrollToTop?.();
+}
+
+/* ---------- Toasts, alerts and sheets ---------- */
+
+// Shows an Ionic overlay and resolves with how it was closed. The overlay is added to the
+// page straight away; presenting waits for Ionic to finish loading.
+async function presentOverlay(overlay) {
+  (document.querySelector("ion-app") ?? document.body).append(overlay);
+  await customElements.whenDefined(overlay.localName);
+  await overlay.present();
+  const result = await overlay.onDidDismiss();
+  overlay.remove();
+  return result;
+}
+
 export function showToast(message) {
-  const toast = el("div", { class: "toast", text: message });
-  byId("toastHost").append(toast);
-  setTimeout(() => toast.remove(), TOAST_DURATION_MS);
+  const toast = el("ion-toast", { position: "top" });
+  toast.message = message;
+  toast.duration = TOAST_DURATION_MS;
+  presentOverlay(toast);
 }
 
 // An in-page replacement for window.confirm, which some phone browsers block.
 // Resolves to true if the user confirms and false if they cancel.
 export function confirmAction(message, confirmLabel) {
-  return new Promise((resolve) => {
-    const previousFocus = document.activeElement;
-    const close = (answer) => {
-      overlay.remove();
-      previousFocus?.focus?.();
-      resolve(answer);
-    };
-    const cancelButton = el("button", {
-      class: "secondary-button",
-      type: "button",
-      text: "Cancel",
-      onclick: () => close(false),
-    });
-    const overlay = el("div", {
-      class: "dialog-overlay",
-      onclick: (event) => {
-        if (event.target === overlay) close(false);
-      },
-      onkeydown: (event) => {
-        if (event.key === "Escape") close(false);
-      },
-    },
-      el("div", { class: "dialog", role: "alertdialog", "aria-modal": "true", "aria-label": message },
-        el("p", { class: "dialog-message", text: message }),
-        el("div", { class: "dialog-actions" },
-          cancelButton,
-          el("button", {
-            class: "danger-button",
-            type: "button",
-            text: confirmLabel,
-            onclick: () => close(true),
-          }))));
-    document.body.append(overlay);
-    cancelButton.focus();
-  });
+  const alert = el("ion-alert");
+  alert.header = message;
+  alert.buttons = [
+    { text: "Cancel", role: "cancel" },
+    { text: confirmLabel, role: CONFIRM_ROLE },
+  ];
+  return presentOverlay(alert).then(({ role }) => role === CONFIRM_ROLE);
 }
 
-// A dialog that asks the user to pick one option. Resolves to the chosen option's `value`,
-// or null if they cancel.
+// A sheet that asks the user to pick one option. Resolves to the chosen option's `value`,
+// or null if they cancel. The option marked `isPrimary` is shown as the current choice.
 export function chooseOption(title, options) {
-  return new Promise((resolve) => {
-    const previousFocus = document.activeElement;
-    const close = (answer) => {
-      overlay.remove();
-      previousFocus?.focus?.();
-      resolve(answer);
-    };
-    const buttons = options.map((option) => el("button", {
-      class: option.isPrimary ? "primary-button" : "secondary-button",
-      type: "button",
+  const sheet = el("ion-action-sheet");
+  sheet.header = title;
+  sheet.buttons = [
+    ...options.map((option) => ({
       text: option.label,
-      onclick: () => close(option.value),
-    }));
-    const overlay = el("div", {
-      class: "dialog-overlay",
-      onclick: (event) => {
-        if (event.target === overlay) close(null);
-      },
-      onkeydown: (event) => {
-        if (event.key === "Escape") close(null);
-      },
-    },
-      el("div", { class: "dialog", role: "dialog", "aria-modal": "true", "aria-label": title },
-        el("p", { class: "dialog-message", text: title }),
-        el("div", { class: "choice-list" }, ...buttons),
-        el("button", { class: "text-button choice-cancel", type: "button", text: "Cancel", onclick: () => close(null) })));
-    document.body.append(overlay);
-    buttons[0]?.focus();
-  });
+      role: option.isPrimary ? "selected" : undefined,
+      data: { value: option.value },
+    })),
+    { text: "Cancel", role: "cancel" },
+  ];
+  return presentOverlay(sheet).then(({ data }) => data?.value ?? null);
+}
+
+// A sheet that slides up from the bottom and can be dragged taller or away. Returns
+// `content` to fill and `close()`; `onClosed` runs however it was closed.
+export function openSheet(title, onClosed = () => {}) {
+  const content = el("div", { class: "sheet-body" });
+  const modal = el("ion-modal", {},
+    el("ion-header", {},
+      el("ion-toolbar", {},
+        el("ion-title", { text: title }),
+        el("ion-buttons", { slot: "end" },
+          el("ion-button", { strong: "true", text: "Done", onclick: () => modal.dismiss() })))),
+    el("ion-content", {}, content));
+  modal.breakpoints = SHEET_HEIGHTS;
+  modal.initialBreakpoint = SHEET_HEIGHTS[1];
+  presentOverlay(modal).then(onClosed);
+  return { content, close: () => modal.dismiss?.() };
 }

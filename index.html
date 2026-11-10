@@ -9,13 +9,18 @@
   <meta name="apple-mobile-web-app-title" content="Gym Quest">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <script>
+    // Every device gets Ionic's iPhone look, so the app is the same wherever it is opened.
+    window.Ionic = { config: { mode: "ios" } };
     // Apply a saved light/dark choice before the page paints, so it never flashes the wrong theme.
+    let savedTheme = null;
     try {
-      const theme = JSON.parse(localStorage.getItem("gymquest.theme"));
-      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      savedTheme = JSON.parse(localStorage.getItem("gymquest.theme"));
     } catch {
       // Storage unavailable: follow the phone's setting.
     }
+    const phoneIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const startsDark = savedTheme === "dark" || (savedTheme !== "light" && phoneIsDark);
+    document.documentElement.classList.toggle("ion-palette-dark", startsDark);
   </script>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -23,134 +28,247 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.8.19/css/ionic.bundle.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.8.19/css/palettes/dark.class.css">
   <link rel="stylesheet" href="styles.css">
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core@8.8.19/dist/ionic/ionic.esm.js"></script>
 </head>
 <body>
-  <div class="wrap">
-    <main id="homeScreen">
-      <header class="home-top">
-        <div>
-          <p class="home-date" id="homeDate"></p>
-          <h1 class="greeting">
-            <span class="greeting-line" id="greetingLine">Hello</span>
-            <span class="greeting-name" id="greetingName"></span>
-          </h1>
-        </div>
-        <button class="profile-button" id="profileButton" type="button" aria-label="Profile and settings">
-          <span id="profileInitial" class="profile-initial"></span>
-          <svg id="profileIcon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
-        </button>
-      </header>
-
-      <div class="bento">
-        <button class="tile tile-next" id="nextTile" type="button">
-          <span class="tag" id="nextTag">Up next</span>
-          <span class="tile-title" id="nextTitle"></span>
-          <span class="tile-meta" id="nextMeta"></span>
-          <span class="arrow-circle" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
-        </button>
-        <section class="tile tile-streak" aria-label="Day streak">
-          <span class="tile-number" id="streakNumber">0</span>
-          <span class="tile-label">day streak</span>
-        </section>
-        <section class="tile tile-total" aria-label="Workouts logged">
-          <span class="tile-number" id="workoutCount">0</span>
-          <span class="tile-label">workouts logged</span>
-        </section>
-        <section class="tile tile-level" aria-label="Your level">
-          <div class="level-text">
-            <p class="level-name" id="levelName">Level 1</p>
-            <p class="tile-label" id="levelDetail"></p>
+  <ion-app>
+    <div class="pages">
+      <div class="ion-page" id="homeScreen">
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-title>Gym Quest</ion-title>
+            <ion-buttons slot="end">
+              <ion-button id="profileButton" aria-label="Profile and settings">
+                <span class="avatar">
+                  <span id="profileInitial"></span>
+                  <svg id="profileIcon" class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+                </span>
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <ion-header collapse="condense">
+            <ion-toolbar>
+              <ion-title size="large" id="greetingName"></ion-title>
+            </ion-toolbar>
+          </ion-header>
+          <div class="wrap">
+            <p class="eyebrow" id="homeDate"></p>
+            <div class="bento">
+              <button class="tile tile-next" id="nextTile" type="button">
+                <span class="tag" id="nextTag">Up next</span>
+                <span class="tile-title" id="nextTitle"></span>
+                <span class="tile-meta" id="nextMeta"></span>
+                <span class="arrow-circle" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+              </button>
+              <section class="tile tile-streak" aria-label="Day streak">
+                <span class="tile-number" id="streakNumber">0</span>
+                <span class="tile-label">day streak</span>
+              </section>
+              <section class="tile tile-total" aria-label="Workouts logged">
+                <span class="tile-number" id="workoutCount">0</span>
+                <span class="tile-label">workouts logged</span>
+              </section>
+              <section class="tile tile-level" aria-label="Your level">
+                <div class="level-text">
+                  <p class="level-name" id="levelName">Level 1</p>
+                  <p class="tile-label" id="levelDetail"></p>
+                </div>
+                <span class="level-percent" id="levelPercent">0%</span>
+                <ion-progress-bar id="levelBar" value="0" aria-hidden="true"></ion-progress-bar>
+              </section>
+              <button class="tile tile-last" id="lastTile" type="button" hidden>
+                <span class="last-text">
+                  <span class="last-name" id="lastName"></span>
+                  <span class="tile-label" id="lastMeta"></span>
+                </span>
+                <span class="last-xp" id="lastXp"></span>
+              </button>
+            </div>
           </div>
-          <span class="level-percent" id="levelPercent">0%</span>
-          <div class="level-bar" aria-hidden="true"><span id="levelBarFill"></span></div>
-        </section>
-        <button class="tile tile-last" id="lastTile" type="button" hidden>
-          <span class="last-text">
-            <span class="last-name" id="lastName"></span>
-            <span class="tile-label" id="lastMeta"></span>
-          </span>
-          <span class="last-xp" id="lastXp"></span>
-        </button>
+        </ion-content>
       </div>
-    </main>
 
-    <main id="logScreen" hidden>
-      <h1 class="screen-title">Log a workout</h1>
-      <section class="panel" id="resumeCard" hidden></section>
-      <section class="panel card-list" aria-labelledby="pickerHeading">
-        <h2 id="pickerHeading">Pick a workout to start</h2>
-        <ul class="history" id="pickerList"></ul>
-        <div id="pickerEmpty" hidden>
-          <p class="empty">No saved workouts yet. Build one like Push day or Legs, then start it here in one tap with rest timers.</p>
-          <button class="secondary-button" id="createFromPickerButton" type="button">Create a saved workout</button>
-        </div>
-      </section>
-      <button class="secondary-button" id="emptyWorkoutButton" type="button">Empty workout (log as you go)</button>
-      <button class="secondary-button" id="activityButton" type="button">Log a run, sport or other activity</button>
-    </main>
+      <div class="ion-page" id="logScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar><ion-title>Log</ion-title></ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <ion-header collapse="condense">
+            <ion-toolbar><ion-title size="large">Log a workout</ion-title></ion-toolbar>
+          </ion-header>
+          <div class="wrap">
+            <section id="resumeCard" hidden></section>
+            <h2 class="section-title" id="pickerHeading">Pick a workout to start</h2>
+            <ion-list class="card-list" lines="none" id="pickerList" aria-labelledby="pickerHeading"></ion-list>
+            <section class="card" id="pickerEmpty" hidden>
+              <p class="empty">No saved workouts yet. Build one like Push day or Legs, then start it here in one tap with rest timers.</p>
+              <ion-button expand="block" class="primary-action" id="createFromPickerButton">Create a saved workout</ion-button>
+            </section>
+            <h2 class="section-title">Or log something else</h2>
+            <ion-list inset="true" lines="none">
+              <ion-item button="true" id="emptyWorkoutButton">
+                <ion-label>
+                  <h2>Empty workout</h2>
+                  <p>Add exercises as you go</p>
+                </ion-label>
+              </ion-item>
+              <ion-item button="true" id="activityButton">
+                <ion-label>
+                  <h2>Run, sport or other activity</h2>
+                  <p>Log the minutes, and the distance if there is one</p>
+                </ion-label>
+              </ion-item>
+            </ion-list>
+          </div>
+        </ion-content>
+      </div>
 
-    <main id="routinesScreen" hidden>
-      <h1 class="screen-title">Workouts</h1>
-      <p class="muted screen-intro">Save workouts like Push day or Legs, then plan which day each one is for.</p>
-      <section class="panel week-panel" aria-labelledby="weekHeading">
-        <h2 id="weekHeading">This week</h2>
-        <div class="week-strip" id="weekStrip"></div>
-        <p class="muted week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
-      </section>
-      <button class="primary-button" id="newRoutineButton" type="button">+ New workout</button>
-      <section class="panel card-list routine-panel">
-        <ul class="history" id="routineList"></ul>
-        <p class="empty" id="routineEmpty" hidden>Nothing saved yet. Tap “New workout” to build your first one.</p>
-      </section>
-    </main>
+      <div class="ion-page" id="routinesScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-title>Workouts</ion-title>
+            <ion-buttons slot="end">
+              <ion-button id="newRoutineButton" aria-label="New workout">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                New
+              </ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <ion-header collapse="condense">
+            <ion-toolbar><ion-title size="large">Workouts</ion-title></ion-toolbar>
+          </ion-header>
+          <div class="wrap">
+            <p class="muted screen-intro">Save workouts like Push day or Legs, then plan which day each one is for.</p>
+            <h2 class="section-title" id="weekHeading">This week</h2>
+            <section class="card week-card" aria-labelledby="weekHeading">
+              <div class="week-strip" id="weekStrip"></div>
+              <p class="muted week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
+            </section>
+            <h2 class="section-title" id="routineHeading">Saved workouts</h2>
+            <ion-list class="card-list" lines="none" id="routineList" aria-labelledby="routineHeading"></ion-list>
+            <section class="card" id="routineEmpty" hidden>
+              <p class="empty">Nothing saved yet. Build your first workout, then start it from the Log tab in one tap.</p>
+              <ion-button expand="block" class="primary-action" id="createFromRoutinesButton">New workout</ion-button>
+            </section>
+          </div>
+        </ion-content>
+      </div>
 
-    <main id="progressScreen" hidden>
-      <div id="progressContent"></div>
-    </main>
+      <div class="ion-page" id="progressScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start" data-header="start"></ion-buttons>
+            <ion-title data-header="title"></ion-title>
+            <ion-buttons slot="end" data-header="end"></ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <ion-header collapse="condense">
+            <ion-toolbar><ion-title size="large" data-header="title"></ion-title></ion-toolbar>
+          </ion-header>
+          <div class="wrap" id="progressContent"></div>
+        </ion-content>
+      </div>
 
-    <main id="profileScreen" hidden>
-      <div id="profileContent"></div>
-    </main>
+      <div class="ion-page" id="historyScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar><ion-title>History</ion-title></ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <ion-header collapse="condense">
+            <ion-toolbar><ion-title size="large">History</ion-title></ion-toolbar>
+          </ion-header>
+          <div class="wrap">
+            <section class="card" aria-labelledby="calendarTitle">
+              <div class="calendar-header">
+                <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+                <h2 id="calendarTitle"></h2>
+                <button class="calendar-nav" id="calendarNext" type="button" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+              </div>
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </section>
+            <div class="list-header">
+              <h2 class="section-title" id="historyHeading">All workouts</h2>
+              <ion-button fill="clear" size="small" id="showAllButton" hidden>Show all</ion-button>
+            </div>
+            <ion-list class="card-list" lines="none" id="historyList" aria-labelledby="historyHeading"></ion-list>
+            <p class="muted swipe-hint" id="historyHint" hidden>Tap a workout to edit it, or swipe it left to delete.</p>
+            <section class="card" id="historyEmpty" hidden>
+              <p class="empty" id="historyEmptyText"></p>
+            </section>
+          </div>
+        </ion-content>
+      </div>
 
-    <main id="completeScreen" hidden>
-      <div id="completeContent"></div>
-    </main>
+      <div class="ion-page" id="profileScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start" data-header="start"></ion-buttons>
+            <ion-title data-header="title"></ion-title>
+            <ion-buttons slot="end" data-header="end"></ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <div class="wrap" id="profileContent"></div>
+        </ion-content>
+      </div>
 
-    <main id="historyScreen" hidden>
-      <h1 class="screen-title">History</h1>
-      <section class="panel" aria-labelledby="calendarTitle">
-        <div class="calendar-header">
-          <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-          <h2 id="calendarTitle"></h2>
-          <button class="calendar-nav" id="calendarNext" type="button" aria-label="Next month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
-        </div>
-        <div class="calendar-grid" id="calendarGrid"></div>
-      </section>
-      <section class="panel card-list" aria-labelledby="historyHeading">
-        <div class="list-header">
-          <h2 id="historyHeading">All workouts</h2>
-          <button class="link-button" id="showAllButton" type="button" hidden>Show all</button>
-        </div>
-        <ul class="history" id="historyList"></ul>
-        <p class="empty" id="historyEmpty" hidden>No workouts yet. Tap “Log” below when you’re ready to log your first one.</p>
-      </section>
-    </main>
+      <div class="ion-page" id="completeScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start" data-header="start"></ion-buttons>
+            <ion-title data-header="title"></ion-title>
+            <ion-buttons slot="end" data-header="end"></ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <div class="wrap" id="completeContent"></div>
+        </ion-content>
+      </div>
 
-    <main id="workoutScreen" hidden></main>
+      <div class="ion-page" id="workoutScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start" data-header="start"></ion-buttons>
+            <ion-title data-header="title"></ion-title>
+            <ion-buttons slot="end" data-header="end"></ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <div class="wrap" id="workoutContent"></div>
+        </ion-content>
+      </div>
 
-    <main id="activityScreen" hidden></main>
-  </div>
+      <div class="ion-page" id="activityScreen" hidden>
+        <ion-header translucent="true">
+          <ion-toolbar>
+            <ion-buttons slot="start" data-header="start"></ion-buttons>
+            <ion-title data-header="title"></ion-title>
+            <ion-buttons slot="end" data-header="end"></ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content fullscreen="true">
+          <div class="wrap" id="activityContent"></div>
+        </ion-content>
+      </div>
+    </div>
 
-  <nav class="tab-bar" id="tabBar" aria-label="Main">
-    <button class="tab" type="button" data-tab="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><span>Home</span></button>
-    <button class="tab" type="button" data-tab="log" aria-label="Log"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Log</span></button>
-    <button class="tab" type="button" data-tab="routines" aria-label="Workouts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Workouts</span></button>
-    <button class="tab" type="button" data-tab="progress" aria-label="Progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3-3.5 3 2.5 5-6.5"/></svg><span>Progress</span></button>
-    <button class="tab" type="button" data-tab="history" aria-label="History"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><span>History</span></button>
-  </nav>
+    <ion-tab-bar id="tabBar" selected-tab="home" translucent="true" aria-label="Main">
+      <ion-tab-button tab="home"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><ion-label>Home</ion-label></ion-tab-button>
+      <ion-tab-button tab="log"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><ion-label>Log</ion-label></ion-tab-button>
+      <ion-tab-button tab="routines"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><ion-label>Workouts</ion-label></ion-tab-button>
+      <ion-tab-button tab="progress"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3-3.5 3 2.5 5-6.5"/></svg><ion-label>Progress</ion-label></ion-tab-button>
+      <ion-tab-button tab="history"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><ion-label>History</ion-label></ion-tab-button>
+    </ion-tab-bar>
+  </ion-app>
 
-  <div class="toast-host" id="toastHost" aria-live="polite"></div>
   <script type="module" src="app.js"></script>
 </body>
 </html>

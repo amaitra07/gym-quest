@@ -8,12 +8,12 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// The app's own files plus the Google Fonts stylesheet and font files, so the look
-// survives with no connection.
-const FONT_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
+// The app's own files, plus the Google Fonts files and the Ionic components it loads from
+// a CDN, so the app looks and works the same with no connection.
+const LIBRARY_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com", "cdn.jsdelivr.net"];
 
 function isCacheable(url) {
-  return url.origin === self.location.origin || FONT_HOSTS.includes(url.hostname);
+  return url.origin === self.location.origin || LIBRARY_HOSTS.includes(url.hostname);
 }
 
 self.addEventListener("fetch", (event) => {
@@ -23,7 +23,7 @@ self.addEventListener("fetch", (event) => {
   }
   // For the app's own files, "no-cache" makes the browser ask the server whether its saved
   // copy is still current (a quick check) instead of trusting it for the 10 minutes GitHub
-  // Pages allows. Font files never change, so they keep the normal rules.
+  // Pages allows. Font and Ionic files never change, so they keep the normal rules.
   const isOwnFile = new URL(request.url).origin === self.location.origin;
   event.respondWith(
     fetch(request, isOwnFile ? { cache: "no-cache" } : undefined)

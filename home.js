@@ -15,20 +15,17 @@ function greeting(now = new Date()) {
   return "Good evening";
 }
 
-// The greeting, date and profile circle (the first letter of your name, or a person icon).
+// Your name as the big title, the greeting and date under it, and the profile circle (the
+// first letter of your name, or a person icon).
 function renderHeader(profile) {
   const now = new Date();
   const name = profile?.name?.trim() ?? "";
-  byId("greetingLine").textContent = greeting(now);
+  const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   byId("greetingName").textContent = name || "Let's go";
+  byId("homeDate").textContent = `${greeting(now)} · ${date}`;
   byId("profileInitial").textContent = name.slice(0, 1).toUpperCase();
   byId("profileInitial").hidden = name === "";
   byId("profileIcon").style.display = name === "" ? "" : "none";
-  byId("homeDate").textContent = now.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
 }
 
 function renderStats(workouts) {
@@ -40,7 +37,7 @@ function renderStats(workouts) {
   byId("levelName").textContent = `Level ${level}`;
   byId("levelDetail").textContent = `${titleForLevel(level)} · ${into} / ${needed} XP`;
   byId("levelPercent").textContent = `${percent}%`;
-  byId("levelBarFill").style.width = `${percent}%`;
+  byId("levelBar").value = into / needed;
 }
 
 // "Today", "Tomorrow", a weekday name, or "Next Friday" when it is a week away.
@@ -94,12 +91,12 @@ function renderLastWorkout(workouts, onOpenWorkout) {
   tile.onclick = () => onOpenWorkout(last);
 }
 
-// Draws Home and the History screen. `actions` are { onOpenWorkout, onStartRoutine,
-// onResume, onOpenLog }.
+// Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
+// onStartRoutine, onResume, onOpenLog }.
 export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
   renderHeader(profile);
   renderStats(workouts);
   renderNextTile(workouts, routines, schedule, draft, actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
-  renderHistory(workouts, actions.onOpenWorkout);
+  renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout);
 }

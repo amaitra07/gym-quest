@@ -1,4 +1,4 @@
-import { byId, el, fillContainer, showToast } from "./dom.js";
+import { button, byId, detailRow, el, fillContainer, insetList, scrollToTop, setHeader, showToast } from "./dom.js";
 import { describeSet } from "./exercises.js";
 import { workoutSummary } from "./records.js";
 import { drawShareCard } from "./share-card.js";
@@ -28,24 +28,26 @@ async function shareImage(file, summary) {
 export function renderComplete(workout, records, levelMessage, unit, onDone) {
   const summary = workoutSummary(workout, records);
   const preview = el("div", { class: "share-preview-frame" }, el("p", { class: "muted", text: "Making your card…" }));
-  const actions = el("div", { class: "complete-actions" });
+  const actions = el("div", { class: "button-stack" });
 
+  setHeader("complete", {
+    title: "Summary",
+    end: [el("ion-button", { strong: "true", text: "Done", onclick: onDone })],
+  });
   fillContainer(
     byId("completeContent"),
-    el("h1", { class: "screen-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
-    el("p", { class: "complete-xp", text: levelMessage ?? `+${summary.xp} XP` }),
+    el("h1", { class: "hero-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
+    el("p", { class: "hero-accent", text: levelMessage ?? `+${summary.xp} XP` }),
     records.length > 0
-      ? el("section", { class: "panel" },
-        el("h2", { text: records.length === 1 ? "New personal record" : "New personal records" }),
-        el("ul", { class: "history" }, ...records.map((record) => el("li", { class: "session-row" },
-          el("span", { class: "session-date", text: record.name }),
-          el("span", { class: "session-sets", text: describeSet(record.type, record.set, unit) }),
-          el("span", { class: "pr-badge", text: "PR" })))))
+      ? el("h2", { class: "section-title", text: records.length === 1 ? "New personal record" : "New personal records" })
+      : null,
+    records.length > 0
+      ? insetList(...records.map((record) => detailRow(record.name, describeSet(record.type, record.set, unit), "PR")))
       : null,
     preview,
     actions,
-    el("button", { class: "text-button", type: "button", text: "Done", onclick: onDone }));
-  window.scrollTo(0, 0);
+    button("text", { text: "Done", onclick: onDone }));
+  scrollToTop("complete");
 
   drawShareCard(summary, unit).then((blob) => {
     const fileName = fileNameFor(summary);
@@ -56,15 +58,8 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
       src: URL.createObjectURL(blob),
       alt: `Share card for ${summary.name}`,
     }));
-    const shareButton = el("button", {
-      class: "primary-button",
-      type: "button",
-      text: "Share",
-      onclick: () => shareImage(file, summary),
-    });
-    const saveButton = el("button", {
-      class: canShareFile ? "secondary-button" : "primary-button",
-      type: "button",
+    const shareButton = button("primary", { text: "Share", onclick: () => shareImage(file, summary) });
+    const saveButton = button(canShareFile ? "secondary" : "primary", {
       text: "Save image",
       onclick: () => downloadImage(blob, fileName),
     });

@@ -1,6 +1,6 @@
 import { activitySummary } from "./activity.js";
 import { formatDate } from "./dates.js";
-import { el } from "./dom.js";
+import { el, listRow } from "./dom.js";
 
 export function summarize(workout) {
   if (workout.kind === "activity") return activitySummary(workout);
@@ -10,22 +10,25 @@ export function summarize(workout) {
   return `${workout.exercises.length} ${exerciseWord} · ${setCount} ${setWord}`;
 }
 
-// One tappable row that opens the workout for editing.
-export function workoutRow(workout, onOpenWorkout) {
-  const button = el(
-    "button",
-    {
-      class: "history-item",
-      type: "button",
-      "aria-label": `Edit ${workout.name}`,
-      onclick: () => onOpenWorkout(workout),
-    },
-    el("span", { class: "history-main" },
-      el("span", { class: "history-name", text: workout.name }),
-      el("span", { class: "muted", text: summarize(workout) })),
-    el("span", { class: "history-side" },
-      el("span", { class: "when", text: formatDate(workout.date) }),
-      el("span", { class: "xp", text: `+${workout.xp || 0} XP` })),
-  );
-  return el("li", {}, button);
+// One row that opens the workout for editing when tapped. Swiping it left shows Delete.
+export function workoutRow(workout, onOpenWorkout, onDeleteWorkout) {
+  const row = el("ion-item-sliding", {},
+    listRow({
+      title: workout.name,
+      detail: summarize(workout),
+      sideTop: formatDate(workout.date),
+      sideBottom: `+${workout.xp || 0} XP`,
+      label: `Edit ${workout.name}`,
+      onTap: () => onOpenWorkout(workout),
+    }),
+    el("ion-item-options", { side: "end" },
+      el("ion-item-option", {
+        color: "danger",
+        text: "Delete",
+        onclick: () => {
+          row.close();
+          onDeleteWorkout(workout);
+        },
+      })));
+  return row;
 }

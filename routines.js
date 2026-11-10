@@ -1,22 +1,17 @@
 import { WEEKDAY_NAMES } from "./dates.js";
-import { byId, el } from "./dom.js";
+import { button, byId, el, listRow } from "./dom.js";
 import { summarize } from "./history-row.js";
 import { weekOf } from "./plan.js";
 
 // One tappable row for a saved workout; `actionText` says what tapping does.
 function routineRow(routine, actionText, onTap) {
-  return el("li", {},
-    el("button", {
-      class: "history-item",
-      type: "button",
-      "aria-label": `${actionText} ${routine.name}`,
-      onclick: () => onTap(routine),
-    },
-    el("span", { class: "history-main" },
-      el("span", { class: "history-name", text: routine.name }),
-      el("span", { class: "muted", text: summarize(routine) })),
-    el("span", { class: "history-side" },
-      el("span", { class: "xp", text: actionText }))));
+  return listRow({
+    title: routine.name,
+    detail: summarize(routine),
+    sideBottom: actionText,
+    label: `${actionText} ${routine.name}`,
+    onTap: () => onTap(routine),
+  });
 }
 
 // The first word of a name, short enough to fit in a day cell ("Push day" becomes "Push").
@@ -53,8 +48,10 @@ function renderWeek(routines, schedule, workouts, today, onPickDay) {
 export function renderRoutines(routines, { schedule, workouts, today, onPickDay, onEdit, onCreate }) {
   renderWeek(routines, schedule, workouts, today, onPickDay);
   byId("routineList").replaceChildren(...routines.map((routine) => routineRow(routine, "Edit", onEdit)));
+  byId("routineHeading").hidden = routines.length === 0;
   byId("routineEmpty").hidden = routines.length > 0;
   byId("newRoutineButton").onclick = onCreate;
+  byId("createFromRoutinesButton").onclick = onCreate;
 }
 
 // The "Log" tab: pick a saved workout to start it, resume an unfinished one, or start empty.
@@ -63,13 +60,8 @@ export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, o
   resume.hidden = draft === null;
   if (draft !== null) {
     resume.replaceChildren(
-      el("h2", { text: "Unfinished workout" }),
-      el("button", {
-        class: "primary-button",
-        type: "button",
-        text: `Resume ${draft.name.trim() || "your workout"}`,
-        onclick: onResume,
-      }));
+      el("h2", { class: "section-title", text: "Unfinished workout" }),
+      button("primary", { text: `Resume ${draft.name.trim() || "your workout"}`, onclick: onResume }));
   }
 
   byId("pickerList").replaceChildren(...routines.map((routine) => routineRow(routine, "Start", onStart)));

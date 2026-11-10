@@ -15,10 +15,10 @@ function emptyMessage(hasAnyWorkouts) {
     : "No workouts yet. Tap “Log” below when you’re ready to log your first one.";
 }
 
-export function renderHistory(workouts, onOpenWorkout) {
+export function renderHistory(workouts, onOpenWorkout, onDeleteWorkout) {
   const selectedDate = getSelectedDate();
   const shown = visibleWorkouts(workouts, selectedDate);
-  const rerender = () => renderHistory(workouts, onOpenWorkout);
+  const rerender = () => renderHistory(workouts, onOpenWorkout, onDeleteWorkout);
 
   renderCalendar(workouts, rerender);
   byId("historyHeading").textContent =
@@ -30,8 +30,8 @@ export function renderHistory(workouts, onOpenWorkout) {
   };
 
   const list = byId("historyList");
-  list.replaceChildren(...shown.map((workout) => workoutRow(workout, onOpenWorkout)));
-  const empty = byId("historyEmpty");
-  empty.hidden = shown.length > 0;
-  empty.textContent = emptyMessage(workouts.length > 0);
+  list.replaceChildren(...shown.map((workout) => workoutRow(workout, onOpenWorkout, onDeleteWorkout)));
+  byId("historyHint").hidden = shown.length === 0;
+  byId("historyEmpty").hidden = shown.length > 0;
+  byId("historyEmptyText").textContent = emptyMessage(workouts.length > 0);
 }

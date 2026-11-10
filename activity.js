@@ -1,5 +1,5 @@
 import { todayIso } from "./dates.js";
-import { byId, confirmAction, el, icon } from "./dom.js";
+import { button, byId, confirmAction, el, fieldRow, fieldText, insetList, setHeader } from "./dom.js";
 import { newId } from "./exercises.js";
 import { computeXp } from "./stats.js";
 import { loadUnit } from "./storage.js";
@@ -81,7 +81,6 @@ export function cleanActivity(activity) {
 
 // The "Log an activity" screen. `handlers` are { onSave(activity, isNew), onDelete(id), onClose }.
 export function openActivity(activity, isNew, handlers) {
-  const screen = byId("activityScreen");
   const state = { activity, errorText: "" };
 
   const numberOrNull = (text) => (text.trim() === "" ? null : Number(text));
@@ -115,108 +114,103 @@ export function openActivity(activity, isNew, handlers) {
     // Nothing is selected until a new activity gets a name; a typed name means "Other".
     const selected = state.chosenOther ? OTHER_CHOICE : ACTIVITIES.find((choice) => choice.name === current.name);
 
-    const choices = ACTIVITIES.map((choice) => el("button", {
-      class: "activity-choice",
-      type: "button",
+    const choices = ACTIVITIES.map((choice) => el("ion-button", {
+      class: choice === selected ? "choice primary-action" : "choice secondary-action",
+      shape: "round",
       "aria-pressed": String(choice === selected),
       text: choice.name,
       onclick: () => chooseActivity(choice),
     }));
 
     const nameField = state.chosenOther
-      ? el("label", { class: "field" },
-        el("span", { text: "What did you do?" }),
-        el("input", {
-          class: "text-input",
-          type: "text",
-          maxlength: String(MAX_NAME_LENGTH),
-          placeholder: "Climbing, pickleball, dance…",
-          value: current.name,
-          onInput: (event) => {
-            current.name = event.target.value;
-          },
-        }))
+      ? el("ion-input", {
+        label: "What did you do?",
+        "label-placement": "stacked",
+        type: "text",
+        maxlength: String(MAX_NAME_LENGTH),
+        placeholder: "Climbing, pickleball, dance…",
+        value: current.name,
+        onIonInput: (event) => {
+          current.name = fieldText(event.target);
+        },
+      })
       : null;
 
-    const durationField = el("label", { class: "field" },
-      el("span", { text: "Minutes" }),
-      el("input", {
-        class: "number-input",
-        type: "number",
-        inputmode: "decimal",
-        min: "1",
-        max: String(MAX_MINUTES),
-        step: "1",
-        placeholder: "30",
-        value: current.minutes ?? "",
-        onInput: (event) => {
-          current.minutes = numberOrNull(event.target.value);
-        },
-      }));
+    const durationField = el("ion-input", {
+      label: "Minutes",
+      class: "value-end",
+      type: "number",
+      inputmode: "decimal",
+      min: "1",
+      max: String(MAX_MINUTES),
+      step: "1",
+      placeholder: "30",
+      value: current.minutes ?? "",
+      onIonInput: (event) => {
+        current.minutes = numberOrNull(fieldText(event.target));
+      },
+    });
 
     const hasDistance = selected?.hasDistance ?? false;
     const distanceField = hasDistance
-      ? el("label", { class: "field" },
-        el("span", { text: `Distance (${current.distanceUnit})` }),
-        el("input", {
-          class: "number-input",
-          type: "number",
-          inputmode: "decimal",
-          min: "0",
-          step: "0.1",
-          placeholder: "Optional",
-          value: current.distance ?? "",
-          onInput: (event) => {
-            current.distance = numberOrNull(event.target.value);
-          },
-        }))
+      ? el("ion-input", {
+        label: `Distance (${current.distanceUnit})`,
+        class: "value-end",
+        type: "number",
+        inputmode: "decimal",
+        min: "0",
+        step: "0.1",
+        placeholder: "Optional",
+        value: current.distance ?? "",
+        onIonInput: (event) => {
+          current.distance = numberOrNull(fieldText(event.target));
+        },
+      })
       : null;
 
-    const dateField = el("label", { class: "field" },
-      el("span", { text: "Date" }),
-      el("input", {
-        class: "text-input",
-        type: "date",
-        max: todayIso(),
-        value: current.date,
-        onInput: (event) => {
-          current.date = event.target.value || todayIso();
-        },
-      }));
+    const dateField = el("ion-input", {
+      label: "Date",
+      class: "value-end",
+      type: "date",
+      max: todayIso(),
+      value: current.date,
+      onIonInput: (event) => {
+        current.date = fieldText(event.target) || todayIso();
+      },
+    });
 
-    const notesField = el("label", { class: "field" },
-      el("span", { text: "Notes, optional" }),
-      el("input", {
-        class: "text-input",
-        type: "text",
-        maxlength: String(MAX_NOTES_LENGTH),
-        placeholder: "Won 21–18, felt strong…",
-        value: current.notes,
-        onInput: (event) => {
-          current.notes = event.target.value;
-        },
-      }));
+    const notesField = el("ion-input", {
+      label: "Notes, optional",
+      "label-placement": "stacked",
+      type: "text",
+      maxlength: String(MAX_NOTES_LENGTH),
+      placeholder: "Won 21–18, felt strong…",
+      value: current.notes,
+      onIonInput: (event) => {
+        current.notes = fieldText(event.target);
+      },
+    });
 
-    screen.replaceChildren(
-      el("div", { class: "top-bar" },
-        el("button", { class: "back-button", type: "button", onclick: handlers.onClose }, icon("back"), "Back"),
-        el("h2", { class: "screen-title", text: isNew ? "Log an activity" : "Edit activity" })),
+    setHeader("activity", { title: isNew ? "Log an activity" : "Edit activity", onBack: handlers.onClose });
+    byId("activityContent").replaceChildren(
       el("form", {
-        class: "panel activity-form",
+        class: "activity-form",
         onsubmit: (event) => {
           event.preventDefault();
           save();
         },
       },
-      el("p", { class: "muted", text: "Pick what you did, then say how long it took." }),
-      el("div", { class: "activity-choices", role: "group", "aria-label": "Activity" }, ...choices),
-      nameField,
-      el("div", { class: hasDistance ? "field-pair" : "" }, durationField, distanceField),
-      dateField,
-      notesField,
+      el("p", { class: "guide", text: "Pick what you did, then say how long it took." }),
+      el("div", { class: "choices", role: "group", "aria-label": "Activity" }, ...choices),
+      insetList(
+        nameField ? fieldRow(nameField) : null,
+        fieldRow(durationField),
+        distanceField ? fieldRow(distanceField) : null,
+        fieldRow(dateField),
+        fieldRow(notesField)),
       state.errorText ? el("p", { class: "form-error", role: "alert", text: state.errorText }) : null,
-      el("button", { class: "primary-button", type: "submit", text: isNew ? "Save activity" : "Save changes" }),
-      isNew ? null : el("button", { class: "text-button", type: "button", text: "Delete activity", onclick: remove })));
+      button("primary", { type: "submit", text: isNew ? "Save activity" : "Save changes" }),
+      isNew ? null : button("text", { color: "danger", text: "Delete activity", onclick: remove })));
   };
 
   state.chosenOther = activity.name !== "" && !ACTIVITIES.some((choice) => choice.name === activity.name);

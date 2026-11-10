@@ -1,6 +1,6 @@
 import { lineChart } from "./chart.js";
 import { formatDate } from "./dates.js";
-import { byId, el, icon } from "./dom.js";
+import { byId, detailRow, el, insetList, listRow, scrollToTop, setHeader } from "./dom.js";
 import { describeSet } from "./exercises.js";
 import { exerciseSummary, listExercises, progressPoints } from "./records.js";
 
@@ -21,54 +21,41 @@ function sessionWord(count) {
   return count === 1 ? "session" : "sessions";
 }
 
+function openLift(name, rerender) {
+  selectedName = name;
+  rerender();
+  scrollToTop("progress");
+}
+
 function renderList(workouts, unit, rerender) {
   const exercises = listExercises(workouts);
-  const rows = exercises.map((exercise) => el("li", {},
-    el("button", {
-      class: "history-item",
-      type: "button",
-      "aria-label": `Open ${exercise.name}`,
-      onclick: () => {
-        selectedName = exercise.name;
-        rerender();
-        window.scrollTo(0, 0);
-      },
-    },
-    el("span", { class: "history-main" },
-      el("span", { class: "history-name", text: exercise.name }),
-      el("span", { class: "muted", text: `${exercise.sessions} ${sessionWord(exercise.sessions)} · last ${formatDate(exercise.lastDate)}` })),
-    el("span", { class: "history-side" },
-      el("span", { class: "when", text: "Best" }),
-      el("span", { class: "xp", text: describeSet(exercise.type, exercise.record.set, unit) })))));
+  const rows = exercises.map((exercise) => listRow({
+    title: exercise.name,
+    detail: `${exercise.sessions} ${sessionWord(exercise.sessions)} · last ${formatDate(exercise.lastDate)}`,
+    sideTop: "Best",
+    sideBottom: describeSet(exercise.type, exercise.record.set, unit),
+    label: `Open ${exercise.name}`,
+    onTap: () => openLift(exercise.name, rerender),
+  }));
 
-  return [
-    el("h1", { class: "screen-title", text: "Progress" }),
-    exercises.length === 0
-      ? el("section", { class: "panel" },
-        el("p", { class: "empty", text: "Your records and charts show up here after you log a workout. Every lift you do gets its own page." }))
-      : el("section", { class: "panel card-list" },
-        el("h2", { text: "Your lifts" }),
-        el("ul", { class: "history" }, ...rows)),
-  ];
+  setHeader("progress", { title: "Progress" });
+  return exercises.length === 0
+    ? [el("section", { class: "card" },
+      el("p", { class: "empty", text: "Your records and charts show up here after you log a workout. Every lift you do gets its own page." }))]
+    : [
+      el("h2", { class: "section-title", text: "Your lifts" }),
+      el("ion-list", { class: "card-list", lines: "none" }, ...rows),
+    ];
 }
 
 function recordCard(label, value) {
-  return el("div", { class: "record-card" },
+  return el("div", { class: "stat-card" },
     el("span", { class: "muted", text: label }),
     el("strong", { text: value }));
 }
 
 function renderDetail(workouts, unit, rerender) {
   const summary = exerciseSummary(workouts, selectedName);
-  const back = el("button", {
-    class: "back-button",
-    type: "button",
-    onclick: () => {
-      selectedName = null;
-      rerender();
-      window.scrollTo(0, 0);
-    },
-  }, icon("back"), "Progress");
   if (summary === null) {
     // The workout that held this lift was deleted or renamed, so go back to the list.
     selectedName = null;
@@ -90,22 +77,20 @@ function renderDetail(workouts, unit, rerender) {
     ];
 
   const chart = lineChart(points, `${CHART_CAPTIONS[type]}, ${points.length} ${sessionWord(points.length)}`);
-  const sessionRows = sessions.map((session, index) => el("li", { class: "session-row" },
-    el("span", { class: "session-date", text: formatDate(session.date) }),
-    el("span", { class: "session-sets", text: session.sets.map((set) => describeSet(type, set, unit)).join(", ") }),
-    recordSessions.has(index) ? el("span", { class: "pr-badge", text: "PR" }) : null)).reverse();
+  const sessionRows = sessions.map((session, index) => detailRow(
+    formatDate(session.date),
+    session.sets.map((set) => describeSet(type, set, unit)).join(", "),
+    recordSessions.has(index) ? "PR" : null)).reverse();
 
+  setHeader("progress", { title: selectedName, backLabel: "Progress", onBack: () => openLift(null, rerender) });
   return [
-    el("div", { class: "top-bar" }, back),
-    el("h1", { class: "screen-title", text: selectedName }),
-    el("div", { class: "record-cards" }, ...cards),
-    el("section", { class: "panel" },
-      el("h2", { text: CHART_CAPTIONS[type] }),
+    el("div", { class: "stat-cards" }, ...cards),
+    el("h2", { class: "section-title", text: CHART_CAPTIONS[type] }),
+    el("section", { class: "card" },
       chart,
       points.length === 1 ? el("p", { class: "empty", text: "Do this lift again to see your trend." }) : null),
-    el("section", { class: "panel" },
-      el("h2", { text: "Sessions" }),
-      el("ul", { class: "history" }, ...sessionRows)),
+    el("h2", { class: "section-title", text: "Sessions" }),
+    insetList(...sessionRows),
   ];
 }
 

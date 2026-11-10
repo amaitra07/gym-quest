@@ -1,7 +1,7 @@
 import { createActivity, isActivity, openActivity } from "./activity.js";
 import { renderComplete } from "./complete.js";
 import { todayIso, WEEKDAY_NAMES } from "./dates.js";
-import { byId, chooseOption, confirmAction, showToast } from "./dom.js";
+import { byId, chooseOption, confirmAction, el, scrollToTop, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
 import { renderProfile } from "./profile.js";
@@ -38,6 +38,7 @@ let profile = loadProfile();
 const REST_DAY = "rest";
 
 const TABS = ["home", "log", "routines", "progress", "history"];
+const IONIC_WAIT_MS = 8000;
 let currentTab = "home";
 let onWorkoutScreen = false;
 
@@ -48,13 +49,8 @@ function showScreen(name, highlightedTab = name) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
   onWorkoutScreen = name === "workout";
-  for (const tab of document.querySelectorAll(".tab")) {
-    const isCurrent = tab.dataset.tab === highlightedTab;
-    tab.classList.toggle("active", isCurrent);
-    if (isCurrent) tab.setAttribute("aria-current", "page");
-    else tab.removeAttribute("aria-current");
-  }
-  window.scrollTo(0, 0);
+  byId("tabBar").selectedTab = highlightedTab;
+  scrollToTop(name);
 }
 
 function showTab(name) {
@@ -63,6 +59,7 @@ function showTab(name) {
   currentTab = name;
   renderScreens(workouts, routines, schedule, profile, loadDraft(), {
     onOpenWorkout: editWorkout,
+    onDeleteWorkout: deleteFromHistory,
     onStartRoutine: startRoutine,
     onResume: resumeWorkout,
     onOpenLog: () => showTab("log"),
@@ -159,6 +156,13 @@ function deleteActivity(id) {
   if (!persist(workouts.filter((workout) => workout.id !== id))) return;
   showHome();
   showToast("Activity deleted.");
+}
+
+// Swiping a row in History deletes it, after the same question its edit screen asks.
+async function deleteFromHistory(workout) {
+  if (!(await confirmAction(`Delete "${workout.name}"? Its XP will be removed too.`, "Delete"))) return;
+  if (isActivity(workout)) deleteActivity(workout.id);
+  else deleteWorkout(workout.id);
 }
 
 function createRoutine() {
@@ -341,9 +345,23 @@ async function onTabClick(target) {
   showTab(target);
 }
 
+// Ionic's components load from the web the first time and from the saved copy after that.
+// The screens call their methods, so wait for them, and say so if they never arrive.
+const ionicLoaded = await Promise.race([
+  customElements.whenDefined("ion-app").then(() => true),
+  new Promise((resolve) => setTimeout(() => resolve(false), IONIC_WAIT_MS)),
+]);
+if (!ionicLoaded) {
+  document.body.prepend(el("p", {
+    class: "load-error",
+    role: "alert",
+    text: "Gym Quest couldn't load its screens. Check your connection, then reload the page. Your workouts are safe.",
+  }));
+}
+
 byId("profileButton").addEventListener("click", openProfile);
-for (const tab of document.querySelectorAll(".tab")) {
-  tab.addEventListener("click", () => onTabClick(tab.dataset.tab));
+for (const tab of document.querySelectorAll("ion-tab-button")) {
+  tab.addEventListener("click", () => onTabClick(tab.getAttribute("tab")));
 }
 applyTheme(loadTheme());
 showTab("home");

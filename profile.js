@@ -1,4 +1,4 @@
-import { byId, el, icon, showToast } from "./dom.js";
+import { button, byId, el, fieldRow, fieldText, focusField, insetList, scrollToTop, setHeader, showToast } from "./dom.js";
 
 // The profile screen: details about you, plus settings. Height and weight are stored in
 // centimetres and kilograms and shown in the unit system the app is set to (lb with feet
@@ -86,30 +86,22 @@ export function parseProfileForm(form, unit) {
 
 /* ---------- Screen ---------- */
 
-function field(label, input) {
-  return el("label", { class: "field" }, el("span", { text: label }), input);
+// A field in a settings-style row: the label on the left, what you type on the right.
+function field(label, attributes) {
+  return el("ion-input", { label, class: "value-end", autocomplete: "off", ...attributes });
 }
 
-function textInput(attributes) {
-  return el("input", { class: "text-input", autocomplete: "off", ...attributes });
-}
-
-// A row of exclusive choices. The pressed state updates in place so typing elsewhere on
-// the screen is not lost.
+// A row of exclusive choices; the selected one slides under your finger like on an iPhone.
 function segmented(label, choices, current, onPick) {
-  const buttons = choices.map(([value, text]) => {
-    const button = el("button", {
-      type: "button",
-      text,
-      "aria-pressed": String(value === current),
-      onclick: () => {
-        for (const other of buttons) other.setAttribute("aria-pressed", String(other === button));
-        onPick(value);
-      },
-    });
-    return button;
-  });
-  return el("div", { class: "segmented", role: "group", "aria-label": label }, ...buttons);
+  return el("ion-segment", {
+    "aria-label": label,
+    value: current,
+    onIonChange: (event) => onPick(event.detail.value),
+  }, ...choices.map(([value, text]) => el("ion-segment-button", { value }, el("ion-label", { text }))));
+}
+
+function sectionTitle(text) {
+  return el("h2", { class: "section-title", text });
 }
 
 // `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onLoadSample, onClearData }.
@@ -120,62 +112,61 @@ export function renderProfile(profile, unit, theme, actions) {
   const weightShown = saved.weightKg ? roundTo(imperial ? kgToLb(saved.weightKg) : saved.weightKg, 1) : "";
 
   const inputs = {
-    name: textInput({ type: "text", maxlength: String(MAX_NAME_LENGTH), placeholder: "What should we call you?", value: saved.name ?? "" }),
-    age: textInput({ type: "number", inputmode: "numeric", min: "5", max: "120", value: saved.age ?? "" }),
-    feet: textInput({ type: "number", inputmode: "numeric", min: "2", max: "8", placeholder: "ft", value: height?.feet ?? "" }),
-    inches: textInput({ type: "number", inputmode: "numeric", min: "0", max: "11", placeholder: "in", value: height?.inches ?? "" }),
-    cm: textInput({ type: "number", inputmode: "decimal", min: "60", max: "250", value: saved.heightCm ? roundTo(saved.heightCm, 0) : "" }),
-    weight: textInput({ type: "number", inputmode: "decimal", min: "20", value: weightShown }),
+    name: field("Name", { type: "text", maxlength: String(MAX_NAME_LENGTH), placeholder: "What should we call you?", value: saved.name ?? "" }),
+    age: field("Age", { type: "number", inputmode: "numeric", min: "5", max: "120", placeholder: "Not set", value: saved.age ?? "" }),
+    feet: field("Height (ft)", { type: "number", inputmode: "numeric", min: "2", max: "8", placeholder: "ft", value: height?.feet ?? "" }),
+    inches: field("Height (in)", { type: "number", inputmode: "numeric", min: "0", max: "11", placeholder: "in", value: height?.inches ?? "" }),
+    cm: field("Height (cm)", { type: "number", inputmode: "decimal", min: "60", max: "250", placeholder: "Not set", value: saved.heightCm ? roundTo(saved.heightCm, 0) : "" }),
+    weight: field(imperial ? "Weight (lb)" : "Weight (kg)", { type: "number", inputmode: "decimal", min: "20", placeholder: "Not set", value: weightShown }),
   };
-  const goal = el("select", { class: "text-input", "aria-label": "Your main goal" },
-    el("option", { value: "", text: "Not set" }),
-    ...GOALS.map((text) => el("option", { value: text, text })));
-  goal.value = saved.goal ?? "";
+  const goal = el("ion-select", { label: "Main goal", interface: "action-sheet", value: saved.goal ?? "" },
+    el("ion-select-option", { value: "", text: "Not set" }),
+    ...GOALS.map((text) => el("ion-select-option", { value: text, text })));
 
   function save() {
     const result = parseProfileForm({
-      name: inputs.name.value,
-      age: inputs.age.value,
-      feet: inputs.feet.value,
-      inches: inputs.inches.value,
-      cm: inputs.cm.value,
-      weight: inputs.weight.value,
+      name: fieldText(inputs.name),
+      age: fieldText(inputs.age),
+      feet: fieldText(inputs.feet),
+      inches: fieldText(inputs.inches),
+      cm: fieldText(inputs.cm),
+      weight: fieldText(inputs.weight),
       goal: goal.value,
     }, unit);
     if (result.error) {
       showToast(result.error);
-      inputs[result.field].focus();
+      focusField(inputs[result.field]);
       return;
     }
     actions.onSave(result.profile);
   }
 
+  setHeader("profile", {
+    title: "Profile",
+    backLabel: "Home",
+    onBack: actions.onBack,
+    end: [el("ion-button", { strong: "true", text: "Save", onclick: save })],
+  });
   byId("profileContent").replaceChildren(
-    el("div", { class: "top-bar" },
-      el("button", { class: "back-button", type: "button", onclick: actions.onBack }, icon("back"), "Home")),
-    el("h1", { class: "screen-title", text: "Profile" }),
-    el("section", { class: "panel profile-form" },
-      el("h2", { text: "About you" }),
-      field("Name", inputs.name),
-      el("div", { class: "field-pair" },
-        field("Age", inputs.age),
-        field(imperial ? "Weight (lb)" : "Weight (kg)", inputs.weight)),
-      imperial
-        ? el("div", { class: "field-pair" }, field("Height (ft)", inputs.feet), field("Height (in)", inputs.inches))
-        : field("Height (cm)", inputs.cm),
-      field("Main goal", goal),
-      el("button", { class: "primary-button", type: "button", text: "Save profile", onclick: save })),
-    el("section", { class: "panel" },
-      el("h2", { text: "Settings" }),
-      el("p", { class: "muted setting-label", text: "Appearance" }),
-      segmented("Appearance", THEME_CHOICES, theme, actions.onTheme),
-      el("p", { class: "muted setting-label", text: "Units for weight and height" }),
-      segmented("Units", UNIT_CHOICES, unit, actions.onUnit)),
-    el("section", { class: "panel" },
-      el("h2", { text: "Try it out" }),
-      el("p", { class: "muted", text: "Fill the app with a Push / Pull / Legs plan and four weeks of sample history to test with." }),
-      el("button", { class: "secondary-button", type: "button", text: "Load sample workouts", onclick: actions.onLoadSample }),
-      el("p", { class: "muted", text: "Or start over: this deletes every workout, saved workout and your weekly plan. Your profile and settings stay." }),
-      el("button", { class: "danger-button", type: "button", text: "Clear workout data", onclick: actions.onClearData })));
-  window.scrollTo(0, 0);
+    sectionTitle("About you"),
+    insetList(
+      fieldRow(inputs.name),
+      fieldRow(inputs.age),
+      fieldRow(inputs.weight),
+      ...(imperial ? [fieldRow(inputs.feet), fieldRow(inputs.inches)] : [fieldRow(inputs.cm)]),
+      fieldRow(goal)),
+    button("primary", { text: "Save profile", onclick: save }),
+    sectionTitle("Settings"),
+    el("p", { class: "muted setting-label", text: "Appearance" }),
+    segmented("Appearance", THEME_CHOICES, theme, actions.onTheme),
+    el("p", { class: "muted setting-label", text: "Units for weight and height" }),
+    segmented("Units", UNIT_CHOICES, unit, actions.onUnit),
+    sectionTitle("Try it out"),
+    insetList(
+      el("ion-item", { button: "true", detail: "false", onclick: actions.onLoadSample },
+        el("ion-label", { color: "primary", text: "Load sample workouts" })),
+      el("ion-item", { button: "true", detail: "false", onclick: actions.onClearData },
+        el("ion-label", { color: "danger", text: "Clear workout data" }))),
+    el("p", { class: "muted list-note", text: "Sample workouts fill the app with a Push / Pull / Legs plan and four weeks of history to test with. Clearing deletes every workout, saved workout and your weekly plan; your profile and settings stay." }));
+  scrollToTop("profile");
 }
