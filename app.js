@@ -4,6 +4,7 @@ import { todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, chooseOption, confirmAction, el, scrollToTop, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
+import { savePhotosForOffline } from "./how-to.js";
 import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
@@ -371,3 +372,4 @@ if ("serviceWorker" in navigator) {
     console.warn("Offline mode unavailable:", error.message);
   });
 }
+savePhotosForOffline();

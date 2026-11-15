@@ -1,4 +1,4 @@
-import { el, openSheet } from "./dom.js";
+import { el, fillContainer, openSheet } from "./dom.js";
 
 // Short plain-language instructions for the built-in exercises, for people who are new to
 // them: what the exercise works and the few cues that matter most. Exercises a person
@@ -171,16 +171,64 @@ const HOW_TOS = [
   ]],
 ];
 
+// Every exercise above has a start and a finish photo in `how-to-photos/`, except these.
+// The photos are from free-exercise-db (https://github.com/yuhonas/free-exercise-db),
+// which is in the public domain.
+const WITHOUT_PHOTOS = new Set(["Swimming", "Wall Sit"]);
+const PHOTO_CAPTIONS = ["Start", "Finish"];
+const PHOTO_CACHE_NAME = "gymquest-how-to-photos";
+
+function photosFor(name) {
+  if (WITHOUT_PHOTOS.has(name)) return [];
+  const slug = name.toLowerCase().replace(/\s+/g, "-");
+  return PHOTO_CAPTIONS.map((caption, position) => ({ caption, src: `how-to-photos/${slug}-${position}.jpg` }));
+}
+
 // "Push-ups" and "push up" both find "Push-up".
 function howToKey(name) {
   return name.trim().toLowerCase().replace(/[-\s]+/g, " ").replace(/s$/, "");
 }
 
-const HOW_TO_BY_KEY = new Map(HOW_TOS.map(([name, works, steps]) => [howToKey(name), { name, works, steps }]));
+const HOW_TO_BY_KEY = new Map(HOW_TOS.map(([name, works, steps]) => [howToKey(name), { name, works, steps, photos: photosFor(name) }]));
 
-// The instructions for an exercise as { name, works, steps }, or null if the app has none.
+// The instructions for an exercise as { name, works, steps, photos }, or null if the app
+// has none. `photos` is a list of { caption, src } and can be empty.
 export function howToFor(name) {
   return HOW_TO_BY_KEY.get(howToKey(name)) ?? null;
+}
+
+// Every photo file the instructions use, so they can be saved for offline use.
+export function howToPhotoPaths() {
+  return [...HOW_TO_BY_KEY.values()].flatMap((howTo) => howTo.photos.map((photo) => photo.src));
+}
+
+// Saves any photo not yet kept on this device, so the instructions show their photos with
+// no connection. The offline helper (service-worker.js) looks in every cache, so it finds
+// these. Quietly does nothing if the browser has no cache or the connection drops.
+export async function savePhotosForOffline() {
+  if (!("caches" in globalThis)) return;
+  try {
+    const cache = await caches.open(PHOTO_CACHE_NAME);
+    for (const path of howToPhotoPaths()) {
+      if (!(await cache.match(path))) await cache.add(path);
+    }
+  } catch {
+    // Offline or out of space: the photos load from the network when a sheet is opened.
+  }
+}
+
+// A photo with its caption. If it cannot be loaded (offline before it was ever saved), it
+// is removed so the written steps still read cleanly.
+function photoFigure(howTo, photo) {
+  const figure = el("figure", { class: "how-to-photo" },
+    el("img", {
+      src: photo.src,
+      alt: `${howTo.name}, ${photo.caption.toLowerCase()} position`,
+      loading: "lazy",
+      onerror: () => figure.remove(),
+    }),
+    el("figcaption", { text: photo.caption }));
+  return figure;
 }
 
 // Opens the instructions for an exercise in a sheet. Returns the sheet, or null if the
@@ -189,7 +237,10 @@ export function showHowTo(name) {
   const howTo = howToFor(name);
   if (howTo === null) return null;
   const sheet = openSheet(howTo.name);
-  sheet.content.replaceChildren(
+  fillContainer(sheet.content,
+    howTo.photos.length > 0
+      ? el("div", { class: "how-to-photos" }, ...howTo.photos.map((photo) => photoFigure(howTo, photo)))
+      : null,
     el("p", { class: "how-to-heading", text: "What it works" }),
     el("p", { class: "how-to-works", text: howTo.works }),
     el("p", { class: "how-to-heading", text: "How to do it" }),
