@@ -426,6 +426,44 @@ ion-toast {
   padding: 8px 20px 24px;
 }
 
+/* Exercise instructions, shown in a sheet. */
+.how-to-heading {
+  margin: 16px 0 4px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.how-to-works {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.how-to-steps {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.how-to-steps li {
+  margin-bottom: 10px;
+}
+
+.how-to-note {
+  margin: 18px 0 0;
+  font-size: 14px;
+}
+
+.how-to-link {
+  justify-self: center;
+  margin: 0;
+  font-weight: 600;
+}
+
 /* ---------- Cards ---------- */
 .card {
   margin-bottom: 12px;

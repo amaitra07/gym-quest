@@ -27,6 +27,7 @@ import {
   nextSetDefaults,
 } from "./exercises.js";
 import { summarize } from "./history-row.js";
+import { howToFor, showHowTo } from "./how-to.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
 import { workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
@@ -645,13 +646,20 @@ function renderPreview() {
   const cleaned = cleanWorkout(session.workout);
   const rows = cleaned.exercises.map((exercise) => {
     const count = exercise.sets.length;
-    return detailRow(exercise.name, `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`);
+    const detail = `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`;
+    return detailRow(exercise.name, detail, null, howToFor(exercise.name) ? () => showHowTo(exercise.name) : null);
   });
+  const hasHowTo = cleaned.exercises.some((exercise) => howToFor(exercise.name));
   backHeader("Get ready");
   fillContainer(
     byId("workoutContent"),
     renderHero(summarize(cleaned)),
-    el("p", { class: "guide", text: "Look over today's exercises, then tap Begin workout." }),
+    el("p", {
+      class: "guide",
+      text: hasHowTo
+        ? "Tap an exercise to see how to do it, then tap Begin workout."
+        : "Look over today's exercises, then tap Begin workout.",
+    }),
     insetList(...rows),
     el("div", { class: "button-stack action-bar" },
       button("primary", { text: "Begin workout", onclick: beginFromPreview })));

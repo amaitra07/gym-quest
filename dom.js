@@ -92,9 +92,11 @@ export function listRow({ title, detail, sideTop = null, sideBottom = null, labe
       sideBottom ? el("span", { class: "row-accent", text: sideBottom }) : null));
 }
 
-// A read-only row: a label on the left and its value on the right, with an optional badge.
-export function detailRow(label, value, badge = null) {
-  return el("ion-item", {},
+// A row with a label on the left and its value on the right, with an optional badge. It is
+// read-only unless `onTap` is given, which makes it a button with an arrow at the end.
+export function detailRow(label, value, badge = null, onTap = null) {
+  const tappable = onTap ? { button: "true", detail: "true", onclick: onTap } : {};
+  return el("ion-item", tappable,
     el("ion-label", { text: label }),
     el("ion-note", { slot: "end", class: "row-value", text: value }),
     badge ? el("ion-badge", { slot: "end", text: badge }) : null);

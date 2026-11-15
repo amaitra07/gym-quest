@@ -1,6 +1,7 @@
 import { createStopwatch, formatClock } from "./clock.js";
 import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
 import { isSetFilled } from "./exercises.js";
+import { howToFor, showHowTo } from "./how-to.js";
 
 const TICK_MS = 250;
 
@@ -107,6 +108,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   let stopped = false;
   const completed = new Set(resumeFrom?.completed ?? []);
   let overview = null;
+  let howToSheet = null;
   let totalNode = null;
   let countdownNode = null;
   let wakeLock = null;
@@ -204,6 +206,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     stopped = true;
     if (!keepPlace) onProgress(null);
     closeOverview();
+    howToSheet?.close();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
   }
@@ -302,6 +305,17 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
       el("p", { class: "muted player-center", text: `${setLabel(step)} · ${targetText(step, unit)}` }),
+      howToFor(step.exercise.name)
+        ? el("ion-button", {
+          class: "how-to-link",
+          fill: "clear",
+          size: "small",
+          text: "How to do it",
+          onclick: () => {
+            howToSheet = showHowTo(step.exercise.name);
+          },
+        })
+        : null,
       countdown,
     ];
     const actions = [];
