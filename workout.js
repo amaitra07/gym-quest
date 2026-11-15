@@ -38,14 +38,16 @@ const DEFAULT_REST_SECONDS = 60;
 const MAX_SUGGESTIONS = 4;
 const DETAILS_SECTION = "details";
 
-// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, fromReview, isAddingExercise }.
+// The workout being edited: { workout, isNew, isDirty, handlers, kind, step, renaming, backStep, isAddingExercise }.
 // `kind` is "log" for a workout being logged or edited from history, or "routine" for a
 // saved workout (a reusable template with no date). A new logged workout is saved as a
 // draft after every change; anything else is edited as a copy and only replaces the
 // original when saved. A new saved workout starts on the "name" step (just a name field),
 // then moves to the "build" step where exercises are added, with the name as the title.
 // After a guided workout, a logged workout opens on the read-only "review" step first;
-// "Edit" there switches to "build", and Back from that returns to the review.
+// "Edit" there switches to "build", and Back from that returns to the review. A saved
+// workout being started opens on the read-only "preview" step, which has the same Edit
+// button. `backStep` is the read-only step that Back returns to from "build", if any.
 let session = null;
 
 // The running guided workout, if any (see player.js).
@@ -62,7 +64,7 @@ const isRoutine = () => session.kind === "routine";
 // opens again, paused where it left off, if its saved position still fits this workout.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, fromReview: false, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
+  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, backStep: null, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
   render();
   if (!autoStart && resumeGuided) {
@@ -102,8 +104,8 @@ async function goBack() {
     session.handlers.onClose();
     return;
   }
-  if (session.step === "build" && session.fromReview) {
-    session.step = "review";
+  if (session.step === "build" && session.backStep !== null) {
+    session.step = session.backStep;
     render();
     scrollToTop("workout");
     return;
@@ -117,9 +119,13 @@ function beginFromPreview() {
   saveDraft(session.workout);
   session.step = "build";
   startGuidedWorkout();
+  // Editing can leave nothing to run; the editor then explains what is missing.
+  if (guidedRun === null) render();
 }
 
+// Opens the editable grid from a read-only step; Back returns to that step.
 function startEditing() {
+  session.backStep = session.step;
   session.step = "build";
   render();
   scrollToTop("workout");
@@ -181,7 +187,6 @@ function startGuidedWorkout(resumeFrom = null) {
   guidedRun = runGuidedWorkout(byId("workoutContent"), session.workout, loadUnit(), () => {
     guidedRun = null;
     session.step = "review";
-    session.fromReview = true;
     render();
     scrollToTop("workout");
   }, { resumeFrom, onProgress: (state) => (state === null ? clearGuidedRun() : saveGuidedRun(state)) });
@@ -579,6 +584,9 @@ function guidanceText() {
       : "Add your first exercise below.";
   }
   if (!session.isNew) return "Fix anything that's wrong, then tap Save changes.";
+  if (session.backStep === "preview" && hasExercises) {
+    return "Change anything for today, then tap Back. Your saved workout stays the same.";
+  }
   return hasExercises
     ? "Fill in each set as you do it. When you're done, tap Finish workout."
     : "Add your first exercise below, for example Squat.";
@@ -650,15 +658,15 @@ function renderPreview() {
     return detailRow(exercise.name, detail, null, howToFor(exercise.name) ? () => showHowTo(exercise.name) : null);
   });
   const hasHowTo = cleaned.exercises.some((exercise) => howToFor(exercise.name));
-  backHeader("Get ready");
+  backHeader("Get ready", [el("ion-button", { onclick: startEditing }, icon("edit", "start"), "Edit")]);
   fillContainer(
     byId("workoutContent"),
     renderHero(summarize(cleaned)),
     el("p", {
       class: "guide",
       text: hasHowTo
-        ? "Tap an exercise to see how to do it, then tap Begin workout."
-        : "Look over today's exercises, then tap Begin workout.",
+        ? "Tap an exercise to see how to do it. Edit changes today's workout only."
+        : "Look over today's exercises. Edit changes today's workout only.",
     }),
     insetList(...rows),
     el("div", { class: "button-stack action-bar" },
