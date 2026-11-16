@@ -45,17 +45,18 @@ function renderWeek(routines, schedule, workouts, today, onPickDay) {
 }
 
 // The "Workouts" tab: this week's plan, plus build, edit and delete saved workouts.
-export function renderRoutines(routines, { schedule, workouts, today, onPickDay, onEdit, onCreate }) {
+export function renderRoutines(routines, { schedule, workouts, today, onPickDay, onEdit, onCreate, onStarterPlan }) {
   renderWeek(routines, schedule, workouts, today, onPickDay);
   byId("routineList").replaceChildren(...routines.map((routine) => routineRow(routine, "Edit", onEdit)));
   byId("routineHeading").hidden = routines.length === 0;
   byId("routineEmpty").hidden = routines.length > 0;
   byId("newRoutineButton").onclick = onCreate;
   byId("createFromRoutinesButton").onclick = onCreate;
+  byId("starterFromRoutinesButton").onclick = onStarterPlan;
 }
 
 // The "Log" tab: pick a saved workout to start it, resume an unfinished one, or start empty.
-export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, onActivity, onCreate }) {
+export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, onActivity, onCreate, onStarterPlan }) {
   const resume = byId("resumeCard");
   resume.hidden = draft === null;
   if (draft !== null) {
@@ -70,4 +71,5 @@ export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, o
   byId("emptyWorkoutButton").onclick = onEmpty;
   byId("activityButton").onclick = onActivity;
   byId("createFromPickerButton").onclick = onCreate;
+  byId("starterFromPickerButton").onclick = onStarterPlan;
 }

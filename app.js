@@ -10,6 +10,7 @@ import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
 import { renderLogPicker, renderRoutines } from "./routines.js";
 import { buildSampleData } from "./sample-data.js";
+import { buildStarterPlan, STARTER_DAY_OPTIONS, STARTER_EQUIPMENT } from "./starter-plan.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
 import {
   clearDraft,
@@ -64,6 +65,7 @@ function showTab(name) {
     onStartRoutine: startRoutine,
     onResume: resumeWorkout,
     onOpenLog: () => showTab("log"),
+    onStarterPlan: addStarterPlan,
   });
   renderRoutines(routines, {
     schedule,
@@ -72,6 +74,7 @@ function showTab(name) {
     onPickDay: pickDayWorkout,
     onEdit: editRoutine,
     onCreate: createRoutine,
+    onStarterPlan: addStarterPlan,
   });
   renderProgress(workouts, loadUnit());
   renderLogPicker(routines, loadDraft(), {
@@ -80,6 +83,7 @@ function showTab(name) {
     onEmpty: startEmptyWorkout,
     onActivity: startActivity,
     onCreate: createRoutine,
+    onStarterPlan: addStarterPlan,
   });
   showScreen(name);
 }
@@ -169,6 +173,27 @@ async function deleteFromHistory(workout) {
 function createRoutine() {
   currentTab = "routines";
   openScreen({ id: newId(), name: "", exercises: [] }, true, { kind: "routine" });
+}
+
+// Asks a beginner two questions, then adds ready-made saved workouts and plans their days.
+// Offered only while there are no saved workouts, so there is nothing to overwrite.
+async function addStarterPlan() {
+  const days = await chooseOption("How many days a week can you train?",
+    STARTER_DAY_OPTIONS.map((count) => ({ label: count === 1 ? "1 day" : `${count} days`, value: count })));
+  if (days === null) return;
+  const equipment = await chooseOption("What can you train with?", STARTER_EQUIPMENT);
+  if (equipment === null) return;
+  const plan = buildStarterPlan(days, equipment, newId);
+  const week = Object.entries(plan.schedule)
+    .sort(([a], [b]) => ((Number(a) + 6) % 7) - ((Number(b) + 6) % 7))
+    .map(([weekday, id]) => `${WEEKDAY_NAMES[weekday].slice(0, 3)}: ${plan.routines.find((routine) => routine.id === id).name}`)
+    .join(" · ");
+  if (!(await confirmAction("Add this plan?", "Add plan", { detail: `${week}. ${plan.why}`, isDestructive: false }))) return;
+  if (!persistRoutines([...routines, ...plan.routines]) || !persistSchedule(plan.schedule)) return;
+  showTab("home");
+  const workoutCount = plan.routines.length === 1 ? "1 workout" : `${plan.routines.length} workouts`;
+  const dayCount = days === 1 ? "1 day" : `${days} days`;
+  showToast(`Starter plan added: ${workoutCount}, ${dayCount} a week. Change anything in the Workouts tab.`);
 }
 
 function editRoutine(routine) {

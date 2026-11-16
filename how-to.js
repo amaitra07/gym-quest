@@ -139,6 +139,31 @@ const HOW_TOS = [
     "Rise up on your toes as high as you can and pause for a moment.",
     "Lower your heels below the step for a stretch, slowly.",
   ]],
+  ["Bodyweight Squat", "Front of the legs and glutes", [
+    "Stand with your feet shoulder-width apart, toes slightly out, arms in front for balance.",
+    "Sit down and back as if into a chair, knees following your toes, heels on the floor.",
+    "Go as low as you can with a straight back, then stand up by pushing through your whole foot.",
+  ]],
+  ["Glute Bridge", "Glutes and back of the legs", [
+    "Lie on your back with your knees bent and your feet flat on the floor, hip-width apart.",
+    "Squeeze your glutes and lift your hips until your body is a straight line from knees to shoulders.",
+    "Pause at the top, then lower slowly. Push through your heels, not your toes.",
+  ]],
+  ["Superman", "Lower back, glutes and upper back", [
+    "Lie face down with your arms stretched out in front of you.",
+    "Lift your arms, chest and legs a few inches off the floor at the same time.",
+    "Hold for a second, then lower slowly. Look at the floor so your neck stays relaxed.",
+  ]],
+  ["Crunch", "Stomach", [
+    "Lie on your back with your knees bent, feet flat, and your hands lightly behind your head.",
+    "Curl your shoulders a few inches off the floor by tightening your stomach.",
+    "Lower slowly. Do not pull on your neck, and keep your lower back on the floor.",
+  ]],
+  ["Walking", "Heart, lungs and legs", [
+    "Walk at a brisk pace: breathing a little harder, but still able to hold a conversation.",
+    "Stand tall, let your arms swing, and land on your heel then roll to your toes.",
+    "Outside or on a treadmill both count. Easy days help you recover for the harder ones.",
+  ]],
   ["Running", "Heart, lungs and legs", [
     "Start at a pace where you could still speak in short sentences.",
     "Keep your shoulders relaxed and take short, quick steps.",

@@ -2,7 +2,8 @@
 // which give the app its iPhone-style toolbars, lists, sheets and alerts.
 
 const TOAST_DURATION_MS = 2600;
-const CONFIRM_ROLE = "destructive";
+const DESTRUCTIVE_ROLE = "destructive";
+const CONFIRM_ROLE = "confirm";
 const SHEET_HEIGHTS = [0, 0.6, 1];
 
 export function byId(id) {
@@ -162,15 +163,19 @@ export function showToast(message) {
 }
 
 // An in-page replacement for window.confirm, which some phone browsers block.
-// Resolves to true if the user confirms and false if they cancel.
-export function confirmAction(message, confirmLabel) {
+// Resolves to true if the user confirms and false if they cancel. `detail` is optional
+// smaller text under the question. The confirm button is red unless `isDestructive` is
+// false, for questions where confirming throws nothing away.
+export function confirmAction(message, confirmLabel, { detail = null, isDestructive = true } = {}) {
+  const confirmRole = isDestructive ? DESTRUCTIVE_ROLE : CONFIRM_ROLE;
   const alert = el("ion-alert");
   alert.header = message;
+  if (detail !== null) alert.message = detail;
   alert.buttons = [
     { text: "Cancel", role: "cancel" },
-    { text: confirmLabel, role: CONFIRM_ROLE },
+    { text: confirmLabel, role: confirmRole },
   ];
-  return presentOverlay(alert).then(({ role }) => role === CONFIRM_ROLE);
+  return presentOverlay(alert).then(({ role }) => role === confirmRole);
 }
 
 // A sheet that asks the user to pick one option. Resolves to the chosen option's `value`,

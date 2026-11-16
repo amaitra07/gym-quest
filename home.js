@@ -54,7 +54,8 @@ function plural(count, word) {
 }
 
 // The big lime tile: finish what you started, otherwise the next workout in your weekly
-// plan (or your rotation if you have no plan), otherwise a nudge to start logging.
+// plan (or your rotation if you have no plan), otherwise a starter plan for someone who has
+// logged nothing yet, or a nudge to log for someone who has.
 function renderNextTile(workouts, routines, schedule, draft, actions) {
   const tile = byId("nextTile");
   const plan = upNext(routines, schedule, workouts, todayIso());
@@ -69,8 +70,13 @@ function renderNextTile(workouts, routines, schedule, draft, actions) {
     byId("nextTitle").textContent = routine.name;
     byId("nextMeta").textContent = `${plural(routine.exercises.length, "exercise")} · about ${estimateMinutes(routine)} min`;
     tile.onclick = () => actions.onStartRoutine(routine);
+  } else if (workouts.length === 0) {
+    byId("nextTag").textContent = "New here?";
+    byId("nextTitle").textContent = "Get a starter plan";
+    byId("nextMeta").textContent = "Two questions, then ready-made workouts. Or use the Log tab to log your own.";
+    tile.onclick = actions.onStarterPlan;
   } else {
-    byId("nextTag").textContent = workouts.length === 0 ? "Get started" : "Ready when you are";
+    byId("nextTag").textContent = "Ready when you are";
     byId("nextTitle").textContent = "Log a workout";
     byId("nextMeta").textContent = "Save workouts in the Workouts tab to start them in one tap";
     tile.onclick = actions.onOpenLog;
@@ -92,7 +98,7 @@ function renderLastWorkout(workouts, onOpenWorkout) {
 }
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
-// onStartRoutine, onResume, onOpenLog }.
+// onStartRoutine, onResume, onOpenLog, onStarterPlan }.
 export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
   renderHeader(profile);
   renderStats(workouts);
