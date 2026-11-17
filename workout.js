@@ -1,3 +1,4 @@
+import { runCountIn, unlockSound } from "./countdown.js";
 import { formatDate, todayIso } from "./dates.js";
 import {
   button,
@@ -118,9 +119,8 @@ async function goBack() {
 function beginFromPreview() {
   saveDraft(session.workout);
   session.step = "build";
-  startGuidedWorkout();
   // Editing can leave nothing to run; the editor then explains what is missing.
-  if (guidedRun === null) render();
+  if (!startGuidedWorkout()) render();
 }
 
 // Opens the editable grid from a read-only step; Back returns to that step.
@@ -175,14 +175,26 @@ function parseNumber(rawValue) {
 }
 
 // Runs the workout as it is on screen (unsaved numbers included); when it ends
-// the log screen comes back so the user can review and save.
+// the log screen comes back so the user can review and save. A new start counts in with
+// 3, 2, 1, Go first; picking up where you left off does not. Returns false if there is
+// nothing to run.
 function startGuidedWorkout(resumeFrom = null) {
   const hasLoggedSet = session.workout.exercises.some((exercise) =>
     exercise.sets.some((set) => isSetFilled(exercise.type, set)));
   if (!hasLoggedSet) {
     showToast("Add an exercise and fill in at least one set first.");
-    return;
+    return false;
   }
+  if (resumeFrom === null) {
+    unlockSound();
+    runCountIn(() => runGuided(null));
+  } else {
+    runGuided(resumeFrom);
+  }
+  return true;
+}
+
+function runGuided(resumeFrom) {
   scrollToTop("workout");
   guidedRun = runGuidedWorkout(byId("workoutContent"), session.workout, loadUnit(), () => {
     guidedRun = null;

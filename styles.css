@@ -1067,6 +1067,49 @@ ion-button.choice {
   line-height: 1;
 }
 
+/* The last three seconds of a rest, counting down to the next set. */
+.player-countdown.is-final {
+  color: var(--accent);
+}
+
+/* 3, 2, 1, Go before a guided workout, over the whole screen. */
+.count-in {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.count-in-label {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.count-in-number {
+  margin: 0;
+  color: var(--accent);
+  font-size: min(60vw, 320px);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.count-in-number.is-go {
+  font-size: min(40vw, 220px);
+}
+
+.count-in-hint {
+  margin: 0;
+  color: var(--text-dim);
+}
+
 .player-actions {
   margin-top: 12px;
 }

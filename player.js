@@ -1,4 +1,5 @@
 import { createStopwatch, formatClock } from "./clock.js";
+import { beep, finalSecondsLeft } from "./countdown.js";
 import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
 import { isSetFilled } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
@@ -112,6 +113,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   let totalNode = null;
   let countdownNode = null;
   let wakeLock = null;
+  // The last of a rest's final three seconds that beeped, so each beeps once.
+  let beepedSecond = null;
 
   const now = () => Date.now();
 
@@ -123,6 +126,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   function enterPhase(nextIndex, nextPhase) {
     index = nextIndex;
     phase = nextPhase;
+    beepedSecond = null;
     phaseClock.reset();
     if (!paused) phaseClock.start(now());
     navigator.vibrate?.(150);
@@ -191,8 +195,21 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     if (countdownNode && seconds !== null) {
       const remainingMs = seconds * 1000 - phaseClock.elapsedMs(now());
       countdownNode.textContent = formatClock(Math.ceil(remainingMs / 1000));
+      if (phase === "rest" && !paused) countDownRestEnd(remainingMs);
       if (remainingMs <= 0 && !paused) completeCountdown();
     }
+  }
+
+  // Over a rest's last three seconds: a beep each second, the clock in lime, and a higher
+  // beep when the next set starts.
+  function countDownRestEnd(remainingMs) {
+    const secondsLeft = finalSecondsLeft(remainingMs);
+    countdownNode.classList.toggle("is-final", secondsLeft !== null);
+    if (secondsLeft !== null && secondsLeft !== beepedSecond) {
+      beepedSecond = secondsLeft;
+      beep();
+    }
+    if (remainingMs <= 0) beep(true);
   }
 
   function completeCountdown() {
