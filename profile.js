@@ -148,6 +148,8 @@ export function renderProfile(profile, unit, theme, actions) {
     end: [el("ion-button", { strong: "true", text: "Save", onclick: save })],
   });
   byId("profileContent").replaceChildren(
+    sectionTitle("Account"),
+    el("div", { id: "accountSection" }),
     sectionTitle("About you"),
     insetList(
       fieldRow(inputs.name),
@@ -167,6 +169,6 @@ export function renderProfile(profile, unit, theme, actions) {
         el("ion-label", { color: "primary", text: "Load sample workouts" })),
       el("ion-item", { button: "true", detail: "false", onclick: actions.onClearData },
         el("ion-label", { color: "danger", text: "Clear workout data" }))),
-    el("p", { class: "muted list-note", text: "Sample workouts fill the app with a Push / Pull / Legs plan and four weeks of history to test with. Clearing deletes every workout, saved workout and your weekly plan; your profile and settings stay." }));
+    el("p", { class: "muted list-note", text: "Sample workouts fill the app with a Push / Pull / Legs plan and four weeks of history to test with. Clearing deletes every workout, saved workout and your weekly plan, including from your account if you're signed in; your profile and settings stay." }));
   scrollToTop("profile");
 }

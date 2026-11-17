@@ -1,3 +1,4 @@
+import { initAccount, renderAccountSection } from "./account.js";
 import { createActivity, isActivity, openActivity } from "./activity.js";
 import { renderComplete } from "./complete.js";
 import { todayIso, WEEKDAY_NAMES } from "./dates.js";
@@ -19,6 +20,7 @@ import {
   loadProfile,
   loadRoutines,
   loadSchedule,
+  loadSyncedData,
   loadTheme,
   loadUnit,
   loadWorkouts,
@@ -42,6 +44,7 @@ const REST_DAY = "rest";
 const TABS = ["home", "log", "routines", "progress", "history"];
 const IONIC_WAIT_MS = 8000;
 let currentTab = "home";
+let visibleScreen = "home";
 let onWorkoutScreen = false;
 
 // `highlightedTab` is the bar button that shows as selected: the screen's own tab, or
@@ -50,6 +53,7 @@ function showScreen(name, highlightedTab = name) {
   for (const screen of [...TABS, "profile", "complete", "workout", "activity"]) {
     byId(`${screen}Screen`).hidden = name !== screen;
   }
+  visibleScreen = name;
   onWorkoutScreen = name === "workout";
   byId("tabBar").selectedTab = highlightedTab;
   scrollToTop(name);
@@ -313,7 +317,16 @@ function openProfile() {
     onLoadSample: loadSampleData,
     onClearData: clearAllWorkoutData,
   });
+  renderAccountSection();
   showScreen("profile", "home");
+}
+
+// After signing out, or when the account's data replaces this device's. A workout being
+// logged stays on screen; the other screens redraw now.
+function reloadSyncedData() {
+  ({ workouts, routines, schedule, profile } = loadSyncedData());
+  if (visibleScreen === "profile") openProfile();
+  else if (TABS.includes(visibleScreen)) showTab(visibleScreen);
 }
 
 function saveProfileDetails(nextProfile) {
@@ -391,6 +404,7 @@ for (const tab of document.querySelectorAll("ion-tab-button")) {
 }
 applyTheme(loadTheme());
 showTab("home");
+initAccount({ onDataReplaced: reloadSyncedData });
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("service-worker.js").catch((error) => {
