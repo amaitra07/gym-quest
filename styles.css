@@ -1524,6 +1524,201 @@ ion-tab-button.tab-selected .icon {
   animation: slam 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
 }
 
+/* ---------- Guided workout: high energy in a set, calm in a rest ---------- */
+:root {
+  --calm: #1d6fb8;
+}
+
+:root.ion-palette-dark {
+  --calm: #7cc4ff;
+}
+
+#workoutContent {
+  position: relative;
+  z-index: 1;
+}
+
+/* Fills the screen behind the guided workout. The set and rest layers fade into each other. */
+.phase-fx {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+
+.phase-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease-in-out;
+}
+
+.phase-fx[data-phase="work"] .is-work,
+.phase-fx[data-phase="rest"] .is-rest {
+  opacity: 1;
+}
+
+.phase-layer.is-work {
+  overflow: hidden;
+  background: radial-gradient(70% 45% at 50% 55%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%);
+}
+
+.phase-layer.is-work::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: repeating-linear-gradient(-55deg, color-mix(in srgb, var(--accent) 8%, transparent) 0 16px, transparent 16px 42px);
+  animation: stripes 1.6s linear infinite;
+}
+
+.phase-layer.is-rest {
+  background:
+    radial-gradient(90% 60% at 50% 55%, color-mix(in srgb, var(--calm) 18%, transparent), transparent 70%),
+    linear-gradient(180deg, color-mix(in srgb, var(--calm) 12%, var(--bg)), var(--bg));
+}
+
+/* On a change between set and rest, the middle of the screen eases in. */
+.player.is-phase-change .player-label,
+.player.is-phase-change .phase-stage,
+.player.is-phase-change .player-actions {
+  animation: phase-in 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.player.is-phase-change .phase-stage {
+  animation-delay: 0.1s;
+}
+
+.player.is-phase-change .player-actions {
+  animation-delay: 0.2s;
+}
+
+.phase-rest .player-label {
+  color: var(--calm);
+}
+
+.phase-rest ion-button.step-action {
+  --background: color-mix(in srgb, var(--calm) 20%, transparent);
+  --background-activated: color-mix(in srgb, var(--calm) 30%, transparent);
+  --color: var(--calm);
+}
+
+/* The middle of the screen: the clock or rep target, with the breathing circle behind it in a rest. */
+.phase-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 240px;
+}
+
+.phase-stage > * {
+  grid-area: 1 / 1;
+}
+
+.breath,
+.breath-word {
+  display: none;
+}
+
+.phase-work .player-countdown {
+  color: var(--ion-color-primary);
+  text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: thump 1.6s ease-in-out infinite;
+}
+
+.player-reps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.player-reps small {
+  color: var(--text-dim);
+  font-family: var(--ion-font-family);
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 700;
+  text-shadow: none;
+}
+
+.phase-rest .breath {
+  display: block;
+  width: 230px;
+  height: 230px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--calm) 30%, transparent), color-mix(in srgb, var(--calm) 4%, transparent) 65%, transparent 70%);
+  animation: breathe 8s ease-in-out infinite;
+}
+
+.phase-rest .breath-word {
+  display: block;
+  align-self: end;
+  color: var(--calm);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  animation: breathe-word 8s ease-in-out infinite;
+}
+
+/* Paused: everything holds still and dims. */
+.phase-fx.is-paused {
+  opacity: 0.45;
+}
+
+.phase-fx.is-paused .phase-layer::before,
+.player.is-paused .player-countdown,
+.player.is-paused .breath,
+.player.is-paused .breath-word {
+  animation-play-state: paused;
+}
+
+@keyframes stripes {
+  to {
+    transform: translateX(51px);
+  }
+}
+
+@keyframes phase-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@keyframes thump {
+  50% {
+    transform: scale(1.1);
+    text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 85%, transparent);
+  }
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(0.7);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes breathe-word {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  50%,
+  95% {
+    opacity: 0.35;
+  }
+}
+
 .confetti {
   position: fixed;
   z-index: 2000;

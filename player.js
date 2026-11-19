@@ -5,6 +5,8 @@ import { isSetFilled } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
 
 const TICK_MS = 250;
+// How long the set and rest backgrounds take to fade into each other (matches styles.css).
+const PHASE_FADE_MS = 1200;
 
 // One entry per set that was filled in, in the order they will be done.
 export function buildSteps(workout) {
@@ -115,6 +117,13 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   let wakeLock = null;
   // The last of a rest's final three seconds that beeped, so each beeps once.
   let beepedSecond = null;
+  // The set and rest backgrounds live outside the re-drawn screen, so one can fade into
+  // the other instead of being swapped.
+  const phaseBackground = el("div", { class: "phase-fx", "aria-hidden": "true" },
+    el("div", { class: "phase-layer is-work" }),
+    el("div", { class: "phase-layer is-rest" }));
+  container.parentElement?.append(phaseBackground);
+  let shownPhase = null;
 
   const now = () => Date.now();
 
@@ -226,6 +235,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     howToSheet?.close();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
+    // A finished run fades its background out on the done screen instead.
+    if (!finished) phaseBackground.remove();
   }
   navigator.wakeLock?.request("screen").then((lock) => {
     wakeLock = lock;
@@ -318,6 +329,15 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const hasCountdown = currentCountdownSeconds() !== null;
     const countdown = hasCountdown ? el("p", { class: "player-countdown", text: "" }) : null;
     countdownNode = countdown;
+    // A set counted in reps has no clock, so its rep target fills the middle instead.
+    const repTarget = !hasCountdown && step.exercise.type === "strength" && step.set.reps
+      ? el("p", { class: "player-countdown player-reps" }, String(step.set.reps), el("small", { text: "reps" }))
+      : null;
+    // The middle of the screen: the number pulses during a set; a circle breathes behind it during a rest.
+    const stage = el("div", { class: "phase-stage" },
+      el("span", { class: "breath", "aria-hidden": "true" }),
+      countdown ?? repTarget,
+      phase === "rest" ? el("span", { class: "breath-word", "aria-hidden": "true", text: "Breathe" }) : null);
 
     const common = [
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
@@ -334,7 +354,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
           },
         })
         : null,
-      countdown,
+      stage,
     ];
     const actions = [];
     if (phase === "rest") {
@@ -373,7 +393,16 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       start: finished ? [] : [pauseButton()],
       end: finished ? [] : [el("ion-button", { color: "danger", text: "End", onclick: endEarly })],
     });
-    container.replaceChildren(el("div", { class: "player" },
+    // The player's look follows the phase: high energy in a set, calm in a rest. Only a real
+    // change of phase eases the middle of the screen in; pausing does not.
+    const nextPhase = finished ? "done" : phase;
+    const isPhaseChange = shownPhase !== null && shownPhase !== nextPhase;
+    shownPhase = nextPhase;
+    phaseBackground.dataset.phase = nextPhase;
+    phaseBackground.classList.toggle("is-paused", paused);
+    if (finished) setTimeout(() => phaseBackground.remove(), PHASE_FADE_MS);
+    const playerClass = `player phase-${nextPhase}${paused ? " is-paused" : ""}${isPhaseChange ? " is-phase-change" : ""}`;
+    container.replaceChildren(el("div", { class: playerClass },
       finished ? null : el("p", { class: "muted player-position", text: `Exercise ${exerciseNumber} of ${workout.exercises.length}` }),
       finished ? null : progressBar(),
       ...(finished ? renderDone() : renderStep())));
