@@ -32,7 +32,7 @@ import { howToFor, showHowTo } from "./how-to.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
 import { workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
-import { clearDraft, clearGuidedRun, loadGuidedRun, loadUnit, saveDraft, saveGuidedRun, saveUnit } from "./storage.js";
+import { clearDraft, loadGuidedRun, loadUnit, saveDraft, saveGuidedRun, saveUnit } from "./storage.js";
 
 const DEFAULT_WORKOUT_NAME = "Workout";
 const DEFAULT_REST_SECONDS = 60;
@@ -61,18 +61,33 @@ export function createWorkout() {
 const isRoutine = () => session.kind === "routine";
 
 // With `autoStart` (used when picking a saved workout), the screen first lists the
-// exercises, and the guided workout begins when "Begin workout" is tapped. With `resumeGuided`, a guided workout that was running when the app was closed
-// opens again, paused where it left off, if its saved position still fits this workout.
+// exercises, and the guided workout begins when "Begin workout" is tapped. With
+// `resumeGuided` (picking an unfinished workout back up), it never opens on the editor: a
+// guided workout that was running opens again, paused where it left off; one whose guided
+// run is over opens on its review; anything else opens on "Get ready", like a fresh start.
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
-  const step = autoStart ? "preview" : kind === "routine" && isNew ? "name" : "build";
-  session = { workout, isNew, isDirty: false, handlers, kind, step, renaming: false, backStep: null, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
+  const savedRun = resumeGuided ? loadGuidedRun() : null;
+  const resumeFrom = resumeGuided ? restoreGuidedState(savedRun, workout) : null;
+  session = { workout, isNew, isDirty: false, handlers, kind, step: firstStep(), renaming: false, backStep: null, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
   guidedRun = null;
   render();
-  if (!autoStart && resumeGuided) {
-    const resumeFrom = restoreGuidedState(loadGuidedRun(), workout);
-    if (resumeFrom) startGuidedWorkout(resumeFrom);
-    else clearGuidedRun();
+  if (resumeFrom) startGuidedWorkout(resumeFrom);
+
+  function firstStep() {
+    if (autoStart) return "preview";
+    if (resumeGuided && !resumeFrom) return isFinishedRun(savedRun, workout) ? "review" : "preview";
+    return kind === "routine" && isNew ? "name" : "build";
   }
+}
+
+// Once a guided run is over its place is replaced by this marker, so picking the workout
+// back up returns to its review instead of offering to begin it again.
+function finishedRunMarker(workout) {
+  return { workoutId: workout.id, finished: true };
+}
+
+function isFinishedRun(savedRun, workout) {
+  return savedRun?.finished === true && savedRun.workoutId === workout.id;
 }
 
 function markChanged() {
@@ -201,7 +216,10 @@ function runGuided(resumeFrom) {
     session.step = "review";
     render();
     scrollToTop("workout");
-  }, { resumeFrom, onProgress: (state) => (state === null ? clearGuidedRun() : saveGuidedRun(state)) });
+  }, {
+    resumeFrom,
+    onProgress: (state) => saveGuidedRun(state ?? finishedRunMarker(session.workout)),
+  });
 }
 
 function saveRoutine() {
