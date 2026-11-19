@@ -220,6 +220,7 @@ function runGuided(resumeFrom) {
   }, {
     resumeFrom,
     onProgress: (state) => saveGuidedRun(state ?? finishedRunMarker(session.workout)),
+    onEdit: markChanged,
   });
 }
 

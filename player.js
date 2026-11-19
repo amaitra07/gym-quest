@@ -1,7 +1,7 @@
 import { createStopwatch, formatClock } from "./clock.js";
 import { beep, finalSecondsLeft } from "./countdown.js";
 import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
-import { isSetFilled } from "./exercises.js";
+import { EXERCISE_TYPES, isSetFilled } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
 
 const TICK_MS = 250;
@@ -30,6 +30,40 @@ export function afterSet(steps, index) {
   const sameExercise = next.exercise === steps[index].exercise;
   if (sameExercise && restSeconds > 0) return { index: index + 1, phase: "rest" };
   return { index: index + 1, phase: "work" };
+}
+
+// The set finished most recently before `index`, which "Last set" lets you fix; -1 if none.
+// `completed` holds the indexes of finished sets.
+export function lastFinishedIndex(completed, index) {
+  let last = -1;
+  for (const position of completed) {
+    if (position < index && position > last) last = position;
+  }
+  return last;
+}
+
+// How much one tap of − or + changes each number when fixing a set.
+function stepSize(fieldKey, unit) {
+  if (fieldKey === "weight") return unit === "kg" ? 2.5 : 5;
+  if (fieldKey === "distance") return 0.1;
+  if (fieldKey === "seconds") return 5;
+  return 1;
+}
+
+// Sets one number of a set, rounded to two decimals. The number a set needs in order to
+// count (reps, minutes or seconds) never goes below 1; the others clear when they reach 0.
+export function setSetValue(set, type, fieldKey, value) {
+  const isRequired = EXERCISE_TYPES[type].requiredField === fieldKey;
+  const rounded = Math.round((Number.isFinite(value) ? value : 0) * 100) / 100;
+  if (isRequired) set[fieldKey] = Math.max(1, rounded);
+  else set[fieldKey] = rounded > 0 ? rounded : null;
+  return set[fieldKey];
+}
+
+// Moves one number of a set up (`direction` 1) or down (-1) by one step.
+export function nudgeSetValue(set, type, fieldKey, direction, unit) {
+  const current = Number.isFinite(set[fieldKey]) ? set[fieldKey] : 0;
+  return setSetValue(set, type, fieldKey, current + direction * stepSize(fieldKey, unit));
 }
 
 // The first step of a later exercise, or -1 if this is the last exercise.
@@ -99,8 +133,9 @@ export function restoreGuidedState(saved, workout) {
 
 // `options.resumeFrom` is a position checked by restoreGuidedState: the run then opens
 // paused where it left off. `options.onProgress(state)` is called every second with where
-// the run has got to, and with null once it is over.
-export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom = null, onProgress = () => {} } = {}) {
+// the run has got to, and with null once it is over. `options.onEdit()` is called after the
+// person fixes a finished set's numbers, which changes the workout in place.
+export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom = null, onProgress = () => {}, onEdit = () => {} } = {}) {
   const steps = buildSteps(workout);
   const totalClock = createStopwatch(resumeFrom?.totalMs ?? 0);
   const phaseClock = createStopwatch(resumeFrom?.phaseMs ?? 0);
@@ -112,6 +147,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   const completed = new Set(resumeFrom?.completed ?? []);
   let overview = null;
   let howToSheet = null;
+  let editSheet = null;
   let totalNode = null;
   let countdownNode = null;
   let wakeLock = null;
@@ -233,6 +269,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     if (!keepPlace) onProgress(null);
     closeOverview();
     howToSheet?.close();
+    editSheet?.close();
     clearInterval(timer);
     wakeLock?.release?.().catch(() => {});
     // A finished run fades its background out on the done screen instead.
@@ -301,6 +338,51 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     return el("ion-button", { onclick: togglePause }, icon(paused ? "play" : "pause", "start"), paused ? "Continue" : "Pause");
   }
 
+  // A sheet for fixing the numbers of the set finished last, for when you did less (or
+  // more) than planned. Changes are saved as you tap.
+  function editLastSet() {
+    const position = lastFinishedIndex(completed, index);
+    if (position === -1) return;
+    const step = steps[position];
+    const { exercise, set } = step;
+    editSheet = openSheet(`${exercise.name} · ${setLabel(step)}`, () => {
+      editSheet = null;
+      if (!stopped) render();
+    });
+    const rows = EXERCISE_TYPES[exercise.type].fields.map((field) => {
+      const input = el("input", {
+        class: "number-input",
+        type: "number",
+        inputmode: "decimal",
+        min: "0",
+        step: field.step,
+        value: set[field.key] ?? "",
+        "aria-label": setFieldName(field),
+        onChange: (event) => {
+          const typed = event.target.value === "" ? 0 : Number(event.target.value);
+          event.target.value = setSetValue(set, exercise.type, field.key, typed) ?? "";
+          onEdit();
+        },
+      });
+      const nudge = (direction) => () => {
+        input.value = nudgeSetValue(set, exercise.type, field.key, direction, unit) ?? "";
+        onEdit();
+      };
+      return el("div", { class: "stepper-row" },
+        el("span", { class: "stepper-label", text: setFieldName(field) }),
+        el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": `Less ${field.label.toLowerCase()}`, onclick: nudge(-1) }, icon("minus")),
+        input,
+        el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": `More ${field.label.toLowerCase()}`, onclick: nudge(1) }, icon("plus")));
+    });
+    editSheet.content.append(
+      el("p", { class: "guide", text: "Change it to what you actually did. It's saved straight away." }),
+      ...rows);
+  }
+
+  function setFieldName(field) {
+    return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
+  }
+
   // The big button for the current step. It is switched off while the workout is paused.
   function stepButton(text, onclick) {
     const stepAction = button("primary", { class: "step-action", size: "large", text, onclick });
@@ -324,6 +406,28 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     ];
   }
 
+  // "How to do it" for this exercise, and "Last set" to fix the set you just finished.
+  function renderLinks(step) {
+    const howTo = howToFor(step.exercise.name)
+      ? el("ion-button", {
+        class: "how-to-link",
+        fill: "clear",
+        size: "small",
+        text: "How to do it",
+        onclick: () => {
+          howToSheet = showHowTo(step.exercise.name);
+        },
+      })
+      : null;
+    const lastPosition = lastFinishedIndex(completed, index);
+    const lastSet = lastPosition === -1
+      ? null
+      : el("ion-button", { class: "how-to-link", fill: "clear", size: "small", onclick: editLastSet },
+        icon("edit", "start"), `Last set: ${targetText(steps[lastPosition], unit)}`);
+    if (howTo === null && lastSet === null) return null;
+    return el("div", { class: "player-links" }, howTo, lastSet);
+  }
+
   function renderStep() {
     const step = steps[index];
     const hasCountdown = currentCountdownSeconds() !== null;
@@ -331,7 +435,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     countdownNode = countdown;
     // A set counted in reps has no clock, so its rep target fills the middle instead.
     const repTarget = !hasCountdown && step.exercise.type === "strength" && step.set.reps
-      ? el("p", { class: "player-countdown player-reps" }, String(step.set.reps), el("small", { text: "reps" }))
+      ? el("p", { class: "player-countdown player-reps" }, String(step.set.reps),
+        el("small", { text: step.set.weight ? `reps at ${step.set.weight} ${unit}` : "reps" }))
       : null;
     // The middle of the screen: the number pulses during a set; a circle breathes behind it during a rest.
     const stage = el("div", { class: "phase-stage" },
@@ -343,17 +448,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
       el("p", { class: "muted player-center", text: `${setLabel(step)} · ${targetText(step, unit)}` }),
-      howToFor(step.exercise.name)
-        ? el("ion-button", {
-          class: "how-to-link",
-          fill: "clear",
-          size: "small",
-          text: "How to do it",
-          onclick: () => {
-            howToSheet = showHowTo(step.exercise.name);
-          },
-        })
-        : null,
+      renderLinks(step),
       stage,
     ];
     const actions = [];

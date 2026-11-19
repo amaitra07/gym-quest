@@ -492,6 +492,41 @@ ion-toast {
   font-weight: 600;
 }
 
+/* "How to do it" and "Last set" side by side under the exercise name. */
+.player-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 6px;
+}
+
+/* Fixing a finished set: − and + either side of the number, which can also be typed. */
+.stepper-row {
+  display: grid;
+  grid-template-columns: 1fr 52px 96px 52px;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.stepper-label {
+  font-weight: 700;
+}
+
+ion-button.stepper-button {
+  --background: var(--fill);
+  --background-activated: var(--fill-strong);
+  --color: var(--text);
+  --border-radius: var(--radius-small);
+  height: 48px;
+  margin: 0;
+}
+
+.stepper-row .number-input {
+  height: 48px;
+  font-size: 22px;
+}
+
 /* ---------- Cards ---------- */
 .card {
   margin-bottom: 12px;
