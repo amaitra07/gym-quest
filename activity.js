@@ -1,5 +1,5 @@
 import { todayIso } from "./dates.js";
-import { button, byId, confirmAction, el, fieldRow, fieldText, insetList, setHeader } from "./dom.js";
+import { button, byId, confirmAction, dateRow, el, fieldRow, fieldText, insetList, setHeader } from "./dom.js";
 import { newId } from "./exercises.js";
 import { computeXp } from "./stats.js";
 import { loadUnit } from "./storage.js";
@@ -168,14 +168,10 @@ export function openActivity(activity, isNew, handlers) {
       })
       : null;
 
-    const dateField = el("ion-input", {
-      label: "Date",
-      class: "value-end",
-      type: "date",
+    const dateField = dateRow("Date", current.date, {
       max: todayIso(),
-      value: current.date,
-      onIonInput: (event) => {
-        current.date = fieldText(event.target) || todayIso();
+      onChange: (date) => {
+        current.date = date;
       },
     });
 
@@ -206,7 +202,7 @@ export function openActivity(activity, isNew, handlers) {
         nameField ? fieldRow(nameField) : null,
         fieldRow(durationField),
         distanceField ? fieldRow(distanceField) : null,
-        fieldRow(dateField),
+        dateField,
         fieldRow(notesField)),
       state.errorText ? el("p", { class: "form-error", role: "alert", text: state.errorText }) : null,
       button("primary", { type: "submit", text: isNew ? "Save activity" : "Save changes" }),

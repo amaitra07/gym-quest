@@ -113,6 +113,31 @@ export function fieldRow(input) {
   return el("ion-item", {}, input);
 }
 
+let dateFieldCount = 0;
+
+// A "Date" row with the date in a pill on the right; tapping it opens a calendar. Used
+// instead of a plain date field because an iPhone draws that field over its label.
+// `onChange` gets the picked date as YYYY-MM-DD.
+export function dateRow(label, value, { max, onChange }) {
+  dateFieldCount += 1;
+  const id = `date-field-${dateFieldCount}`;
+  const calendar = el("ion-datetime", {
+    id,
+    presentation: "date",
+    max,
+    value,
+    "show-default-buttons": "true",
+    onIonChange: (event) => {
+      const picked = typeof event.detail.value === "string" ? event.detail.value.slice(0, 10) : "";
+      if (picked !== "") onChange(picked);
+    },
+  });
+  return el("ion-item", {},
+    el("ion-label", { text: label }),
+    el("ion-datetime-button", { slot: "end", datetime: id }),
+    el("ion-modal", { "keep-contents-mounted": "true" }, calendar));
+}
+
 // What is typed in an Ionic field, always as text.
 export function fieldText(input) {
   return String(input.value ?? "");

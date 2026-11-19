@@ -4,6 +4,7 @@ import {
   button,
   byId,
   confirmAction,
+  dateRow,
   detailRow,
   el,
   fieldRow,
@@ -68,7 +69,7 @@ const isRoutine = () => session.kind === "routine";
 export function openWorkout(workout, isNew, handlers, { kind = "log", autoStart = false, resumeGuided = false } = {}) {
   const savedRun = resumeGuided ? loadGuidedRun() : null;
   const resumeFrom = resumeGuided ? restoreGuidedState(savedRun, workout) : null;
-  session = { workout, isNew, isDirty: false, handlers, kind, step: firstStep(), renaming: false, backStep: null, isAddingExercise: false, isDetailsOpen: false, openExerciseId: undefined };
+  session = { workout, isNew, isDirty: false, handlers, kind, step: firstStep(), renaming: false, backStep: null, isAddingExercise: false, isDetailsOpen: false, openExerciseId: null };
   guidedRun = null;
   render();
   if (resumeFrom) startGuidedWorkout(resumeFrom);
@@ -179,7 +180,7 @@ async function removeExercise(exercise) {
   const hasData = exercise.sets.some((set) => isSetFilled(exercise.type, set));
   if (hasData && !(await confirmAction(`Remove ${exercise.name} and its sets?`, "Remove"))) return;
   session.workout.exercises = session.workout.exercises.filter((item) => item !== exercise);
-  if (session.openExerciseId === exercise.id) session.openExerciseId = undefined;
+  if (session.openExerciseId === exercise.id) session.openExerciseId = null;
   markChanged();
   render();
 }
@@ -366,14 +367,10 @@ function renderDetails() {
       markChanged();
     },
   });
-  const dateInput = el("ion-input", {
-    label: "Date",
-    class: "value-end",
-    type: "date",
+  const dateField = dateRow("Date", workout.date, {
     max: todayIso(),
-    value: workout.date,
-    onIonInput: (event) => {
-      workout.date = fieldText(event.target) || todayIso();
+    onChange: (date) => {
+      workout.date = date;
       summaryLabel.textContent = summaryText();
       markChanged();
     },
@@ -390,7 +387,7 @@ function renderDetails() {
     el("ion-item", { slot: "header", lines: "none" },
       summaryLabel,
       el("ion-note", { slot: "end", text: "Name and date" })),
-    el("ion-list", { slot: "content", lines: "none" }, fieldRow(nameInput), fieldRow(dateInput))));
+    el("ion-list", { slot: "content", lines: "none" }, fieldRow(nameInput), dateField)));
   return group;
 }
 
@@ -398,12 +395,11 @@ function setFieldLabel(field, unit) {
   return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
 }
 
-// Only one exercise shows its sets at a time; the others fold into a single line. Until one
-// is picked, the first is open. `null` means the person folded them all.
+// Only one exercise shows its sets at a time; the others fold into a single line. They all
+// start folded, so the whole workout is visible and you tap the one to change.
 function openExercise() {
   const { openExerciseId, workout } = session;
-  if (openExerciseId === null) return null;
-  return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? workout.exercises[0] ?? null;
+  return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? null;
 }
 
 function toggleExercise(exercise) {
