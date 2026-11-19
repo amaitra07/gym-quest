@@ -1609,7 +1609,69 @@ ion-tab-button.tab-selected .icon {
   position: relative;
   display: grid;
   place-items: center;
-  min-height: 240px;
+  min-height: clamp(96px, 22dvh, 200px);
+}
+
+/* Sets and rests fit on one phone screen with no scrolling: tighter gaps, and the big
+   number and breathing circle sized to the screen's height. */
+.player:is(.phase-work, .phase-rest) {
+  gap: 8px;
+}
+
+#workoutContent:has(> .player:is(.phase-work, .phase-rest)) {
+  padding-bottom: 12px;
+}
+
+.player:is(.phase-work, .phase-rest) .player-position {
+  margin-top: 0;
+}
+
+.player:is(.phase-work, .phase-rest) .progress-summary {
+  gap: 8px;
+  padding: 10px 14px;
+}
+
+.player:is(.phase-work, .phase-rest) .player-label {
+  margin-top: 6px;
+}
+
+.player:is(.phase-work, .phase-rest) .player-exercise {
+  font-size: clamp(30px, 5dvh, 42px);
+}
+
+.player:is(.phase-work, .phase-rest) .player-countdown {
+  margin: 0;
+  font-size: clamp(64px, 14dvh, 132px);
+}
+
+.player:is(.phase-work, .phase-rest) .player-actions {
+  margin-top: 0;
+  gap: 8px;
+}
+
+.player:is(.phase-work, .phase-rest) ion-button.step-action {
+  min-height: clamp(54px, 9dvh, 72px);
+}
+
+/* On very short screens the "Exercise 1 of 5" line goes; the progress card below it
+   already shows how far along you are and lists every exercise. */
+@media (max-height: 620px) {
+  .player:is(.phase-work, .phase-rest) .player-position {
+    display: none;
+  }
+
+  .player:is(.phase-work, .phase-rest) {
+    gap: 6px;
+  }
+
+  .player:is(.phase-work, .phase-rest) .player-label {
+    margin-top: 0;
+  }
+
+  .phase-rest .breath {
+    width: 20dvh;
+    height: 20dvh;
+  }
 }
 
 .phase-stage > * {
@@ -1644,8 +1706,8 @@ ion-tab-button.tab-selected .icon {
 
 .phase-rest .breath {
   display: block;
-  width: 230px;
-  height: 230px;
+  width: clamp(110px, 24dvh, 230px);
+  height: clamp(110px, 24dvh, 230px);
   border-radius: 50%;
   background: radial-gradient(circle, color-mix(in srgb, var(--calm) 30%, transparent), color-mix(in srgb, var(--calm) 4%, transparent) 65%, transparent 70%);
   animation: breathe 8s ease-in-out infinite;
