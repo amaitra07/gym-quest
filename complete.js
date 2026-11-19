@@ -1,5 +1,6 @@
 import { button, byId, detailRow, el, fillContainer, insetList, scrollToTop, setHeader, showToast } from "./dom.js";
 import { describeSet } from "./exercises.js";
+import { burstConfetti } from "./motion.js";
 import { workoutSummary } from "./records.js";
 import { drawShareCard } from "./share-card.js";
 
@@ -48,6 +49,7 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
     actions,
     button("text", { text: "Done", onclick: onDone }));
   scrollToTop("complete");
+  burstConfetti();
 
   drawShareCard(summary, unit).then((blob) => {
     const fileName = fileNameFor(summary);

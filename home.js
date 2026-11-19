@@ -1,6 +1,7 @@
 import { addDays, formatDate, todayIso } from "./dates.js";
 import { byId } from "./dom.js";
 import { renderHistory } from "./history.js";
+import { countUp, fillBar } from "./motion.js";
 import { estimateMinutes, upNext } from "./plan.js";
 import { summarize } from "./history-row.js";
 import { currentStreak, levelInfo, titleForLevel, totalXp } from "./stats.js";
@@ -32,12 +33,12 @@ function renderStats(workouts) {
   const { level, into, needed } = levelInfo(totalXp(workouts));
   const percent = Math.round((into / needed) * 100);
 
-  byId("streakNumber").textContent = currentStreak(workouts);
-  byId("workoutCount").textContent = workouts.length;
+  countUp(byId("streakNumber"), currentStreak(workouts));
+  countUp(byId("workoutCount"), workouts.length);
   byId("levelName").textContent = `Level ${level}`;
   byId("levelDetail").textContent = `${titleForLevel(level)} · ${into} / ${needed} XP`;
-  byId("levelPercent").textContent = `${percent}%`;
-  byId("levelBar").value = into / needed;
+  countUp(byId("levelPercent"), percent, (value) => `${value}%`);
+  fillBar(byId("levelBar"), into / needed);
 }
 
 // "Today", "Tomorrow", a weekday name, or "Next Friday" when it is a week away.

@@ -285,8 +285,9 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     el("ion-progress-bar", { value: done / total, "aria-label": `${percent}% of sets done` }));
   }
 
+  // Pause sits in the top-left corner, opposite End, out of the way of the big buttons.
   function pauseButton() {
-    return button("secondary", { onclick: togglePause }, icon(paused ? "play" : "pause", "start"), paused ? "Continue" : "Pause");
+    return el("ion-button", { onclick: togglePause }, icon(paused ? "play" : "pause", "start"), paused ? "Continue" : "Pause");
   }
 
   // The big button for the current step. It is switched off while the workout is paused.
@@ -343,7 +344,6 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     } else {
       actions.push(stepButton("Done with set", completeSet));
     }
-    actions.push(pauseButton());
     if (nextExerciseIndex(steps, index) !== -1) {
       const skip = button("secondary", { onclick: skipExercise }, "Next exercise", icon("arrow", "end"));
       skip.disabled = paused;
@@ -367,9 +367,10 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     });
     countdownNode = null;
     const exerciseNumber = workout.exercises.indexOf(steps[Math.min(index, steps.length - 1)].exercise) + 1;
-    // The toolbar holds the total clock and End; the rest of the screen is the current set.
+    // The toolbar holds Pause, the total clock and End; the rest of the screen is the current set.
     setHeader("workout", {
       title: totalNode,
+      start: finished ? [] : [pauseButton()],
       end: finished ? [] : [el("ion-button", { color: "danger", text: "End", onclick: endEarly })],
     });
     container.replaceChildren(el("div", { class: "player" },

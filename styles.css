@@ -1289,6 +1289,304 @@ ion-button.step-action {
   border-radius: var(--radius);
 }
 
+/* ---------- Arcade: display font, backgrounds and motion ---------- */
+/* Big titles and numbers use a condensed italic display font in capitals; everything people
+   read in sentences stays in the body font. */
+:root {
+  --display-font: "Barlow Condensed", "Inter", sans-serif;
+  --teal: #2de2c6;
+  --grid-line: color-mix(in srgb, var(--text) 5%, transparent);
+  --glow: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+ion-title.title-large,
+.hero-title,
+.tile-title,
+.tile-number,
+.level-name,
+.level-percent,
+.last-xp,
+.hero-accent,
+.stat-card strong,
+.player-exercise,
+.player-countdown,
+.count-in-number {
+  font-family: var(--display-font);
+  font-style: italic;
+  letter-spacing: 0.005em;
+}
+
+ion-title.title-large,
+.hero-title,
+.tile-title,
+.level-name,
+.hero-accent,
+.player-exercise {
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: 44px;
+  line-height: 0.98;
+}
+
+.tile-title {
+  font-size: 52px;
+  line-height: 0.92;
+}
+
+.tile-number {
+  font-size: 72px;
+}
+
+.level-name {
+  font-size: 26px;
+}
+
+.level-percent {
+  font-size: 44px;
+}
+
+.last-xp,
+.hero-accent {
+  font-size: 22px;
+}
+
+.stat-card strong {
+  font-size: 30px;
+}
+
+.player-exercise {
+  font-size: 42px;
+  line-height: 0.95;
+}
+
+.player-countdown {
+  font-size: 132px;
+}
+
+/* A faint grid and a lime glow behind every screen, toolbars included. */
+.ion-page {
+  background:
+    radial-gradient(120% 45% at 0% 0%, var(--glow), transparent 70%),
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
+    var(--bg);
+}
+
+ion-content {
+  --background: transparent;
+}
+
+.section-title {
+  font-family: var(--display-font);
+  font-size: 26px;
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+ion-header ion-toolbar,
+ion-tab-bar {
+  --background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+/* The big title scrolls with the page, so it sits straight on the grid. */
+ion-content ion-header.header-collapse-condense ion-toolbar {
+  --background: transparent;
+  backdrop-filter: none;
+}
+
+.tile,
+.card,
+.stat-card {
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* The Up next tile: a slowly turning lime and teal glow with a shine on top. */
+.tile-next {
+  overflow: hidden;
+  border: none;
+  isolation: isolate;
+}
+
+.tile-next::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  inset: -60%;
+  background: conic-gradient(from 0deg, var(--accent), var(--teal), #e8ff7a, var(--accent));
+  animation: spin 9s linear infinite;
+}
+
+.tile-next::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.4), transparent 55%);
+}
+
+/* The level bar fills slowly in lime to teal, then glows. */
+ion-progress-bar::part(progress) {
+  background: linear-gradient(90deg, var(--accent), var(--teal));
+  transition: transform 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tile-level ion-progress-bar {
+  height: 10px;
+  border-radius: 99px;
+  overflow: visible;
+}
+
+.tile-level ion-progress-bar::part(progress) {
+  border-radius: 99px;
+  animation: glow 1.4s 1.2s ease-in-out 2;
+}
+
+/* Things you tap squash a little and spring back. */
+button.tile,
+ion-button,
+.icon-button {
+  transition: transform 0.14s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+button.tile:active {
+  opacity: 1;
+  transform: scale(0.96);
+}
+
+ion-button:active,
+.icon-button:active {
+  transform: scale(0.94);
+}
+
+/* Home and the tab lists pop in one after another when the screen opens. */
+#homeScreen .bento > *,
+#logScreen .wrap > *,
+#routinesScreen .wrap > *,
+#historyScreen .wrap > *,
+#progressScreen .wrap > *,
+#completeContent > * {
+  animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) both;
+}
+
+#homeScreen .bento > :nth-child(2),
+.wrap > :nth-child(2),
+#completeContent > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+#homeScreen .bento > :nth-child(3),
+.wrap > :nth-child(3),
+#completeContent > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+#homeScreen .bento > :nth-child(4),
+.wrap > :nth-child(4),
+#completeContent > :nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+#homeScreen .bento > :nth-child(n + 5),
+.wrap > :nth-child(n + 5),
+#completeContent > :nth-child(n + 5) {
+  animation-delay: 0.2s;
+}
+
+/* The XP you earned pulses after a workout. */
+#completeContent > .hero-accent {
+  animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) 0.05s both, pulse 1s 0.6s ease-in-out 2;
+}
+
+/* The selected tab's icon bounces and glows. Every tab keeps its icon and its name. */
+ion-tab-button {
+  --color-selected: var(--ion-color-primary);
+}
+
+ion-tab-button ion-label {
+  font-weight: 600;
+}
+
+ion-tab-button.tab-selected ion-label {
+  font-weight: 800;
+}
+
+ion-tab-button.tab-selected .icon {
+  animation: tab-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+/* Each number of the 3, 2, 1, Go slams in. */
+.count-in-number.is-new {
+  animation: slam 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+
+.confetti {
+  position: fixed;
+  z-index: 2000;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.confetti i {
+  position: absolute;
+  top: -14px;
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  animation: drop 1.6s ease-in forwards;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.88) translateY(12px);
+  }
+}
+
+@keyframes glow {
+  50% {
+    box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 90%, transparent);
+  }
+}
+
+@keyframes pulse {
+  50% {
+    transform: scale(1.12);
+    text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 80%, transparent);
+  }
+}
+
+@keyframes tab-pop {
+  40% {
+    transform: translateY(-4px) scale(1.18);
+  }
+}
+
+@keyframes slam {
+  from {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+@keyframes drop {
+  to {
+    opacity: 0.6;
+    transform: translateY(105vh) rotate(560deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;

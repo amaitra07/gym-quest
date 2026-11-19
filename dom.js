@@ -128,13 +128,14 @@ export function focusField(input) {
 
 // Fills a screen's toolbar: its title, an optional back button on the left, and optional
 // buttons on the right. `title` is text, or an element on a screen with one title.
-export function setHeader(screen, { title, backLabel = "Back", onBack = null, end = [] }) {
+// `start` replaces the Back button with other toolbar buttons on the left.
+export function setHeader(screen, { title, backLabel = "Back", onBack = null, start = null, end = [] }) {
   const page = byId(`${screen}Screen`);
   for (const titleNode of page.querySelectorAll("[data-header='title']")) {
     titleNode.replaceChildren(title);
   }
-  fillContainer(page.querySelector("[data-header='start']"),
-    onBack ? el("ion-button", { onclick: onBack }, icon("back", "start"), backLabel) : null);
+  const backButton = onBack ? el("ion-button", { onclick: onBack }, icon("back", "start"), backLabel) : null;
+  fillContainer(page.querySelector("[data-header='start']"), ...(start ?? [backButton]));
   fillContainer(page.querySelector("[data-header='end']"), ...end);
 }
 

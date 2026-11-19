@@ -1,4 +1,5 @@
 import { el } from "./dom.js";
+import { replay } from "./motion.js";
 
 // The 3, 2, 1, Go before a guided workout starts, and the beeps that go with it and with the
 // end of every rest. Beeps are made with the Web Audio API, so there are no sound files to
@@ -88,6 +89,7 @@ export function runCountIn(onDone) {
     shown = label;
     number.textContent = label;
     number.classList.toggle("is-go", label === "Go");
+    replay(number, "is-new");
     beep(label === "Go");
   }
 
