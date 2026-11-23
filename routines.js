@@ -14,6 +14,20 @@ function routineRow(routine, actionText, onTap) {
   });
 }
 
+// A Log tab row for a saved workout, with two ways to do it: "Guided" runs the timers,
+// and "Log" opens the set grid to type in what you did and save it.
+function pickerRow(routine, onStart, onLog) {
+  const choice = (text, fill, onTap) => el("ion-button", {
+    size: "small", fill, class: "picker-choice", text,
+    "aria-label": `${text} ${routine.name}`, onclick: () => onTap(routine),
+  });
+  return el("ion-item", { detail: "false" },
+    el("ion-label", {}, el("h2", { text: routine.name }), el("p", { text: summarize(routine) })),
+    el("div", { slot: "end", class: "picker-choices" },
+      choice("Guided", "solid", onStart),
+      choice("Log", "outline", onLog)));
+}
+
 // The first word of a name, short enough to fit in a day cell ("Push day" becomes "Push").
 function shortName(name) {
   return name.trim().split(/\s+/)[0];
@@ -55,8 +69,8 @@ export function renderRoutines(routines, { schedule, workouts, today, onPickDay,
   byId("starterFromRoutinesButton").onclick = onStarterPlan;
 }
 
-// The "Log" tab: pick a saved workout to start it, resume an unfinished one, or start empty.
-export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, onActivity, onCreate, onStarterPlan }) {
+// The "Log" tab: pick a saved workout to run it guided or log it by hand, resume an unfinished one, or start empty.
+export function renderLogPicker(routines, draft, { onStart, onLog, onResume, onEmpty, onActivity, onCreate, onStarterPlan }) {
   const resume = byId("resumeCard");
   resume.hidden = draft === null;
   if (draft !== null) {
@@ -65,7 +79,7 @@ export function renderLogPicker(routines, draft, { onStart, onResume, onEmpty, o
       button("primary", { text: `Resume ${draft.name.trim() || "your workout"}`, onclick: onResume }));
   }
 
-  byId("pickerList").replaceChildren(...routines.map((routine) => routineRow(routine, "Start", onStart)));
+  byId("pickerList").replaceChildren(...routines.map((routine) => pickerRow(routine, onStart, onLog)));
   byId("pickerHeading").hidden = routines.length === 0;
   byId("pickerEmpty").hidden = routines.length > 0;
   byId("emptyWorkoutButton").onclick = onEmpty;

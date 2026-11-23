@@ -83,6 +83,7 @@ function showTab(name) {
   renderProgress(workouts, loadUnit());
   renderLogPicker(routines, loadDraft(), {
     onStart: startRoutine,
+    onLog: logRoutine,
     onResume: resumeWorkout,
     onEmpty: startEmptyWorkout,
     onActivity: startActivity,
@@ -123,6 +124,13 @@ async function startRoutine(routine) {
   if (!(await confirmReplacingDraft())) return;
   const workout = workoutFromRoutine(routine, workouts, todayIso());
   openScreen(workout, true, { autoStart: true });
+}
+
+// Opens a saved workout straight on the set grid, filled in from the plan, so you can type
+// in what you did and tap Finish workout without running the guided timers.
+async function logRoutine(routine) {
+  if (!(await confirmReplacingDraft())) return;
+  openScreen(workoutFromRoutine(routine, workouts, todayIso()), true);
 }
 
 // Starting something new would overwrite the unfinished workout, so ask first.

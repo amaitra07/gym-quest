@@ -357,6 +357,19 @@ ion-list.card-list {
   white-space: nowrap;
 }
 
+.picker-choices {
+  display: flex;
+  gap: 8px;
+  margin-inline-start: 12px;
+}
+
+.picker-choice {
+  --padding-start: 14px;
+  --padding-end: 14px;
+  min-height: 40px;
+  font-weight: 800;
+}
+
 .row-when {
   color: var(--text-dim);
 }
