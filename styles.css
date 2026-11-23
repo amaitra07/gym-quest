@@ -1700,6 +1700,28 @@ ion-tab-button.tab-selected .icon {
   animation-delay: 0.2s;
 }
 
+/* "Up next" between exercises: a lime line saying the last exercise is done. */
+.up-next-done {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--ion-color-primary);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.up-next-done .icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 3;
+}
+
+.is-up-next .player-label {
+  letter-spacing: 0.2em;
+}
+
 .phase-rest .player-label {
   color: var(--calm);
 }

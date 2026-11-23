@@ -20,17 +20,21 @@ export function buildSteps(workout) {
   return steps;
 }
 
-// Where to go after finishing the set at `index`: straight to the next
-// exercise, or into a rest first when the same exercise has sets left.
-// Returns null when the workout is over.
+// Where to go after finishing the set at `index`: a rest when the same exercise has sets
+// left, the "Up next" screen before a new exercise, or straight on when the exercise has no
+// rest time. Both pauses count down the finished exercise's rest. Returns null when the
+// workout is over.
 export function afterSet(steps, index) {
   const next = steps[index + 1];
   if (!next) return null;
-  const restSeconds = steps[index].exercise.restSeconds;
+  if (!(steps[index].exercise.restSeconds > 0)) return { index: index + 1, phase: "work" };
   const sameExercise = next.exercise === steps[index].exercise;
-  if (sameExercise && restSeconds > 0) return { index: index + 1, phase: "rest" };
-  return { index: index + 1, phase: "work" };
+  return { index: index + 1, phase: sameExercise ? "rest" : "next" };
 }
+
+// The phases a guided run can be in: a set, a rest between sets, or "Up next" between
+// exercises.
+const PHASES = ["work", "rest", "next"];
 
 // The set finished most recently before `index`, which "Last set" lets you fix; -1 if none.
 // `completed` holds the indexes of finished sets.
@@ -125,7 +129,7 @@ export function restoreGuidedState(saved, workout) {
   const isStepNumber = (value) => Number.isInteger(value) && value >= 0 && value < stepCount;
   const isDuration = (value) => Number.isFinite(value) && value >= 0;
   const isValid = isStepNumber(saved.index)
-    && (saved.phase === "work" || saved.phase === "rest")
+    && PHASES.includes(saved.phase)
     && Array.isArray(saved.completed) && saved.completed.every(isStepNumber)
     && isDuration(saved.totalMs) && isDuration(saved.phaseMs);
   return isValid ? saved : null;
@@ -165,6 +169,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
 
   function currentCountdownSeconds() {
     if (phase === "rest") return steps[index].exercise.restSeconds;
+    // "Up next" waits for as long as the exercise just finished rests between its sets.
+    if (phase === "next") return steps[index - 1]?.exercise.restSeconds ?? 0;
     return workDurationSeconds(steps[index]);
   }
 
@@ -242,7 +248,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     if (countdownNode && seconds !== null) {
       const remainingMs = seconds * 1000 - phaseClock.elapsedMs(now());
       countdownNode.textContent = formatClock(Math.ceil(remainingMs / 1000));
-      if (phase === "rest" && !paused) countDownRestEnd(remainingMs);
+      if (phase !== "work" && !paused) countDownRestEnd(remainingMs);
       if (remainingMs <= 0 && !paused) completeCountdown();
     }
   }
@@ -260,8 +266,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   }
 
   function completeCountdown() {
-    if (phase === "rest") skipRest();
-    else completeSet();
+    if (phase === "work") completeSet();
+    else skipRest();
   }
 
   const timer = setInterval(tick, TICK_MS);
@@ -430,7 +436,37 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     return el("div", { class: "player-links" }, howTo, lastSet);
   }
 
+  // Between exercises: the one just finished, then the next one big, with its sets, a
+  // countdown of the rest, and "Start now" to begin early.
+  function renderUpNext() {
+    const step = steps[index];
+    const finishedExercise = steps[index - 1].exercise;
+    const entry = progressSummary(steps, completed, index).exercises.find((item) => item.name === finishedExercise.name);
+    countdownNode = el("p", { class: "player-countdown", text: "" });
+    const start = stepButton("Start now", skipRest);
+    const actions = [start];
+    if (nextExerciseIndex(steps, index) !== -1) {
+      const skip = button("secondary", { onclick: skipExercise }, "Skip this exercise", icon("arrow", "end"));
+      skip.disabled = paused;
+      actions.push(skip);
+    }
+    return [
+      el("p", { class: "up-next-done" }, icon("check", "start"),
+        entry ? `${finishedExercise.name} done · ${entry.done} of ${entry.total} ${entry.total === 1 ? "set" : "sets"}` : `${finishedExercise.name} done`),
+      el("p", { class: "player-label", text: paused ? "Paused" : "Up next" }),
+      el("h2", { class: "player-exercise", text: step.exercise.name }),
+      el("p", { class: "muted player-center", text: `${step.setCount} ${step.setCount === 1 ? "set" : "sets"} · ${targetText(step, unit)}` }),
+      renderLinks(step),
+      el("div", { class: "phase-stage" },
+        el("span", { class: "breath", "aria-hidden": "true" }),
+        countdownNode,
+        el("span", { class: "breath-word", "aria-hidden": "true", text: "Get set" })),
+      el("div", { class: "button-stack player-actions" }, ...actions),
+    ];
+  }
+
   function renderStep() {
+    if (phase === "next") return renderUpNext();
     const step = steps[index];
     const hasCountdown = currentCountdownSeconds() !== null;
     const countdown = hasCountdown ? el("p", { class: "player-countdown", text: "" }) : null;
@@ -492,13 +528,15 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     });
     // The player's look follows the phase: high energy in a set, calm in a rest. Only a real
     // change of phase eases the middle of the screen in; pausing does not.
-    const nextPhase = finished ? "done" : phase;
-    const isPhaseChange = shownPhase !== null && shownPhase !== nextPhase;
-    shownPhase = nextPhase;
+    // "Up next" shares the calm look of a rest, but still eases in as a change of screen.
+    const shownStep = finished ? "done" : phase;
+    const nextPhase = shownStep === "next" ? "rest" : shownStep;
+    const isPhaseChange = shownPhase !== null && shownPhase !== shownStep;
+    shownPhase = shownStep;
     phaseBackground.dataset.phase = nextPhase;
     phaseBackground.classList.toggle("is-paused", paused);
     if (finished) setTimeout(() => phaseBackground.remove(), PHASE_FADE_MS);
-    const playerClass = `player phase-${nextPhase}${paused ? " is-paused" : ""}${isPhaseChange ? " is-phase-change" : ""}`;
+    const playerClass = `player phase-${nextPhase}${shownStep === "next" ? " is-up-next" : ""}${paused ? " is-paused" : ""}${isPhaseChange ? " is-phase-change" : ""}`;
     container.replaceChildren(el("div", { class: playerClass },
       finished ? null : el("p", { class: "muted player-position", text: `Exercise ${exerciseNumber} of ${workout.exercises.length}` }),
       finished ? null : progressBar(),
