@@ -188,6 +188,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
 
   function completeSet() {
     completed.add(index);
+    steps[index].set.done = true;
+    onEdit();
     const next = afterSet(steps, index);
     if (next === null) finish();
     else enterPhase(next.index, next.phase);

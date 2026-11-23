@@ -46,8 +46,8 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
       ? insetList(...records.map((record) => detailRow(record.name, describeSet(record.type, record.set, unit), "PR")))
       : null,
     preview,
-    actions,
-    button("text", { text: "Done", onclick: onDone }));
+    button("primary", { text: "Done", onclick: onDone }),
+    actions);
   scrollToTop("complete");
   burstConfetti();
 
@@ -60,8 +60,8 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
       src: URL.createObjectURL(blob),
       alt: `Share card for ${summary.name}`,
     }));
-    const shareButton = button("primary", { text: "Share", onclick: () => shareImage(file, summary) });
-    const saveButton = button(canShareFile ? "secondary" : "primary", {
+    const shareButton = button("secondary", { text: "Share", onclick: () => shareImage(file, summary) });
+    const saveButton = button(canShareFile ? "text" : "secondary", {
       text: "Save image",
       onclick: () => downloadImage(blob, fileName),
     });

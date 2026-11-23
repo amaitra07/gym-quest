@@ -357,19 +357,6 @@ ion-list.card-list {
   white-space: nowrap;
 }
 
-.picker-choices {
-  display: flex;
-  gap: 8px;
-  margin-inline-start: 12px;
-}
-
-.picker-choice {
-  --padding-start: 14px;
-  --padding-end: 14px;
-  min-height: 40px;
-  font-weight: 800;
-}
-
 .row-when {
   color: var(--text-dim);
 }
@@ -627,29 +614,55 @@ button.tile:active {
 }
 
 .tile-meta {
-  max-width: calc(100% - 76px);
   font-size: 14px;
   font-weight: 600;
   opacity: 0.7;
 }
 
-.arrow-circle {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
+/* The buttons that start a workout, at the bottom of the lime tile. */
+.tile-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--accent-ink);
-  color: var(--accent);
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
 }
 
-.arrow-circle .icon {
-  width: 26px;
-  height: 26px;
+ion-button.tile-button {
+  flex: 1;
+  height: 52px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+  --border-radius: 16px;
+}
+
+ion-button.tile-button.is-solid {
+  --background: var(--accent-ink);
+  --background-activated: var(--accent-ink);
+  --color: var(--accent);
+}
+
+ion-button.tile-button.is-outline {
+  --border-color: var(--accent-ink);
+  --border-width: 2px;
+  --color: var(--accent-ink);
+}
+
+/* "Start something else": a slim full-width row under the lime tile. */
+.tile-other {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tile-other .icon {
+  width: 20px;
+  height: 20px;
+  color: var(--ion-color-primary);
 }
 
 .tile-number {
@@ -963,6 +976,40 @@ ion-accordion-group.details {
 
 .set-row {
   padding: 3px 0;
+}
+
+.set-grid.has-tick {
+  grid-template-columns: 20px 58px repeat(var(--fields), minmax(0, 1fr)) 44px 26px;
+  gap: 5px;
+}
+
+.tick-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 46px;
+  border: 2px solid var(--fill-strong);
+  border-radius: var(--radius-small);
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.tick-button .icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 3;
+}
+
+.set-row.is-done .tick-button,
+.exercise-tick.is-done {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.set-row.is-done .number-input {
+  background: color-mix(in srgb, var(--accent) 14%, var(--fill));
 }
 
 .set-number {
@@ -1453,8 +1500,10 @@ ion-content ion-header.header-collapse-condense ion-toolbar {
 }
 
 /* The Up next tile: a slowly turning lime and teal glow with a shine on top. */
+/* "clip" rather than "hidden": a hidden overflow can still be scrolled when a button
+   inside it takes focus, which slid the tile's title out of view. */
 .tile-next {
-  overflow: hidden;
+  overflow: clip;
   border: none;
   isolation: isolate;
 }

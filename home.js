@@ -1,5 +1,5 @@
 import { addDays, formatDate, todayIso } from "./dates.js";
-import { byId } from "./dom.js";
+import { byId, el } from "./dom.js";
 import { renderHistory } from "./history.js";
 import { countUp, fillBar } from "./motion.js";
 import { estimateMinutes, upNext } from "./plan.js";
@@ -54,34 +54,49 @@ function plural(count, word) {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
 }
 
-// The big lime tile: finish what you started, otherwise the next workout in your weekly
-// plan (or your rotation if you have no plan), otherwise a starter plan for someone who has
-// logged nothing yet, or a nudge to log for someone who has.
+// A button inside the lime tile; "solid" is dark, "outline" is a dark ring.
+function tileButton(text, fill, onclick) {
+  return el("ion-button", { class: `tile-button is-${fill}`, fill: fill === "solid" ? "solid" : "outline", text, onclick });
+}
+
+// The big lime tile, where every workout starts: finish what you started, otherwise the
+// next workout in your weekly plan (or your rotation if you have no schedule), run with
+// timers or logged by hand; with no plans at all, a starter plan. Returns the plan it
+// shows, if any, so "Start something else" can leave it out.
 function renderNextTile(workouts, routines, schedule, draft, actions) {
-  const tile = byId("nextTile");
   const plan = upNext(routines, schedule, workouts, todayIso());
+  const show = (tag, title, meta, ...buttons) => {
+    byId("nextTag").textContent = tag;
+    byId("nextTitle").textContent = title;
+    byId("nextMeta").textContent = meta;
+    byId("nextActions").replaceChildren(...buttons);
+  };
   if (draft !== null) {
-    byId("nextTag").textContent = "In progress";
-    byId("nextTitle").textContent = draft.name.trim() || "Your workout";
-    byId("nextMeta").textContent = "Tap to pick it back up";
-    tile.onclick = actions.onResume;
-  } else if (plan !== null) {
-    const { routine, daysAhead } = plan;
-    byId("nextTag").textContent = daysAhead === null ? "Up next" : `Up next · ${whenLabel(daysAhead)}`;
-    byId("nextTitle").textContent = routine.name;
-    byId("nextMeta").textContent = `${plural(routine.exercises.length, "exercise")} · about ${estimateMinutes(routine)} min`;
-    tile.onclick = () => actions.onStartRoutine(routine);
-  } else if (workouts.length === 0) {
-    byId("nextTag").textContent = "New here?";
-    byId("nextTitle").textContent = "Get a starter plan";
-    byId("nextMeta").textContent = "Two questions, then ready-made workouts. Or use the Log tab to log your own.";
-    tile.onclick = actions.onStarterPlan;
-  } else {
-    byId("nextTag").textContent = "Ready when you are";
-    byId("nextTitle").textContent = "Log a workout";
-    byId("nextMeta").textContent = "Save workouts in the Workouts tab to start them in one tap";
-    tile.onclick = actions.onOpenLog;
+    show("In progress", draft.name.trim() || "Your workout", "Pick up where you left off.",
+      tileButton("Resume", "solid", actions.onResume));
+    return null;
   }
+  if (plan !== null) {
+    const { routine, daysAhead } = plan;
+    show(daysAhead === null ? "Up next" : `Up next · ${whenLabel(daysAhead)}`, routine.name,
+      `${plural(routine.exercises.length, "exercise")} · about ${estimateMinutes(routine)} min`,
+      tileButton("Start guided", "solid", () => actions.onStartRoutine(routine)),
+      tileButton("Log it", "outline", () => actions.onLogRoutine(routine)));
+    return routine;
+  }
+  if (routines.length === 0) {
+    show("New here?", "Get a starter plan", "Answer two questions and get ready-made workouts for your week.",
+      tileButton("Make my plan", "solid", actions.onStarterPlan));
+    return null;
+  }
+  show("Ready when you are", "Log a workout", "Start an empty workout and add exercises as you go.",
+    tileButton("Start", "solid", actions.onStartEmpty));
+  return null;
+}
+
+// "Start something else": every other plan, an empty workout, or an activity.
+function renderOtherStart(featured, actions) {
+  byId("otherStartButton").onclick = () => actions.onStartOther(featured?.id ?? null);
 }
 
 function renderLastWorkout(workouts, onOpenWorkout) {
@@ -99,11 +114,11 @@ function renderLastWorkout(workouts, onOpenWorkout) {
 }
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
-// onStartRoutine, onResume, onOpenLog, onStarterPlan }.
+// onStartRoutine, onLogRoutine, onResume, onStartEmpty, onStartOther, onStarterPlan }.
 export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
   renderHeader(profile);
   renderStats(workouts);
-  renderNextTile(workouts, routines, schedule, draft, actions);
+  renderOtherStart(renderNextTile(workouts, routines, schedule, draft, actions), actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
   renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout);
 }

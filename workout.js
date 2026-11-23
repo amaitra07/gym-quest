@@ -20,6 +20,7 @@ import {
 import {
   EXERCISE_TYPES,
   cleanWorkout,
+  keepDoneSets,
   describeSet,
   exerciseNames,
   exerciseTypeFor,
@@ -60,6 +61,15 @@ export function createWorkout() {
 }
 
 const isRoutine = () => session.kind === "routine";
+
+// A workout being logged now has a tick on each set, and only ticked sets are saved. Saved
+// workouts (plans) and past workouts being fixed have none: every set in them counts.
+const tracksDone = () => session.isNew && !isRoutine();
+
+// The workout as it will be saved.
+function workoutToSave() {
+  return tracksDone() ? keepDoneSets(session.workout) : cleanWorkout(session.workout);
+}
 
 // With `autoStart` (used when picking a saved workout), the screen first lists the
 // exercises, and the guided workout begins when "Begin workout" is tapped. With
@@ -228,7 +238,7 @@ function saveRoutine() {
   const cleaned = cleanWorkout(session.workout);
   const name = cleaned.name.trim();
   if (!name) {
-    showToast("Give this workout a name first.");
+    showToast("Give this plan a name first.");
     return;
   }
   if (cleaned.exercises.length === 0) {
@@ -243,9 +253,11 @@ function finishWorkout() {
     saveRoutine();
     return;
   }
-  const cleaned = cleanWorkout(session.workout);
+  const cleaned = workoutToSave();
   if (cleaned.exercises.length === 0) {
-    showToast("Log at least one set with a number in it before finishing.");
+    showToast(tracksDone()
+      ? "Tick ✓ each set you did before finishing."
+      : "Log at least one set with a number in it before finishing.");
     return;
   }
   cleaned.name = cleaned.name.trim() || DEFAULT_WORKOUT_NAME;
@@ -263,7 +275,7 @@ async function discardOrDeleteWorkout() {
     handlers.onClose();
   } else {
     const message = isRoutine()
-      ? `Delete the saved workout "${workout.name}"? Workouts you already logged are not affected.`
+      ? `Delete the plan "${workout.name}"? Workouts you already logged are not affected.`
       : `Delete "${workout.name}"? Its XP will be removed too.`;
     if (!(await confirmAction(message, "Delete workout"))) return;
     handlers.onDelete(workout.id);
@@ -287,7 +299,7 @@ function renderBuildHeader(unit) {
   const title = isRoutine() ? session.workout.name : session.isNew ? "Log workout" : "Edit workout";
   backHeader(title, [
     isRoutine()
-      ? el("ion-button", { "aria-label": "Rename this workout", onclick: startRename }, icon("edit"))
+      ? el("ion-button", { "aria-label": "Rename this plan", onclick: startRename }, icon("edit"))
       : null,
     el("ion-button", {
       class: "unit-toggle",
@@ -312,7 +324,7 @@ function renderNameStep() {
   const confirmName = () => {
     const name = fieldText(nameInput).trim();
     if (name === "") {
-      showToast("Give this workout a name first.");
+      showToast("Give this plan a name first.");
       focusField(nameInput);
       return;
     }
@@ -334,7 +346,7 @@ function renderNameStep() {
     session.renaming = false;
     render();
   };
-  backHeader(session.renaming ? "Rename workout" : "New saved workout", [], goBackFromName);
+  backHeader(session.renaming ? "Rename plan" : "New plan", [], goBackFromName);
   byId("workoutContent").replaceChildren(
     el("form", {
       onsubmit: (event) => {
@@ -410,7 +422,12 @@ function toggleExercise(exercise) {
 
 function setCountText(exercise) {
   const count = exercise.sets.length;
-  return `${EXERCISE_TYPES[exercise.type].label} · ${count} ${count === 1 ? "set" : "sets"}`;
+  const label = EXERCISE_TYPES[exercise.type].label;
+  if (tracksDone() && count > 0) {
+    const done = exercise.sets.filter((set) => set.done === true).length;
+    return `${label} · ${done} of ${count} sets done`;
+  }
+  return `${label} · ${count} ${count === 1 ? "set" : "sets"}`;
 }
 
 function renderExerciseHead(exercise, isOpen) {
@@ -426,6 +443,7 @@ function renderExerciseHead(exercise, isOpen) {
       el("h3", { text: exercise.name }),
       el("p", { class: "muted", text: setCountText(exercise) })),
     icon("forward")),
+    tracksDone() && exercise.sets.length > 0 ? renderExerciseTick(exercise) : null,
     isOpen
       ? el("button", {
         class: "icon-button",
@@ -459,10 +477,11 @@ function renderSetRow(exercise, set, index, lastSet, unit) {
     });
     return input;
   });
-  return el("div", { class: "set-grid set-row", style: `--fields: ${fields.length}` },
+  return el("div", { class: `set-grid set-row${tracksDone() ? " has-tick" : ""}${set.done ? " is-done" : ""}`, style: `--fields: ${fields.length}` },
     el("span", { class: "set-number", text: String(index + 1) }),
     el("span", { class: "set-last", text: lastSet && isSetFilled(exercise.type, lastSet) ? describeSet(exercise.type, lastSet, unit) : "—" }),
     ...inputs,
+    tracksDone() ? renderTick(exercise, set, index) : null,
     el("button", {
       class: "icon-button",
       type: "button",
@@ -471,12 +490,54 @@ function renderSetRow(exercise, set, index, lastSet, unit) {
     }, icon("close")));
 }
 
+// A ✓ on the exercise itself, for when every set went as planned: one tap ticks all of its
+// sets (the ones with a number in them), and tapping again clears them.
+function renderExerciseTick(exercise) {
+  const filledSets = exercise.sets.filter((set) => isSetFilled(exercise.type, set));
+  const allDone = filledSets.length > 0 && filledSets.every((set) => set.done === true);
+  return el("button", {
+    class: `tick-button exercise-tick${allDone ? " is-done" : ""}`,
+    type: "button",
+    "aria-pressed": String(allDone),
+    "aria-label": `All sets of ${exercise.name} done`,
+    onclick: () => {
+      if (filledSets.length === 0) {
+        showToast(`Fill in the ${EXERCISE_TYPES[exercise.type].requiredField} first, then tick the sets.`);
+        return;
+      }
+      for (const set of filledSets) set.done = !allDone;
+      markChanged();
+      render();
+    },
+  }, icon("check"));
+}
+
+// The ✓ at the end of a set row. Ticking a set says you did it; only ticked sets are saved.
+function renderTick(exercise, set, index) {
+  return el("button", {
+    class: "tick-button",
+    type: "button",
+    "aria-pressed": String(set.done === true),
+    "aria-label": `Set ${index + 1} of ${exercise.name} done`,
+    onclick: () => {
+      if (set.done !== true && !isSetFilled(exercise.type, set)) {
+        showToast(`Fill in the ${EXERCISE_TYPES[exercise.type].requiredField} first, then tick the set.`);
+        return;
+      }
+      set.done = set.done !== true;
+      markChanged();
+      render();
+    },
+  }, icon("check"));
+}
+
 function renderSetHeader(exercise, unit) {
   const fields = EXERCISE_TYPES[exercise.type].fields;
-  return el("div", { class: "set-grid set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
+  return el("div", { class: `set-grid set-header${tracksDone() ? " has-tick" : ""}`, "aria-hidden": "true", style: `--fields: ${fields.length}` },
     el("span", { text: "Set" }),
     el("span", { text: "Last" }),
     ...fields.map((field) => el("span", { text: setFieldLabel(field, unit) })),
+    tracksDone() ? el("span", { text: "Done" }) : null,
     el("span"));
 }
 
@@ -607,22 +668,22 @@ function guidanceText() {
   const hasExercises = session.workout.exercises.length > 0;
   if (isRoutine()) {
     return hasExercises
-      ? "Set the reps for each set. Tap Save workout when you're done."
+      ? "Set the reps for each set. Tap Save plan when you're done."
       : "Add your first exercise below.";
   }
   if (!session.isNew) return "Fix anything that's wrong, then tap Save changes.";
   if (session.backStep === "preview" && hasExercises) {
-    return "Change anything for today, then tap Back. Your saved workout stays the same.";
+    return "Change anything for today, then tap Back. Your plan stays the same.";
   }
   return hasExercises
-    ? "Fill in each set as you do it. When you're done, tap Finish workout."
+    ? "Tick ✓ each set as you finish it; only ticked sets are saved. Then tap Finish workout."
     : "Add your first exercise below, for example Squat.";
 }
 
 function renderActionBar() {
   const { isNew } = session;
   const startsGuided = isNew && !isRoutine();
-  const primaryText = isRoutine() ? "Save workout" : isNew ? "Finish workout" : "Save changes";
+  const primaryText = isRoutine() ? "Save plan" : isNew ? "Finish workout" : "Save changes";
   const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : "Delete workout";
   return el("div", { class: "button-stack action-bar" },
     startsGuided
@@ -646,7 +707,7 @@ function renderHero(detail) {
 // fixing anything that is wrong.
 function renderReview() {
   const unit = loadUnit();
-  const cleaned = cleanWorkout(session.workout);
+  const cleaned = workoutToSave();
   const summary = workoutSummary(cleaned, []);
   const stat = (label, value) => el("div", { class: "stat-card" },
     el("span", { class: "muted", text: label }),

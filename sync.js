@@ -41,7 +41,7 @@ const plural = (count, word) => `${count} ${word}${count === 1 ? "" : "s"}`;
 // "12 workouts, 3 saved workouts", used when asking which copy to keep.
 export function describeData(data) {
   const { workouts, routines } = normalizeData(data);
-  return `${plural(workouts.length, "workout")}, ${plural(routines.length, "saved workout")}`;
+  return `${plural(workouts.length, "workout")}, ${plural(routines.length, "plan")}`;
 }
 
 // The record to upload. `previousUpdatedAt` is the cloud's current stamp, so the new one always

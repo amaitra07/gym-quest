@@ -59,11 +59,15 @@
           <div class="wrap">
             <p class="eyebrow" id="homeDate"></p>
             <div class="bento">
-              <button class="tile tile-next" id="nextTile" type="button">
+              <section class="tile tile-next" id="nextTile" aria-labelledby="nextTitle">
                 <span class="tag" id="nextTag">Up next</span>
                 <span class="tile-title" id="nextTitle"></span>
                 <span class="tile-meta" id="nextMeta"></span>
-                <span class="arrow-circle" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+                <div class="tile-actions" id="nextActions"></div>
+              </section>
+              <button class="tile tile-other" id="otherStartButton" type="button">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                <span id="otherStartText">Start something else</span>
               </button>
               <section class="tile tile-streak" aria-label="Day streak">
                 <span class="tile-number" id="streakNumber">0</span>
@@ -93,48 +97,12 @@
         </ion-content>
       </div>
 
-      <div class="ion-page" id="logScreen" hidden>
-        <ion-header translucent="true">
-          <ion-toolbar><ion-title>Log</ion-title></ion-toolbar>
-        </ion-header>
-        <ion-content fullscreen="true">
-          <ion-header collapse="condense">
-            <ion-toolbar><ion-title size="large">Log a workout</ion-title></ion-toolbar>
-          </ion-header>
-          <div class="wrap">
-            <section id="resumeCard" hidden></section>
-            <h2 class="section-title" id="pickerHeading">Pick a workout</h2>
-            <ion-list class="card-list" lines="none" id="pickerList" aria-labelledby="pickerHeading"></ion-list>
-            <section class="card" id="pickerEmpty" hidden>
-              <p class="empty">No saved workouts yet. Build one like Push day or Legs, then start it here in one tap with rest timers.</p>
-              <ion-button expand="block" class="primary-action" id="createFromPickerButton">Create a saved workout</ion-button>
-              <ion-button expand="block" class="secondary-action" id="starterFromPickerButton">New to this? Get a starter plan</ion-button>
-            </section>
-            <h2 class="section-title">Or log something else</h2>
-            <ion-list inset="true" lines="none">
-              <ion-item button="true" id="emptyWorkoutButton">
-                <ion-label>
-                  <h2>Empty workout</h2>
-                  <p>Add exercises as you go</p>
-                </ion-label>
-              </ion-item>
-              <ion-item button="true" id="activityButton">
-                <ion-label>
-                  <h2>Run, sport or other activity</h2>
-                  <p>Log the minutes, and the distance if there is one</p>
-                </ion-label>
-              </ion-item>
-            </ion-list>
-          </div>
-        </ion-content>
-      </div>
-
       <div class="ion-page" id="routinesScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
-            <ion-title>Workouts</ion-title>
+            <ion-title>Plans</ion-title>
             <ion-buttons slot="end">
-              <ion-button id="newRoutineButton" aria-label="New workout">
+              <ion-button id="newRoutineButton" aria-label="New plan">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                 New
               </ion-button>
@@ -143,21 +111,20 @@
         </ion-header>
         <ion-content fullscreen="true">
           <ion-header collapse="condense">
-            <ion-toolbar><ion-title size="large">Workouts</ion-title></ion-toolbar>
+            <ion-toolbar><ion-title size="large">Plans</ion-title></ion-toolbar>
           </ion-header>
           <div class="wrap">
-            <p class="muted screen-intro">Save workouts like Push day or Legs, then plan which day each one is for.</p>
+            <p class="muted screen-intro">A plan is a workout you repeat, like Push day or Legs. Pick a day for each, and Home shows today's.</p>
             <h2 class="section-title" id="weekHeading">This week</h2>
-            <section class="card week-card" aria-labelledby="weekHeading">
+            <section class="card week-card" id="weekCard" aria-labelledby="weekHeading">
               <div class="week-strip" id="weekStrip"></div>
               <p class="muted week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
             </section>
-            <h2 class="section-title" id="routineHeading">Saved workouts</h2>
+            <h2 class="section-title" id="routineHeading">Your plans</h2>
             <ion-list class="card-list" lines="none" id="routineList" aria-labelledby="routineHeading"></ion-list>
             <section class="card" id="routineEmpty" hidden>
-              <p class="empty">Nothing saved yet. Build your first workout, then start it from the Log tab in one tap.</p>
-              <ion-button expand="block" class="primary-action" id="createFromRoutinesButton">New workout</ion-button>
-              <ion-button expand="block" class="secondary-action" id="starterFromRoutinesButton">New to this? Get a starter plan</ion-button>
+              <p class="empty">No plans yet. Build one like Push day, then start it from Home in one tap. New to this? Home can make you a starter plan.</p>
+              <ion-button expand="block" class="primary-action" id="createFromRoutinesButton">New plan</ion-button>
             </section>
           </div>
         </ion-content>
@@ -264,8 +231,7 @@
 
     <ion-tab-bar id="tabBar" selected-tab="home" translucent="true" aria-label="Main">
       <ion-tab-button tab="home"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/></svg><ion-label>Home</ion-label></ion-tab-button>
-      <ion-tab-button tab="log"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><ion-label>Log</ion-label></ion-tab-button>
-      <ion-tab-button tab="routines"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><ion-label>Workouts</ion-label></ion-tab-button>
+      <ion-tab-button tab="routines"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><ion-label>Plans</ion-label></ion-tab-button>
       <ion-tab-button tab="progress"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="M8 15l3-3.5 3 2.5 5-6.5"/></svg><ion-label>Progress</ion-label></ion-tab-button>
       <ion-tab-button tab="history"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5M12 8v4.5l3 2"/></svg><ion-label>History</ion-label></ion-tab-button>
     </ion-tab-bar>

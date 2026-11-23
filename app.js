@@ -9,7 +9,7 @@ import { savePhotosForOffline } from "./how-to.js";
 import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
-import { renderLogPicker, renderRoutines } from "./routines.js";
+import { renderRoutines, startMenuOptions } from "./routines.js";
 import { buildSampleData } from "./sample-data.js";
 import { buildStarterPlan, STARTER_DAY_OPTIONS, STARTER_EQUIPMENT } from "./starter-plan.js";
 import { levelInfo, titleForLevel, totalXp } from "./stats.js";
@@ -41,7 +41,7 @@ let profile = loadProfile();
 
 const REST_DAY = "rest";
 
-const TABS = ["home", "log", "routines", "progress", "history"];
+const TABS = ["home", "routines", "progress", "history"];
 const IONIC_WAIT_MS = 8000;
 let currentTab = "home";
 let visibleScreen = "home";
@@ -67,8 +67,10 @@ function showTab(name) {
     onOpenWorkout: editWorkout,
     onDeleteWorkout: deleteFromHistory,
     onStartRoutine: startRoutine,
+    onLogRoutine: logRoutine,
     onResume: resumeWorkout,
-    onOpenLog: () => showTab("log"),
+    onStartEmpty: startEmptyWorkout,
+    onStartOther: startOther,
     onStarterPlan: addStarterPlan,
   });
   renderRoutines(routines, {
@@ -78,18 +80,8 @@ function showTab(name) {
     onPickDay: pickDayWorkout,
     onEdit: editRoutine,
     onCreate: createRoutine,
-    onStarterPlan: addStarterPlan,
   });
   renderProgress(workouts, loadUnit());
-  renderLogPicker(routines, loadDraft(), {
-    onStart: startRoutine,
-    onLog: logRoutine,
-    onResume: resumeWorkout,
-    onEmpty: startEmptyWorkout,
-    onActivity: startActivity,
-    onCreate: createRoutine,
-    onStarterPlan: addStarterPlan,
-  });
   showScreen(name);
 }
 
@@ -105,8 +97,8 @@ function openScreen(workout, isNew, { kind = "log", autoStart = false, resumeGui
     onDelete: kind === "routine" ? deleteRoutine : deleteWorkout,
     onClose: showHome,
   }, { kind, autoStart, resumeGuided });
-  // A workout being logged is the "Log" tab; a saved workout belongs to "Workouts".
-  const highlightedTab = kind === "routine" ? "routines" : isNew ? "log" : currentTab;
+  // A workout being logged starts from Home; a plan belongs to "Plans".
+  const highlightedTab = kind === "routine" ? "routines" : isNew ? "home" : currentTab;
   showScreen("workout", highlightedTab);
 }
 
@@ -133,6 +125,23 @@ async function logRoutine(routine) {
   openScreen(workoutFromRoutine(routine, workouts, todayIso()), true);
 }
 
+// "Start something else" on Home: pick another plan (then guided or logged), an empty
+// workout, or an activity. `featuredId` is the plan Home already shows, left out here.
+async function startOther(featuredId) {
+  const choice = await chooseOption("Start something else", startMenuOptions(routines, featuredId));
+  if (choice === null) return;
+  if (choice.kind === "empty") startEmptyWorkout();
+  else if (choice.kind === "activity") startActivity();
+  else {
+    const mode = await chooseOption(choice.routine.name, [
+      { label: "Start guided (timers, one set at a time)", value: "guided" },
+      { label: "Log it (fill in what you did)", value: "log" },
+    ]);
+    if (mode === "guided") startRoutine(choice.routine);
+    else if (mode === "log") logRoutine(choice.routine);
+  }
+}
+
 // Starting something new would overwrite the unfinished workout, so ask first.
 async function confirmReplacingDraft() {
   if (loadDraft() === null) return true;
@@ -156,7 +165,7 @@ function openActivityScreen(activity, isNew) {
     onDelete: deleteActivity,
     onClose: showHome,
   });
-  showScreen("activity", isNew ? "log" : currentTab);
+  showScreen("activity", isNew ? "home" : currentTab);
 }
 
 function saveActivity(activity, isNew) {
@@ -187,8 +196,8 @@ function createRoutine() {
   openScreen({ id: newId(), name: "", exercises: [] }, true, { kind: "routine" });
 }
 
-// Asks a beginner two questions, then adds ready-made saved workouts and plans their days.
-// Offered only while there are no saved workouts, so there is nothing to overwrite.
+// Asks a beginner two questions, then adds ready-made plans and picks their days.
+// Offered (on Home) only while there are no plans, so there is nothing to overwrite.
 async function addStarterPlan() {
   const days = await chooseOption("How many days a week can you train?",
     STARTER_DAY_OPTIONS.map((count) => ({ label: count === 1 ? "1 day" : `${count} days`, value: count })));
@@ -205,7 +214,7 @@ async function addStarterPlan() {
   showTab("home");
   const workoutCount = plan.routines.length === 1 ? "1 workout" : `${plan.routines.length} workouts`;
   const dayCount = days === 1 ? "1 day" : `${days} days`;
-  showToast(`Starter plan added: ${workoutCount}, ${dayCount} a week. Change anything in the Workouts tab.`);
+  showToast(`Starter plan added: ${workoutCount}, ${dayCount} a week. Change anything in the Plans tab.`);
 }
 
 function editRoutine(routine) {
@@ -283,7 +292,7 @@ function saveRoutine(routine, isNew) {
     : routines.map((existing) => (existing.id === routine.id ? routine : existing));
   if (!persistRoutines(nextRoutines)) return;
   showTab("routines");
-  showToast(`Saved “${routine.name}”. Start it any time from the Log tab.`);
+  showToast(`Saved “${routine.name}”. Start it any time from Home.`);
 }
 
 // Asks which saved workout (or a rest day) belongs to a weekday of the weekly plan.
@@ -311,7 +320,7 @@ function deleteRoutine(id) {
   const keptDays = Object.entries(schedule).filter(([, routineId]) => routineId !== id);
   persistSchedule(Object.fromEntries(keptDays));
   showTab("routines");
-  showToast("Saved workout deleted.");
+  showToast("Plan deleted.");
 }
 
 // The profile and settings screen, opened from the circle on Home.
@@ -361,7 +370,7 @@ function chooseUnit(unit) {
 // Replaces saved workouts, the weekly plan and history with the sample Push / Pull / Legs data.
 async function loadSampleData() {
   const hasData = workouts.length > 0 || routines.length > 0;
-  if (hasData && !(await confirmAction("Replace your saved workouts, weekly plan and history with sample data?", "Replace"))) return;
+  if (hasData && !(await confirmAction("Replace your plans, weekly plan and history with sample data?", "Replace"))) return;
   const sample = buildSampleData(todayIso());
   if (!saveWorkouts(sample.workouts) || !saveRoutines(sample.routines) || !saveSchedule(sample.schedule)) {
     showToast("Couldn't save. Your browser may be blocking or out of storage.");
@@ -375,7 +384,7 @@ async function loadSampleData() {
 }
 
 async function clearAllWorkoutData() {
-  if (!(await confirmAction("Delete every workout, saved workout and your weekly plan? This can't be undone.", "Delete everything"))) return;
+  if (!(await confirmAction("Delete every workout, every plan and your weekly plan? This can't be undone.", "Delete everything"))) return;
   if (!clearWorkoutData()) {
     showToast("Couldn't clear. Your browser may be blocking storage.");
     return;

@@ -89,6 +89,22 @@ export function cleanWorkout(workout) {
   return { ...workout, exercises };
 }
 
+function withoutTick(set) {
+  const copy = { ...set };
+  delete copy.done;
+  return copy;
+}
+
+// What a new workout saves: only the sets ticked as done (and filled in), without the tick
+// itself, since every saved set was done.
+export function keepDoneSets(workout) {
+  const exercises = workout.exercises.map((exercise) => ({
+    ...exercise,
+    sets: exercise.sets.filter((set) => set.done === true).map(withoutTick),
+  }));
+  return cleanWorkout({ ...workout, exercises });
+}
+
 export function exerciseNames(workouts) {
   const names = new Map(LIBRARY.map(([name]) => [normalizeName(name), name]));
   for (const workout of workouts) {
