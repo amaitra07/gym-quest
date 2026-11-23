@@ -1398,8 +1398,13 @@ ion-button.step-action {
 :root {
   --display-font: "Barlow Condensed", "Inter", sans-serif;
   --teal: #2de2c6;
-  --grid-line: color-mix(in srgb, var(--text) 5%, transparent);
-  --glow: color-mix(in srgb, var(--accent) 16%, transparent);
+  --aurora-violet: #8b6cff;
+  /* Pale colours wash out on a light page, so the clouds are stronger there. */
+  --aurora-strength: 55%;
+}
+
+:root.ion-palette-dark {
+  --aurora-strength: 40%;
 }
 
 ion-title.title-large,
@@ -1468,13 +1473,40 @@ ion-title.title-large,
   font-size: 132px;
 }
 
-/* A faint grid and a lime glow behind every screen, toolbars included. */
+/* "Aurora" behind every screen, toolbars included: big soft clouds of lime, teal and violet
+   that drift slowly (Anish's pick over a grid, dots, grain or stripes). */
 .ion-page {
+  background: var(--bg);
+}
+
+.ion-page::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
   background:
-    radial-gradient(120% 45% at 0% 0%, var(--glow), transparent 70%),
-    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 28px 28px,
-    var(--bg);
+    radial-gradient(80% 35% at 10% 10%, color-mix(in srgb, var(--accent) var(--aurora-strength), transparent), transparent 75%),
+    radial-gradient(75% 40% at 100% 50%, color-mix(in srgb, var(--teal) calc(var(--aurora-strength) * 0.8), transparent), transparent 75%),
+    radial-gradient(75% 40% at 0% 55%, color-mix(in srgb, var(--accent) calc(var(--aurora-strength) * 0.5), transparent), transparent 75%),
+    radial-gradient(90% 40% at 30% 95%, color-mix(in srgb, var(--aurora-violet) calc(var(--aurora-strength) * 0.9), transparent), transparent 75%),
+    linear-gradient(160deg,
+      color-mix(in srgb, var(--accent) calc(var(--aurora-strength) * 0.3), transparent),
+      color-mix(in srgb, var(--teal) calc(var(--aurora-strength) * 0.2), transparent) 50%,
+      color-mix(in srgb, var(--aurora-violet) calc(var(--aurora-strength) * 0.3), transparent));
+  filter: blur(30px);
+  animation: aurora 24s ease-in-out infinite alternate;
+}
+
+@keyframes aurora {
+  to {
+    transform: translate(6%, 4%) rotate(8deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ion-page::before {
+    animation: none;
+  }
 }
 
 ion-content {
