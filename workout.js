@@ -596,12 +596,18 @@ function suggestNames(typed, knownNames) {
     .slice(0, MAX_SUGGESTIONS);
 }
 
-// An "Add exercise" button below the exercises. It opens the form, which closes again once
+// A small "+ Exercise" link below the exercises. It opens the form, which closes again once
 // an exercise is added. With no exercises yet the form is open from the start.
 function renderAddExercise() {
   const hasExercises = session.workout.exercises.length > 0;
   if (hasExercises && !session.isAddingExercise) {
-    return button("secondary", { class: "add-exercise-button", onclick: openAddExercise }, icon("plus", "start"), "Add exercise");
+    return el("ion-button", {
+      class: "add-set add-exercise-button",
+      fill: "clear",
+      size: "small",
+      "aria-label": "Add exercise",
+      onclick: openAddExercise,
+    }, icon("plus", "start"), "Exercise");
   }
   const knownNames = exerciseNames(pastWorkouts());
   const typeChoice = el("ion-segment", { "aria-label": "Exercise type", value: "strength" },
@@ -684,7 +690,7 @@ function renderActionBar() {
   const { isNew } = session;
   const startsGuided = isNew && !isRoutine();
   const primaryText = isRoutine() ? "Save plan" : isNew ? "Finish workout" : "Save changes";
-  const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : "Delete workout";
+  const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : (isRoutine() ? "Delete plan" : "Delete workout");
   return el("div", { class: "button-stack action-bar" },
     startsGuided
       ? button("secondary", { onclick: () => startGuidedWorkout() }, icon("play", "start"), "Start guided workout")

@@ -1079,8 +1079,11 @@ ion-button.add-set {
   gap: 12px;
 }
 
-.add-exercise-button {
-  margin-top: 4px;
+/* "+ Exercise": a short centred link under the exercises, matching "+ Set" inside one. */
+ion-button.add-exercise-button {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 4px;
 }
 
 .filled-field {
