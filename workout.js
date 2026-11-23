@@ -32,7 +32,7 @@ import {
 import { summarize } from "./history-row.js";
 import { howToFor, showHowTo } from "./how-to.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
-import { workoutSummary } from "./records.js";
+import { headlineStat, workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
 import { clearDraft, loadGuidedRun, loadUnit, saveDraft, saveGuidedRun, saveUnit } from "./storage.js";
 
@@ -714,7 +714,8 @@ function renderHero(detail) {
 function renderReview() {
   const unit = loadUnit();
   const cleaned = workoutToSave();
-  const summary = workoutSummary(cleaned, []);
+  const summary = workoutSummary({ ...cleaned, xp: computeXp(cleaned) }, []);
+  const [headlineValue, headlineLabel] = headlineStat(summary, unit);
   const stat = (label, value) => el("div", { class: "stat-card" },
     el("span", { class: "muted", text: label }),
     el("strong", { text: value }));
@@ -733,7 +734,7 @@ function renderReview() {
       ? el("div", { class: "stat-cards" },
         stat("Exercises", String(summary.exerciseCount)),
         stat("Sets", String(summary.setCount)),
-        stat(`${unit} lifted`, summary.volume.toLocaleString()))
+        stat(headlineLabel, headlineValue))
       : el("section", { class: "card" },
         el("p", { class: "empty", text: "Nothing is logged yet. Tap Edit to add your sets." })),
     ...exerciseLists,

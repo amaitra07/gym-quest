@@ -1,4 +1,5 @@
 import { describeSet } from "./exercises.js";
+import { headlineStat } from "./records.js";
 
 // Draws the shareable summary of a finished workout as a PNG (see workoutSummary in
 // records.js for the input). Everything is drawn on a canvas, so nothing leaves the phone.
@@ -87,7 +88,7 @@ export async function drawShareCard(summary, unit) {
   const stats = [
     [String(summary.exerciseCount), summary.exerciseCount === 1 ? "exercise" : "exercises"],
     [String(summary.setCount), summary.setCount === 1 ? "set" : "sets"],
-    [summary.volume.toLocaleString(), `${unit} lifted`],
+    headlineStat(summary, unit),
   ];
   const gap = 24;
   const boxWidth = (WIDTH - MARGIN * 2 - gap * 2) / 3;

@@ -135,6 +135,7 @@ export function findNewRecords(pastWorkouts, workout) {
 export function workoutSummary(workout, records) {
   let setCount = 0;
   let volume = 0;
+  let reps = 0;
   const lines = [];
   for (const exercise of workout.exercises) {
     const filled = exercise.sets.filter((set) => isSetFilled(exercise.type, set));
@@ -142,6 +143,7 @@ export function workoutSummary(workout, records) {
     setCount += filled.length;
     if (exercise.type === "strength") {
       volume += filled.reduce((sum, set) => sum + (set.weight ?? 0) * set.reps, 0);
+      reps += filled.reduce((sum, set) => sum + set.reps, 0);
     }
     lines.push({ name: exercise.name, type: exercise.type, set: bestSet(exercise.type, filled) });
   }
@@ -152,7 +154,17 @@ export function workoutSummary(workout, records) {
     exerciseCount: lines.length,
     setCount,
     volume: Math.round(volume),
+    reps,
     lines,
     records,
   };
+}
+
+// The third number on the summary: weight lifted, or total reps when nothing had a weight
+// (bodyweight work), or the XP earned when there were no reps either (cardio, holds).
+// Returns [value, label].
+export function headlineStat(summary, unit) {
+  if (summary.volume > 0) return [summary.volume.toLocaleString(), `${unit} lifted`];
+  if (summary.reps > 0) return [summary.reps.toLocaleString(), summary.reps === 1 ? "rep" : "reps"];
+  return [`+${summary.xp}`, "XP"];
 }

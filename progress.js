@@ -31,7 +31,7 @@ function renderList(workouts, unit, rerender) {
   const exercises = listExercises(workouts);
   const rows = exercises.map((exercise) => listRow({
     title: exercise.name,
-    detail: `${exercise.sessions} ${sessionWord(exercise.sessions)} · last ${formatDate(exercise.lastDate)}`,
+    detail: `${exercise.sessions} ${sessionWord(exercise.sessions)} · last ${formatDate(exercise.lastDate).replace(/^(Today|Yesterday)$/, (word) => word.toLowerCase())}`,
     sideTop: "Best",
     sideBottom: describeSet(exercise.type, exercise.record.set, unit),
     label: `Open ${exercise.name}`,

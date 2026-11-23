@@ -149,7 +149,7 @@ ion-tab-button .icon {
 }
 
 .screen-intro {
-  margin: 0 4px;
+  margin: 0 4px 16px;
 }
 
 .guide {
@@ -164,7 +164,8 @@ ion-tab-button .icon {
   font-size: 15px;
 }
 
-.empty + ion-button {
+/* More specific than the button looks' own margins, which otherwise win. */
+.card > .empty + ion-button {
   margin-top: 14px;
 }
 
@@ -1598,6 +1599,7 @@ ion-button:active,
 
 /* The XP you earned pulses after a workout. */
 #completeContent > .hero-accent {
+  transform-origin: left center;
   animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) 0.05s both, pulse 1s 0.6s ease-in-out 2;
 }
 

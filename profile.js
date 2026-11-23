@@ -145,7 +145,6 @@ export function renderProfile(profile, unit, theme, actions) {
     title: "Profile",
     backLabel: "Home",
     onBack: actions.onBack,
-    end: [el("ion-button", { strong: "true", text: "Save", onclick: save })],
   });
   byId("profileContent").replaceChildren(
     sectionTitle("Account"),
