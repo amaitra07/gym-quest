@@ -194,7 +194,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   const phaseBackground = el("div", { class: "phase-fx", "aria-hidden": "true" },
     el("div", { class: "phase-layer is-work" }),
     el("div", { class: "phase-layer is-rest" }));
-  container.parentElement?.append(phaseBackground);
+  // It sits behind the whole screen, top bar included, so the bar matches the set or rest look.
+  (container.closest(".ion-page") ?? container.parentElement)?.prepend(phaseBackground);
   let shownPhase = null;
   // The fraction of sets the progress bar last showed.
   let shownProgress = completed.size / Math.max(steps.length, 1);

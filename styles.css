@@ -103,6 +103,7 @@ ion-header.header-ios ion-toolbar:last-of-type {
 
 ion-tab-bar {
   --border: 0;
+  padding-bottom: 6px;
 }
 
 ion-tab-button .icon {
@@ -1590,10 +1591,107 @@ ion-content {
   text-transform: uppercase;
 }
 
-ion-header ion-toolbar,
+/* The top bar has no tint of its own, so the Aurora runs straight up behind it. Once the
+   page scrolls under it (Ionic drops "inactive" from the header), it blurs what passes
+   beneath so the title stays readable. */
+ion-header ion-toolbar {
+  --background: transparent;
+}
+
+/* The blur sits on its own layer behind the bar and fades out below it, so there is no
+   hard line where the bar ends. */
+ion-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -18px;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+  transition: opacity 0.2s ease;
+}
+
+ion-header:not(.header-collapse-condense-inactive)::before {
+  opacity: 1;
+}
+
+ion-content ion-header::before {
+  display: none;
+}
+
+/* Ionic's own translucent header adds a blurred layer of its own, which turned the Aurora
+   behind the bar into a band with a hard edge. The fading blur above replaces it. (The
+   extra selectors outrank Ionic's rule.) */
+ion-app ion-header.header-translucent .header-background {
+  display: none;
+}
+
+/* A guided workout fits on one screen and never scrolls, so its top bar stays fully clear
+   over the set and rest backgrounds instead of blurring them into a band. */
+#workoutScreen:has(.player) ion-header::before {
+  display: none;
+}
+
+/* The tab bar is a floating "liquid glass" pill: frosted and see-through, with a bright
+   top edge, a soft shadow, and a lighter glass bubble behind the selected tab. Pages run
+   down behind it, so the Aurora shows around and through it. */
+:root {
+  --glass: color-mix(in srgb, #ffffff 55%, transparent);
+  --glass-edge: color-mix(in srgb, #ffffff 80%, transparent);
+  --glass-shine: color-mix(in srgb, #ffffff 90%, transparent);
+  --glass-shadow: 0 10px 30px rgba(30, 40, 20, 0.18);
+  --glass-bubble: color-mix(in srgb, #ffffff 70%, transparent);
+  --tab-bar-space: calc(88px + env(safe-area-inset-bottom));
+}
+
+:root.ion-palette-dark {
+  --glass: color-mix(in srgb, #2a2a30 45%, transparent);
+  --glass-edge: color-mix(in srgb, #ffffff 16%, transparent);
+  --glass-shine: color-mix(in srgb, #ffffff 30%, transparent);
+  --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  --glass-bubble: color-mix(in srgb, #ffffff 12%, transparent);
+}
+
 ion-tab-bar {
-  --background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px);
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 10;
+  height: 66px;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 6px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 34px;
+  --background: var(--glass);
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  box-shadow: inset 0 1px 0 var(--glass-shine), var(--glass-shadow);
+}
+
+ion-tab-button {
+  --padding-top: 2px;
+  --padding-bottom: 2px;
+  border-radius: 26px;
+  transition: background 0.25s ease;
+}
+
+ion-tab-button.tab-selected {
+  background: var(--glass-bubble);
+  box-shadow: inset 0 1px 0 var(--glass-shine);
+}
+
+/* Pages end behind the floating bar, so leave room to scroll the last item above it. */
+.pages {
+  flex: 1 1 auto;
+}
+
+ion-content {
+  --padding-bottom: var(--tab-bar-space);
 }
 
 /* The big title scrolls with the page, so it sits straight on the grid. */
@@ -1747,7 +1845,7 @@ ion-tab-button.tab-selected .icon {
 
 /* Fills the screen behind the guided workout. The set and rest layers fade into each other. */
 .phase-fx {
-  position: fixed;
+  position: absolute;
   z-index: 0;
   inset: 0;
   overflow: hidden;
