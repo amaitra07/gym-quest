@@ -165,6 +165,10 @@ ion-tab-button .icon {
 }
 
 /* More specific than the button looks' own margins, which otherwise win. */
+ion-button.log-day-button {
+  margin-top: 12px;
+}
+
 .card > .empty + ion-button {
   margin-top: 14px;
 }

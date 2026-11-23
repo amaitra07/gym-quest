@@ -425,7 +425,7 @@ function setCountText(exercise) {
   const label = EXERCISE_TYPES[exercise.type].label;
   if (tracksDone() && count > 0) {
     const done = exercise.sets.filter((set) => set.done === true).length;
-    return `${label} · ${done} of ${count} sets done`;
+    return `${label} · ${done} of ${count} ${count === 1 ? "set" : "sets"} done`;
   }
   return `${label} · ${count} ${count === 1 ? "set" : "sets"}`;
 }
@@ -682,13 +682,14 @@ function guidanceText() {
     return "Change anything for today, then tap Back. Your plan stays the same.";
   }
   return hasExercises
-    ? "Tick ✓ each set as you finish it; only ticked sets are saved. Then tap Finish workout."
+    ? "Tick ✓ each set you did; only ticked sets are saved. Then tap Finish workout."
     : "Add your first exercise below, for example Squat.";
 }
 
 function renderActionBar() {
   const { isNew } = session;
-  const startsGuided = isNew && !isRoutine();
+  // A guided run is only offered for today; a past day is logged from memory.
+  const startsGuided = isNew && !isRoutine() && session.workout.date >= todayIso();
   const primaryText = isRoutine() ? "Save plan" : isNew ? "Finish workout" : "Save changes";
   const secondaryText = isNew ? (isRoutine() ? "Discard" : "Discard workout") : (isRoutine() ? "Delete plan" : "Delete workout");
   return el("div", { class: "button-stack action-bar" },

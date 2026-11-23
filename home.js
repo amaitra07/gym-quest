@@ -114,11 +114,11 @@ function renderLastWorkout(workouts, onOpenWorkout) {
 }
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
-// onStartRoutine, onLogRoutine, onResume, onStartEmpty, onStartOther, onStarterPlan }.
+// onStartRoutine, onLogRoutine, onResume, onStartEmpty, onStartOther, onStarterPlan, onLogDay }.
 export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
   renderHeader(profile);
   renderStats(workouts);
   renderOtherStart(renderNextTile(workouts, routines, schedule, draft, actions), actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
-  renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout);
+  renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout, actions.onLogDay);
 }

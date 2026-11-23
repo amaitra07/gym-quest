@@ -1,6 +1,7 @@
 import { initAccount, renderAccountSection } from "./account.js";
 import { createActivity, isActivity, openActivity } from "./activity.js";
 import { renderComplete } from "./complete.js";
+import { longDate } from "./calendar.js";
 import { todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, chooseOption, confirmAction, el, scrollToTop, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
@@ -69,7 +70,8 @@ function showTab(name) {
     onStartRoutine: startRoutine,
     onLogRoutine: logRoutine,
     onResume: resumeWorkout,
-    onStartEmpty: startEmptyWorkout,
+    onStartEmpty: () => startEmptyWorkout(),
+    onLogDay: logForDay,
     onStartOther: startOther,
     onStarterPlan: addStarterPlan,
   });
@@ -97,8 +99,9 @@ function openScreen(workout, isNew, { kind = "log", autoStart = false, resumeGui
     onDelete: kind === "routine" ? deleteRoutine : deleteWorkout,
     onClose: showHome,
   }, { kind, autoStart, resumeGuided });
-  // A workout being logged starts from Home; a plan belongs to "Plans".
-  const highlightedTab = kind === "routine" ? "routines" : isNew ? "home" : currentTab;
+  // A plan belongs to "Plans"; a workout stays with the tab it was started from (Home, or
+  // History for a past day).
+  const highlightedTab = kind === "routine" ? "routines" : currentTab;
   showScreen("workout", highlightedTab);
 }
 
@@ -106,10 +109,11 @@ function resumeWorkout() {
   openScreen(loadDraft() ?? createWorkout(), true, { resumeGuided: true });
 }
 
-async function startEmptyWorkout() {
+// `date` (YYYY-MM-DD) is the day the workout is for: today, or a past day picked in History.
+async function startEmptyWorkout(date = todayIso()) {
   if (!(await confirmReplacingDraft())) return;
   clearDraft();
-  openScreen(createWorkout(), true);
+  openScreen({ ...createWorkout(), date }, true);
 }
 
 async function startRoutine(routine) {
@@ -120,9 +124,19 @@ async function startRoutine(routine) {
 
 // Opens a saved workout straight on the set grid, filled in from the plan, so you can type
 // in what you did and tap Finish workout without running the guided timers.
-async function logRoutine(routine) {
+async function logRoutine(routine, date = todayIso()) {
   if (!(await confirmReplacingDraft())) return;
-  openScreen(workoutFromRoutine(routine, workouts, todayIso()), true);
+  openScreen(workoutFromRoutine(routine, workouts, date), true);
+}
+
+// "Log a workout for <day>" in History: a plan (opened on the tick grid, since a guided
+// run only makes sense live), an empty workout, or an activity, all dated that day.
+async function logForDay(date) {
+  const choice = await chooseOption(`Log a workout for ${longDate(date)}`, startMenuOptions(routines));
+  if (choice === null) return;
+  if (choice.kind === "routine") logRoutine(choice.routine, date);
+  else if (choice.kind === "empty") startEmptyWorkout(date);
+  else startActivity(date);
 }
 
 // "Start something else" on Home: pick another plan (then guided or logged), an empty
@@ -155,8 +169,8 @@ function editWorkout(workout) {
 }
 
 // Logging an activity does not touch an unfinished workout, so nothing needs confirming.
-function startActivity() {
-  openActivityScreen(createActivity(), true);
+function startActivity(date = todayIso()) {
+  openActivityScreen({ ...createActivity(), date }, true);
 }
 
 function openActivityScreen(activity, isNew) {
@@ -165,7 +179,7 @@ function openActivityScreen(activity, isNew) {
     onDelete: deleteActivity,
     onClose: showHome,
   });
-  showScreen("activity", isNew ? "home" : currentTab);
+  showScreen("activity", currentTab);
 }
 
 function saveActivity(activity, isNew) {
@@ -173,8 +187,7 @@ function saveActivity(activity, isNew) {
     ? [...workouts, activity]
     : workouts.map((existing) => (existing.id === activity.id ? activity : existing));
   if (!persist(nextWorkouts)) return;
-  if (isNew) showTab("home");
-  else showHome();
+  showHome();
   showToast(`Saved ${activity.name}. +${activity.xp} XP`);
 }
 
@@ -242,10 +255,10 @@ function persistRoutines(nextRoutines) {
 }
 
 // The screen after finishing a new workout: XP, any new records, and the share card.
+// Done returns to the tab the workout was started from: Home, or History for a past day.
 function showComplete(workout, records, levelMessage) {
-  currentTab = "home";
-  renderComplete(workout, records, levelMessage, loadUnit(), () => showTab("home"));
-  showScreen("complete", "home");
+  renderComplete(workout, records, levelMessage, loadUnit(), showHome);
+  showScreen("complete", currentTab);
 }
 
 function persistSchedule(nextSchedule) {

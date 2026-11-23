@@ -1,4 +1,5 @@
 import { clearSelectedDate, getSelectedDate, longDate, renderCalendar } from "./calendar.js";
+import { todayIso } from "./dates.js";
 import { byId } from "./dom.js";
 import { workoutRow } from "./history-row.js";
 
@@ -9,16 +10,27 @@ export function visibleWorkouts(workouts, selectedDate) {
     .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1));
 }
 
-function emptyMessage(hasAnyWorkouts) {
-  return hasAnyWorkouts
+function emptyMessage(selectedDate) {
+  return selectedDate !== null
     ? "No workout logged this day."
-    : "No workouts yet. Tap “Log” below when you’re ready to log your first one.";
+    : "No workouts yet. Start one from Home, or tap a day above to log one you already did.";
 }
 
-export function renderHistory(workouts, onOpenWorkout, onDeleteWorkout) {
+// A workout can be logged for today or any earlier day, never one still to come.
+export function canLogForDay(selectedDate, today = todayIso()) {
+  return selectedDate !== null && selectedDate <= today;
+}
+
+// "Feb 3": short enough for a button.
+function shortDay(isoDate) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+export function renderHistory(workouts, onOpenWorkout, onDeleteWorkout, onLogDay) {
   const selectedDate = getSelectedDate();
   const shown = visibleWorkouts(workouts, selectedDate);
-  const rerender = () => renderHistory(workouts, onOpenWorkout, onDeleteWorkout);
+  const rerender = () => renderHistory(workouts, onOpenWorkout, onDeleteWorkout, onLogDay);
 
   renderCalendar(workouts, rerender);
   byId("historyHeading").textContent =
@@ -33,5 +45,12 @@ export function renderHistory(workouts, onOpenWorkout, onDeleteWorkout) {
   list.replaceChildren(...shown.map((workout) => workoutRow(workout, onOpenWorkout, onDeleteWorkout)));
   byId("historyHint").hidden = shown.length === 0;
   byId("historyEmpty").hidden = shown.length > 0;
-  byId("historyEmptyText").textContent = emptyMessage(workouts.length > 0);
+  byId("historyEmptyText").textContent = emptyMessage(selectedDate);
+
+  const logDayButton = byId("logDayButton");
+  logDayButton.hidden = !canLogForDay(selectedDate);
+  if (canLogForDay(selectedDate)) {
+    byId("logDayText").textContent = `Log a workout for ${shortDay(selectedDate)}`;
+    logDayButton.onclick = () => onLogDay(selectedDate);
+  }
 }
