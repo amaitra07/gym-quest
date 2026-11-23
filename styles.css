@@ -1364,16 +1364,84 @@ ion-button.step-action {
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
+  stroke-dasharray: 1;
+  animation: chart-draw 1.1s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .chart-dot {
   fill: var(--panel);
   stroke: var(--ion-color-primary);
   stroke-width: 2.5;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: chart-dot 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation-delay: calc(var(--reach) * 1s);
 }
 
+/* Record dots glow after the line has drawn. */
 .chart-record {
   fill: var(--ion-color-primary);
+  animation:
+    chart-dot 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--reach) * 1s) both,
+    record-glow 1.6s ease-in-out 1.3s 2;
+}
+
+@keyframes chart-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes chart-dot {
+  from {
+    transform: scale(0);
+  }
+}
+
+@keyframes record-glow {
+  50% {
+    filter: drop-shadow(0 0 6px var(--accent));
+  }
+}
+
+/* A new personal record: the title drops in gold with a shine sweeping across it, and the
+   PR badges pop in one after another. */
+#completeContent > .hero-title.is-pr {
+  background: linear-gradient(100deg, var(--gold) 35%, #fff6cf 50%, var(--gold) 65%) 0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    slam 0.5s cubic-bezier(0.3, 1.45, 0.5, 1) both,
+    shine 1.6s 0.5s ease-in-out 2;
+}
+
+#completeContent ion-badge {
+  --background: var(--gold);
+  --color: #2a1f00;
+  animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) both;
+}
+
+#completeContent ion-item:nth-child(2) ion-badge {
+  animation-delay: 0.15s;
+}
+
+#completeContent ion-item:nth-child(n + 3) ion-badge {
+  animation-delay: 0.3s;
+}
+
+@keyframes shine {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
 }
 
 .share-preview-frame {
@@ -1399,6 +1467,7 @@ ion-button.step-action {
   --display-font: "Barlow Condensed", "Inter", sans-serif;
   --teal: #2de2c6;
   --aurora-violet: #8b6cff;
+  --gold: #f5c542;
   /* Pale colours wash out on a light page, so the clouds are stronger there. */
   --aurora-strength: 55%;
 }
@@ -1732,6 +1801,66 @@ ion-tab-button.tab-selected .icon {
   animation-delay: 0.2s;
 }
 
+/* Finishing a set in guided mode: a lime ring and a check burst out of the button. */
+.set-burst {
+  position: fixed;
+  z-index: 50;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.set-burst-ring {
+  position: absolute;
+  left: -40px;
+  top: -40px;
+  width: 80px;
+  height: 80px;
+  border: 4px solid var(--accent);
+  border-radius: 50%;
+  animation: burst-ring 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.set-burst-check {
+  position: absolute;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  color: var(--accent);
+  stroke-width: 3.5;
+  animation: burst-check 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
+}
+
+@keyframes burst-ring {
+  from {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+@keyframes burst-check {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+
+  35% {
+    opacity: 1;
+    transform: scale(1.2) translateY(-6px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1) translateY(-46px);
+  }
+}
+
 /* "Up next" between exercises: a lime line saying the last exercise is done. */
 .up-next-done {
   display: flex;
@@ -2007,6 +2136,7 @@ ion-tab-button.tab-selected .icon {
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
     transition-duration: 0.001ms !important;
   }
 }

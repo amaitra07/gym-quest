@@ -7,6 +7,7 @@ import { byId, chooseOption, confirmAction, el, scrollToTop, showToast } from ".
 import { newId, workoutFromRoutine } from "./exercises.js";
 import { renderScreens } from "./home.js";
 import { savePhotosForOffline } from "./how-to.js";
+import { slideIn, staggerIn } from "./motion.js";
 import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
@@ -61,6 +62,7 @@ function showScreen(name, highlightedTab = name) {
 }
 
 function showTab(name) {
+  const cameFrom = visibleScreen;
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
@@ -85,6 +87,21 @@ function showTab(name) {
   });
   renderProgress(workouts, loadUnit());
   showScreen(name);
+  if (cameFrom !== name) animateTabIn(name, cameFrom);
+}
+
+// Arriving on a tab: the screen slides in from the side of the tab you came from, and its
+// cards and rows slide up one after another. Redrawing the same tab does neither.
+function animateTabIn(name, cameFrom) {
+  const screen = byId(`${name}Screen`);
+  const from = TABS.indexOf(cameFrom);
+  slideIn(screen.querySelector("ion-content"), from === -1 ? 0 : Math.sign(TABS.indexOf(name) - from));
+  const pieces = [];
+  for (const child of screen.querySelectorAll(".wrap > :not([hidden])")) {
+    if (child.matches(".bento, .card-list")) pieces.push(...child.children);
+    else pieces.push(child);
+  }
+  staggerIn(pieces);
 }
 
 // Closing a workout returns to the tab it was opened from.

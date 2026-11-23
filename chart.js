@@ -52,8 +52,11 @@ export function lineChart(points, description) {
   }
 
   const path = points.map((point, index) => `${index === 0 ? "M" : "L"}${x(point).toFixed(1)} ${y(point.value).toFixed(1)}`).join(" ");
-  const dots = points.map((point) => svg("circle", {
+  // The line draws itself left to right (pathLength 1 lets CSS animate it without measuring),
+  // and each dot pops in as the line reaches it.
+  const dots = points.map((point, index) => svg("circle", {
     class: point.isRecord ? "chart-dot chart-record" : "chart-dot",
+    style: `--reach: ${points.length > 1 ? index / (points.length - 1) : 0}`,
     cx: x(point).toFixed(1),
     cy: y(point.value).toFixed(1),
     r: point.isRecord ? 6 : 4,
@@ -68,7 +71,7 @@ export function lineChart(points, description) {
 
   return svg("svg", { class: "chart", viewBox: `0 0 ${WIDTH} ${HEIGHT}`, role: "img", "aria-label": description },
     ...grid,
-    points.length > 1 ? svg("path", { class: "chart-line", d: path }) : null,
+    points.length > 1 ? svg("path", { class: "chart-line", d: path, pathLength: 1 }) : null,
     ...dots,
     ...dateLabels);
 }

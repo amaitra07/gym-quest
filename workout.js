@@ -31,6 +31,7 @@ import {
 } from "./exercises.js";
 import { summarize } from "./history-row.js";
 import { howToFor, showHowTo } from "./how-to.js";
+import { animateHeights, pop, prefersLessMotion } from "./motion.js";
 import { restoreGuidedState, runGuidedWorkout } from "./player.js";
 import { headlineStat, workoutSummary } from "./records.js";
 import { computeXp } from "./stats.js";
@@ -415,9 +416,23 @@ function openExercise() {
   return workout.exercises.find((exercise) => exercise.id === openExerciseId) ?? null;
 }
 
+// Opening one exercise closes the other; both slide rather than snap, and their arrows turn.
 function toggleExercise(exercise) {
-  session.openExerciseId = openExercise() === exercise ? null : exercise.id;
-  render();
+  const wasOpen = openExercise();
+  session.openExerciseId = wasOpen === exercise ? null : exercise.id;
+  animateHeights(byId("workoutContent"), ".exercise", render);
+  turnArrow(wasOpen, "rotate(90deg)", "rotate(0deg)");
+  turnArrow(openExercise(), "rotate(0deg)", "rotate(90deg)");
+}
+
+function exerciseSection(exercise) {
+  return exercise ? byId("workoutContent").querySelector(`.exercise[data-motion-key="${exercise.id}"]`) : null;
+}
+
+function turnArrow(exercise, from, to) {
+  const arrow = exerciseSection(exercise)?.querySelector(".exercise-toggle .icon");
+  if (!arrow || prefersLessMotion()) return;
+  arrow.animate([{ transform: from }, { transform: to }], { duration: 280, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
 }
 
 function setCountText(exercise) {
@@ -508,6 +523,11 @@ function renderExerciseTick(exercise) {
       for (const set of filledSets) set.done = !allDone;
       markChanged();
       render();
+      if (allDone) return;
+      // Ticking a whole exercise pops its tick, then ripples down its sets if they are showing.
+      const section = exerciseSection(exercise);
+      pop(section?.querySelector(".exercise-tick"));
+      section?.querySelectorAll(".set-row .tick-button").forEach((tick, position) => pop(tick, 80 + position * 70));
     },
   }, icon("check"));
 }
@@ -527,6 +547,7 @@ function renderTick(exercise, set, index) {
       set.done = set.done !== true;
       markChanged();
       render();
+      if (set.done) pop(byId("workoutContent").querySelector(`[aria-label="Set ${index + 1} of ${CSS.escape(exercise.name)} done"]`));
     },
   }, icon("check"));
 }
@@ -543,10 +564,10 @@ function renderSetHeader(exercise, unit) {
 
 function renderExercise(exercise, unit) {
   if (openExercise() !== exercise) {
-    return el("section", { class: "card exercise is-folded" }, renderExerciseHead(exercise, false));
+    return el("section", { class: "card exercise is-folded", "data-motion-key": exercise.id }, renderExerciseHead(exercise, false));
   }
   const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
-  return el("section", { class: "card exercise is-open" },
+  return el("section", { class: "card exercise is-open", "data-motion-key": exercise.id },
     renderExerciseHead(exercise, true),
     exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
     ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, last?.sets[index], unit)),

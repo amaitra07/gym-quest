@@ -3,6 +3,7 @@ import { beep, finalSecondsLeft } from "./countdown.js";
 import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
 import { EXERCISE_TYPES, isSetFilled } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
+import { burstFrom } from "./motion.js";
 
 const TICK_MS = 250;
 // How long the set and rest backgrounds take to fade into each other (matches styles.css).
@@ -164,6 +165,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     el("div", { class: "phase-layer is-rest" }));
   container.parentElement?.append(phaseBackground);
   let shownPhase = null;
+  // The fraction of sets the progress bar last showed.
+  let shownProgress = completed.size / Math.max(steps.length, 1);
 
   const now = () => Date.now();
 
@@ -193,6 +196,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   }
 
   function completeSet() {
+    burstFrom(container.querySelector(".step-action"));
     completed.add(index);
     steps[index].set.done = true;
     onEdit();
@@ -325,10 +329,18 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
 
   /* ---------- Rendering ---------- */
 
-  // How many sets are done, as a bar. Tapping it opens the list of all exercises.
+  // How many sets are done, as a bar. Tapping it opens the list of all exercises. It is
+  // drawn at the last value shown and then moved, so a finished set slides it forward.
   function progressBar() {
     const { done, total } = progressSummary(steps, completed, index, finished);
     const percent = Math.round((done / total) * 100);
+    const bar = el("ion-progress-bar", { value: shownProgress, "aria-label": `${percent}% of sets done` });
+    if (shownProgress !== done / total) {
+      shownProgress = done / total;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        bar.value = shownProgress;
+      }));
+    }
     return el("button", {
       class: "progress-summary",
       type: "button",
@@ -338,7 +350,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     el("span", { class: "progress-row" },
       el("span", { class: "progress-count", text: `${done} of ${total} sets` }),
       el("span", { class: "progress-link" }, "All exercises", icon("forward"))),
-    el("ion-progress-bar", { value: done / total, "aria-label": `${percent}% of sets done` }));
+    bar);
   }
 
   // Pause sits in the top-left corner, opposite End, out of the way of the big buttons.

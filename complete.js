@@ -37,7 +37,7 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
   });
   fillContainer(
     byId("completeContent"),
-    el("h1", { class: "hero-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
+    el("h1", { class: records.length > 0 ? "hero-title is-pr" : "hero-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
     el("p", { class: "hero-accent", text: levelMessage ?? `+${summary.xp} XP` }),
     records.length > 0
       ? el("h2", { class: "section-title", text: records.length === 1 ? "New personal record" : "New personal records" })
