@@ -1801,6 +1801,96 @@ ion-tab-button.tab-selected .icon {
   animation-delay: 0.2s;
 }
 
+/* The tappable "Set 2 of 4 · 135 lb × 8 reps" line in guided mode, which opens Edit set. */
+.edit-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: center;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.edit-target .icon {
+  width: 15px;
+  height: 15px;
+  color: var(--ion-color-primary);
+}
+
+.rest-toggle {
+  margin: 14px 4px 6px;
+  font-size: 16px;
+}
+
+/* The Edit sets sheet in guided mode: one row per set, the one you are on outlined in lime. */
+.sheet-set-row {
+  display: grid;
+  grid-template-columns: 52px repeat(var(--fields), minmax(0, 1fr)) 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-small);
+}
+
+.sheet-set-row.is-current {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.sheet-set-row.is-done .number-input {
+  opacity: 0.7;
+}
+
+.sheet-set-header {
+  margin-bottom: 0;
+  padding-block: 0;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.sheet-set-header span:first-child {
+  text-align: left;
+}
+
+.sheet-set-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.sheet-set-label strong {
+  color: var(--ion-color-primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sheet-set-label small {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.sheet-set-row .icon-button {
+  width: 36px;
+  height: 36px;
+  opacity: 0.6;
+}
+
+.add-set-button {
+  margin-top: 6px;
+}
+
 /* Finishing a set in guided mode: a lime ring and a check burst out of the button. */
 .set-burst {
   position: fixed;

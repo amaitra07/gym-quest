@@ -71,6 +71,37 @@ export function nudgeSetValue(set, type, fieldKey, direction, unit) {
   return setSetValue(set, type, fieldKey, current + direction * stepSize(fieldKey, unit));
 }
 
+// Copies `set`'s numbers to the sets of the same exercise still to come after `index`
+// (finished ones keep what was done). Used by "Use for the rest of this exercise".
+export function copyToLaterSets(steps, index, completed) {
+  const { exercise, set } = steps[index];
+  steps.forEach((step, position) => {
+    if (position <= index || step.exercise !== exercise || completed.has(position)) return;
+    for (const field of EXERCISE_TYPES[exercise.type].fields) step.set[field.key] = set[field.key] ?? null;
+  });
+}
+
+// Adds a copy of `set` to `exercise`, straight after its last set.
+export function addSetLike(exercise, set) {
+  const copy = { ...set };
+  delete copy.done;
+  exercise.sets.push(copy);
+  return copy;
+}
+
+// After sets were added or removed, the steps are rebuilt. This finds where things moved:
+// the finished sets, and the set to stand on (`currentSet`, or else the first unfinished one).
+export function remapPositions(newSteps, finishedSets, currentSet) {
+  const completed = new Set();
+  for (const set of finishedSets) {
+    const position = newSteps.findIndex((step) => step.set === set);
+    if (position !== -1) completed.add(position);
+  }
+  let index = newSteps.findIndex((step) => step.set === currentSet);
+  if (index === -1) index = newSteps.findIndex((step, position) => !completed.has(position));
+  return { index, completed };
+}
+
 // The first step of a later exercise, or -1 if this is the last exercise.
 export function nextExerciseIndex(steps, index) {
   const current = steps[index].exercise;
@@ -141,7 +172,7 @@ export function restoreGuidedState(saved, workout) {
 // the run has got to, and with null once it is over. `options.onEdit()` is called after the
 // person fixes a finished set's numbers, which changes the workout in place.
 export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom = null, onProgress = () => {}, onEdit = () => {} } = {}) {
-  const steps = buildSteps(workout);
+  let steps = buildSteps(workout);
   const totalClock = createStopwatch(resumeFrom?.totalMs ?? 0);
   const phaseClock = createStopwatch(resumeFrom?.phaseMs ?? 0);
   let index = resumeFrom?.index ?? 0;
@@ -358,18 +389,9 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     return el("ion-button", { onclick: togglePause }, icon(paused ? "play" : "pause", "start"), paused ? "Continue" : "Pause");
   }
 
-  // A sheet for fixing the numbers of the set finished last, for when you did less (or
-  // more) than planned. Changes are saved as you tap.
-  function editLastSet() {
-    const position = lastFinishedIndex(completed, index);
-    if (position === -1) return;
-    const step = steps[position];
-    const { exercise, set } = step;
-    editSheet = openSheet(`${exercise.name} · ${setLabel(step)}`, () => {
-      editSheet = null;
-      if (!stopped) render();
-    });
-    const rows = EXERCISE_TYPES[exercise.type].fields.map((field) => {
+  // − / + rows for each number of `set`; `onChanged` runs after every change.
+  function stepperRows(exercise, set, onChanged) {
+    return EXERCISE_TYPES[exercise.type].fields.map((field) => {
       const input = el("input", {
         class: "number-input",
         type: "number",
@@ -381,12 +403,12 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         onChange: (event) => {
           const typed = event.target.value === "" ? 0 : Number(event.target.value);
           event.target.value = setSetValue(set, exercise.type, field.key, typed) ?? "";
-          onEdit();
+          onChanged();
         },
       });
       const nudge = (direction) => () => {
         input.value = nudgeSetValue(set, exercise.type, field.key, direction, unit) ?? "";
-        onEdit();
+        onChanged();
       };
       return el("div", { class: "stepper-row" },
         el("span", { class: "stepper-label", text: setFieldName(field) }),
@@ -394,10 +416,144 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         input,
         el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": `More ${field.label.toLowerCase()}`, onclick: nudge(1) }, icon("plus")));
     });
-    editSheet.content.append(
-      el("p", { class: "guide", text: "Change it to what you actually did. It's saved straight away." }),
-      ...rows);
   }
+
+  function openEditSheet(title) {
+    editSheet = openSheet(title, () => {
+      editSheet = null;
+      if (!stopped) render();
+    });
+    return editSheet;
+  }
+
+  // A sheet for fixing the numbers of the set finished last, for when you did less (or
+  // more) than planned. Changes are saved as you tap.
+  function editLastSet() {
+    const position = lastFinishedIndex(completed, index);
+    if (position === -1) return;
+    const step = steps[position];
+    openEditSheet(`${step.exercise.name} · ${setLabel(step)}`).content.append(
+      el("p", { class: "guide", text: "Change it to what you actually did. It's saved straight away." }),
+      ...stepperRows(step.exercise, step.set, onEdit));
+  }
+
+  // After sets were added or removed: rebuild the steps and stand on `currentSet`.
+  function rebuildSteps(currentSet) {
+    const finishedSets = [...completed].map((position) => steps[position].set);
+    steps = buildSteps(workout);
+    const moved = remapPositions(steps, finishedSets, currentSet);
+    completed.clear();
+    for (const position of moved.completed) completed.add(position);
+    return moved.index;
+  }
+
+  // A sheet listing every set of this exercise: change any of them, add a set, or remove
+  // one. A change can also go to the sets after it that are not done yet. The clock keeps
+  // going.
+  function editExerciseSets() {
+    const { exercise } = steps[index];
+    const sheet = openEditSheet(exercise.name);
+    let forRest = true;
+    const fields = EXERCISE_TYPES[exercise.type].fields;
+    const restToggle = el("ion-checkbox", {
+      class: "rest-toggle",
+      "label-placement": "end",
+      justify: "start",
+      checked: true,
+      onIonChange: (event) => {
+        forRest = event.detail.checked;
+      },
+    }, "Changes also go to the sets after it");
+
+    const valueInput = (step, position, field) => el("input", {
+      class: "number-input",
+      type: "number",
+      inputmode: field.step === "1" || field.step === "5" ? "numeric" : "decimal",
+      min: "0",
+      step: field.step,
+      value: step.set[field.key] ?? "",
+      "aria-label": `${setFieldName(field)}, set ${step.setNumber}`,
+      onChange: (event) => {
+        const typed = event.target.value === "" ? 0 : Number(event.target.value);
+        setSetValue(step.set, exercise.type, field.key, typed);
+        if (forRest) copyToLaterSets(steps, position, completed);
+        onEdit();
+        draw();
+      },
+    });
+
+    const setRow = (step, position) => {
+      const isCurrent = position === index;
+      const isDone = completed.has(position);
+      const remove = el("button", {
+        class: "icon-button",
+        type: "button",
+        "aria-label": `Remove set ${step.setNumber}`,
+        onclick: () => removeSet(position),
+      }, icon("close"));
+      remove.disabled = steps.length === 1;
+      return el("div", { class: `sheet-set-row${isCurrent ? " is-current" : ""}${isDone ? " is-done" : ""}`, style: `--fields: ${fields.length}` },
+        el("span", { class: "sheet-set-label" },
+          el("strong", { text: String(step.setNumber) }),
+          el("small", { text: isCurrent ? "Now" : isDone ? "Done" : "" })),
+        ...fields.map((field) => valueInput(step, position, field)),
+        remove);
+    };
+
+    function draw() {
+      const rows = [];
+      steps.forEach((step, position) => {
+        if (step.exercise === exercise) rows.push(setRow(step, position));
+      });
+      sheet.content.replaceChildren(
+        el("p", { class: "guide", text: "Change any set, before or after you do it. It's saved straight away." }),
+        el("div", { class: "sheet-set-row sheet-set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
+          el("span", { text: "Set" }),
+          ...fields.map((field) => el("span", { text: setFieldName(field) })),
+          el("span")),
+        ...rows,
+        button("secondary", {
+          class: "add-set-button",
+          onclick: () => {
+            const exerciseSteps = steps.filter((step) => step.exercise === exercise);
+            addSetLike(exercise, exerciseSteps.at(-1).set);
+            index = rebuildSteps(steps[index].set);
+            onEdit();
+            draw();
+          },
+        }, icon("plus", "start"), "Add a set"),
+        restToggle);
+    }
+
+    // Removing the set you are on moves you to the next one; removing another keeps your place.
+    function removeSet(position) {
+      const removed = steps[position];
+      const isCurrent = position === index;
+      const standOn = isCurrent ? steps[position + 1]?.set ?? null : steps[index].set;
+      exercise.sets.splice(exercise.sets.indexOf(removed.set), 1);
+      const nextIndex = rebuildSteps(standOn);
+      onEdit();
+      if (nextIndex === -1) {
+        sheet.close();
+        finish();
+        return;
+      }
+      if (isCurrent) {
+        enterPhase(nextIndex, "work");
+        if (steps[nextIndex].exercise !== exercise) {
+          sheet.close();
+          return;
+        }
+      } else {
+        index = nextIndex;
+      }
+      draw();
+    }
+
+    draw();
+  }
+
+
 
   function setFieldName(field) {
     return field.usesWeightUnit ? `${field.label} (${unit})` : field.label;
@@ -424,6 +580,13 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       insetList(...lines),
       button("primary", { text: "Review and save", onclick: onExit }),
     ];
+  }
+
+  // The line under the exercise name ("Set 2 of 4 · 135 lb × 8 reps"), with a pencil:
+  // tapping it opens every set of this exercise to change, add or remove.
+  function editTarget(text) {
+    return el("button", { class: "edit-target", type: "button", "aria-label": `${text}. Change the sets.`, onclick: editExerciseSets },
+      el("span", { text }), icon("edit"));
   }
 
   // "How to do it" for this exercise, and "Last set" to fix the set you just finished.
@@ -467,7 +630,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         entry ? `${finishedExercise.name} done · ${entry.done} of ${entry.total} ${entry.total === 1 ? "set" : "sets"}` : `${finishedExercise.name} done`),
       el("p", { class: "player-label", text: paused ? "Paused" : "Up next" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
-      el("p", { class: "muted player-center", text: `${step.setCount} ${step.setCount === 1 ? "set" : "sets"} · ${targetText(step, unit)}` }),
+      editTarget(`${step.setCount} ${step.setCount === 1 ? "set" : "sets"} · ${targetText(step, unit)}`),
       renderLinks(step),
       el("div", { class: "phase-stage" },
         el("span", { class: "breath", "aria-hidden": "true" }),
@@ -497,7 +660,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const common = [
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
-      el("p", { class: "muted player-center", text: `${setLabel(step)} · ${targetText(step, unit)}` }),
+      editTarget(`${setLabel(step)} · ${targetText(step, unit)}`),
       renderLinks(step),
       stage,
     ];
