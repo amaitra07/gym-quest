@@ -78,11 +78,21 @@ export function isSetFilled(type, set) {
   return Number.isFinite(value) && value > 0;
 }
 
+// Notes that only matter while logging (a weight suggestion, the "Find your weight" progress)
+// aren't saved with the workout. The weight that was found, and "bodyweight", are.
+function withoutSuggestion(exercise) {
+  const copy = { ...exercise };
+  delete copy.suggestion;
+  delete copy.findingWeight;
+  delete copy.feelNote;
+  return copy;
+}
+
 // Drops sets with nothing logged, and exercises left with no sets.
 export function cleanWorkout(workout) {
   const exercises = workout.exercises
     .map((exercise) => ({
-      ...exercise,
+      ...withoutSuggestion(exercise),
       sets: exercise.sets.filter((set) => isSetFilled(exercise.type, set)),
     }))
     .filter((exercise) => exercise.sets.length > 0);
@@ -134,9 +144,61 @@ export function lastPerformance(workouts, name, excludeWorkoutId) {
     .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1));
   for (const workout of newestFirst) {
     const match = workout.exercises.find((exercise) => normalizeName(exercise.name) === wanted);
-    if (match) return { date: workout.date, sets: match.sets };
+    if (match) return { date: workout.date, sets: match.sets, foundWeight: match.foundWeight ?? null, bodyweight: match.bodyweight === true };
   }
   return null;
+}
+
+// The sets of the most recent `count` other workouts that included this exercise, newest first.
+export function recentPerformances(workouts, name, count) {
+  const wanted = normalizeName(name);
+  return [...workouts]
+    .sort((a, b) => (a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1))
+    .map((workout) => workout.exercises.find((exercise) => normalizeName(exercise.name) === wanted))
+    .filter(Boolean)
+    .slice(0, count)
+    .map((exercise) => exercise.sets.filter((set) => isSetFilled("strength", set)));
+}
+
+// How much one step of weight is: 5 lb or 2.5 kg.
+export const WEIGHT_STEP = { lb: 5, kg: 2.5 };
+
+// Double progression for a rep range (`range` is { reps, repsTop }): after a session where
+// every set reached the top of the range, add one step of weight; after two sessions in a
+// row with a set below the bottom, drop about 5%; otherwise stay and keep adding reps.
+// `sessions` holds the sets of recent sessions, newest first. Returns null for no change, or
+// { change: "up" | "down" | "harder", from, to }. Without weights it can only say "harder".
+export function suggestNextWeight(sessions, range, unit = "lb") {
+  const [last, before] = sessions;
+  if (!range?.repsTop || !last?.length) return null;
+  const step = WEIGHT_STEP[unit] ?? WEIGHT_STEP.lb;
+  const working = Math.max(...last.map((set) => set.weight ?? 0));
+  const allAtTop = last.every((set) => set.reps >= range.repsTop);
+  if (working <= 0) return allAtTop ? { change: "harder", from: null, to: null } : null;
+  if (allAtTop) return { change: "up", from: working, to: working + step };
+  const belowBottom = (sets) => sets.some((set) => set.reps < range.reps);
+  if (belowBottom(last) && before?.length && belowBottom(before)) {
+    const lighter = Math.max(step, Math.round((working * 0.95) / step) * step);
+    return lighter < working ? { change: "down", from: working, to: lighter } : null;
+  }
+  return null;
+}
+
+// What the suggestion says, for Get ready, the log grid and the guided set screen.
+export function suggestionText(suggestion, range, unit) {
+  if (suggestion.change === "up") return `↑ ${suggestion.to} ${unit}: you hit ${range.repsTop} reps on every set last time`;
+  if (suggestion.change === "down") return `↓ ${suggestion.to} ${unit}: under ${range.reps} reps two sessions running, so a little lighter`;
+  return `You hit ${range.repsTop} reps on every set last time. Time to add weight, or try a harder version.`;
+}
+
+// "Keep 135": puts back last time's weight on the sets not done yet and drops the suggestion.
+export function keepPreviousWeight(exercise) {
+  const { suggestion } = exercise;
+  if (!suggestion || suggestion.from === null) return;
+  for (const set of exercise.sets) {
+    if (set.done !== true && set.weight === suggestion.to) set.weight = suggestion.from;
+  }
+  delete exercise.suggestion;
 }
 
 // A new set starts from last time's matching set, then from the set just before it.
@@ -146,26 +208,61 @@ export function nextSetDefaults(type, lastSets, ownSets) {
   for (const { key } of EXERCISE_TYPES[type].fields) {
     set[key] = source[key] ?? null;
   }
+  if (source.repsTop) set.repsTop = source.repsTop;
   return set;
 }
 
 // A fresh workout to log from a saved one. Reps, minutes and rest come from the saved
 // workout; strength weights come from the last time each exercise was done, falling
-// back to the weight saved with the workout.
-export function workoutFromRoutine(routine, pastWorkouts, date) {
+// back to the weight saved with the workout. An exercise with a rep range may also get a
+// suggested weight (see suggestNextWeight), filled in and noted in `exercise.suggestion`.
+export function workoutFromRoutine(routine, pastWorkouts, date, unit = "lb") {
   const exercises = routine.exercises.map((exercise) => {
     const last = lastPerformance(pastWorkouts, exercise.name, null);
     const sets = [];
     for (const savedSet of exercise.sets) {
       const set = { ...savedSet };
       if (exercise.type === "strength" && last) {
-        set.weight = nextSetDefaults(exercise.type, last.sets, sets).weight ?? savedSet.weight;
+        // A weight found with "Find your weight" last time goes on every set.
+        set.weight = last.foundWeight ?? nextSetDefaults(exercise.type, last.sets, sets).weight ?? savedSet.weight;
       }
       sets.push(set);
     }
-    return { ...exercise, id: newId(), sets };
+    const range = exercise.type === "strength" ? exercise.sets.find((set) => set.repsTop) : null;
+    const suggestion = range ? suggestNextWeight(recentPerformances(pastWorkouts, exercise.name, 2), range, unit) : null;
+    if (suggestion?.to !== null && suggestion?.to !== undefined) {
+      for (const set of sets) if (set.weight > 0) set.weight = suggestion.to;
+    }
+    const started = { ...exercise, id: newId(), sets };
+    if (last?.bodyweight) started.bodyweight = true;
+    if (suggestion) started.suggestion = suggestion;
+    return started;
   });
   return { id: newId(), createdAt: Date.now(), name: routine.name, date, exercises };
+}
+
+// Reps can be a range: "6-8" means a set counts from 6 reps and tops out at 8. It is stored
+// as `reps` (the bottom, or the actual reps once done) and `repsTop` (the top). Returns
+// { reps, repsTop }, with repsTop null for a plain number, or null if it isn't a target.
+export function parseRepRange(text) {
+  const match = String(text).trim().match(/^(\d+)(?:\s*(?:-|–|to)\s*(\d+))?$/i);
+  if (!match) return null;
+  let low = Number(match[1]);
+  let high = match[2] === undefined ? null : Number(match[2]);
+  if (high !== null && high < low) [low, high] = [high, low];
+  if (low < 1) return null;
+  return { reps: low, repsTop: high === null || high === low ? null : high };
+}
+
+// "6–8" for a range, "8" for a plain number.
+export function repTargetText(set) {
+  return set.repsTop ? `${set.reps}–${set.repsTop}` : String(set.reps ?? "");
+}
+
+// A set as a target to aim for: like describeSet, but a rep range shows as the range.
+export function describeTarget(type, set, unit) {
+  if (type !== "strength" || !set.repsTop) return describeSet(type, set, unit);
+  return set.weight > 0 ? `${set.weight} ${unit} × ${repTargetText(set)}` : `${repTargetText(set)} reps`;
 }
 
 export function describeSet(type, set, unit) {

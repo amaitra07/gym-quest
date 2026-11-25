@@ -1130,6 +1130,7 @@ ion-button.choice {
 /* ---------- Guided workout ---------- */
 .player {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   text-align: center;
 }
@@ -1987,6 +1988,160 @@ ion-tab-button.tab-selected .icon {
 
 .add-set-button {
   margin-top: 6px;
+}
+
+/* A suggested weight from the rep range ("↑ 140 lb: you hit 8 reps on every set last time"). */
+.suggestion-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  margin: 8px 0 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.suggestion-note.is-down {
+  background: color-mix(in srgb, var(--calm) 16%, transparent);
+}
+
+ion-button.suggestion-keep {
+  margin: 0;
+  --padding-start: 6px;
+  --padding-end: 6px;
+  font-weight: 800;
+}
+
+/* "Find your weight": a card in place of the rep target, then weight used and how it felt. */
+.find-weight-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  text-align: left;
+}
+
+.find-weight-card p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.find-weight-card .find-weight-title {
+  color: var(--ion-color-primary);
+  font-family: var(--display-font);
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.find-weight-card ion-button {
+  justify-self: start;
+  margin: 0 0 0 -8px;
+}
+
+.feel-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.feel-weight {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.feel-weight-value {
+  min-width: 120px;
+  font-family: var(--display-font);
+  font-size: 40px;
+  font-style: italic;
+  font-weight: 800;
+}
+
+.feel-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.feel-choice {
+  display: grid;
+  gap: 4px;
+  padding: 12px 6px;
+  border: 2px solid color-mix(in srgb, var(--text) 18%, transparent);
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--text);
+  font: inherit;
+}
+
+.feel-choice strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.feel-choice small {
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.feel-choice.is-right {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* "How many reps?" after a set with a rep range: big one-tap chips, the top of the range in lime. */
+.rep-ask {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rep-chips {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+ion-button.rep-chip {
+  flex: 1 1 0;
+  max-width: 72px;
+  min-width: 0;
+  height: 60px;
+  margin: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  font-family: var(--display-font);
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 800;
+  --border-radius: 20px;
+  --border-width: 2px;
+  --border-color: color-mix(in srgb, var(--text) 25%, transparent);
+  --color: var(--text);
+}
+
+ion-button.rep-chip.is-top {
+  --background: var(--accent);
+  --color: var(--accent-ink);
+}
+
+.number-input.rep-range-input.is-invalid {
+  outline: 2px solid var(--danger);
 }
 
 /* Finishing a set in guided mode: a lime ring and a check burst out of the button. */

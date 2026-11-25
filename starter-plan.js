@@ -16,8 +16,14 @@ export const STARTER_EQUIPMENT = [
 
 const REST_SECONDS = 60;
 
-// Strength sets leave the weight blank: a beginner picks it on the day.
-const lift = (name, sets, reps) => ({ name, type: "strength", sets, set: { weight: null, reps } });
+// Strength sets leave the weight blank: a beginner picks it on the day. Each has a rep range
+// ending at the number given (8 becomes 6-8, 12 becomes 10-12, 15 becomes 12-15), so hitting
+// the top on every set tells the app it is time to go heavier.
+function repRangeEndingAt(top) {
+  return { reps: top - (top >= 15 ? 3 : 2), repsTop: top };
+}
+
+const lift = (name, sets, reps) => ({ name, type: "strength", sets, set: { weight: null, ...repRangeEndingAt(reps) } });
 const hold = (name, sets, seconds) => ({ name, type: "timed", sets, set: { seconds } });
 const cardio = (name, minutes) => ({ name, type: "cardio", sets: 1, set: { minutes, distance: null } });
 

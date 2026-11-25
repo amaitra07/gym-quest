@@ -41,6 +41,14 @@ let routines = loadRoutines();
 let schedule = loadSchedule();
 let profile = loadProfile();
 
+// Testing on this computer at localhost starts with the sample data instead of an empty app,
+// because the browser pane forgets everything when it closes (Anish's choice). Only an empty
+// app gets it. 127.0.0.1 and the live site still start empty, so the first-time screens
+// (Get a starter plan) can be tried there.
+if (location.hostname === "localhost" && workouts.length === 0 && routines.length === 0 && loadDraft() === null) {
+  storeSampleData();
+}
+
 const REST_DAY = "rest";
 
 const TABS = ["home", "routines", "progress", "history"];
@@ -135,7 +143,7 @@ async function startEmptyWorkout(date = todayIso()) {
 
 async function startRoutine(routine) {
   if (!(await confirmReplacingDraft())) return;
-  const workout = workoutFromRoutine(routine, workouts, todayIso());
+  const workout = workoutFromRoutine(routine, workouts, todayIso(), loadUnit());
   openScreen(workout, true, { autoStart: true });
 }
 
@@ -143,7 +151,7 @@ async function startRoutine(routine) {
 // in what you did and tap Finish workout without running the guided timers.
 async function logRoutine(routine, date = todayIso()) {
   if (!(await confirmReplacingDraft())) return;
-  openScreen(workoutFromRoutine(routine, workouts, date), true);
+  openScreen(workoutFromRoutine(routine, workouts, date, loadUnit()), true);
 }
 
 // "Log a workout for <day>" in History: a plan (opened on the tick grid, since a guided
@@ -397,18 +405,25 @@ function chooseUnit(unit) {
   openProfile();
 }
 
+// Saves the sample Push / Pull / Legs plans, weekly plan and month of history in place of
+// what is there. Returns false if it could not be saved.
+function storeSampleData() {
+  const sample = buildSampleData(todayIso());
+  if (!saveWorkouts(sample.workouts) || !saveRoutines(sample.routines) || !saveSchedule(sample.schedule)) return false;
+  workouts = sample.workouts;
+  routines = sample.routines;
+  schedule = sample.schedule;
+  return true;
+}
+
 // Replaces saved workouts, the weekly plan and history with the sample Push / Pull / Legs data.
 async function loadSampleData() {
   const hasData = workouts.length > 0 || routines.length > 0;
   if (hasData && !(await confirmAction("Replace your plans, weekly plan and history with sample data?", "Replace"))) return;
-  const sample = buildSampleData(todayIso());
-  if (!saveWorkouts(sample.workouts) || !saveRoutines(sample.routines) || !saveSchedule(sample.schedule)) {
+  if (!storeSampleData()) {
     showToast("Couldn't save. Your browser may be blocking or out of storage.");
     return;
   }
-  workouts = sample.workouts;
-  routines = sample.routines;
-  schedule = sample.schedule;
   showTab("home");
   showToast("Sample Push / Pull / Legs data loaded.");
 }

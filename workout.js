@@ -22,6 +22,11 @@ import {
   cleanWorkout,
   keepDoneSets,
   describeSet,
+  describeTarget,
+  repTargetText,
+  parseRepRange,
+  keepPreviousWeight,
+  suggestionText,
   exerciseNames,
   exerciseTypeFor,
   isSetFilled,
@@ -437,7 +442,8 @@ function turnArrow(exercise, from, to) {
 
 function setCountText(exercise) {
   const count = exercise.sets.length;
-  const label = EXERCISE_TYPES[exercise.type].label;
+  const range = !isRoutine() && exercise.sets.find((set) => set.repsTop);
+  const label = range ? `${EXERCISE_TYPES[exercise.type].label} · aim ${repTargetText(range)}` : EXERCISE_TYPES[exercise.type].label;
   if (tracksDone() && count > 0) {
     const done = exercise.sets.filter((set) => set.done === true).length;
     return `${label} · ${done} of ${count} ${count === 1 ? "set" : "sets"} done`;
@@ -469,11 +475,36 @@ function renderExerciseHead(exercise, isOpen) {
       : null);
 }
 
+// A plan's reps box takes a number ("8") or a range ("6-8"). It turns red while what is
+// typed isn't either, and keeps the last good value.
+function repRangeInput(set, index) {
+  const input = el("input", {
+    class: "number-input rep-range-input",
+    type: "text",
+    inputmode: "text",
+    autocomplete: "off",
+    placeholder: "8 or 6-8",
+    value: repTargetText(set),
+    "aria-label": `Reps or a range like 6-8, set ${index + 1}`,
+    onInput: (event) => {
+      const parsed = parseRepRange(event.target.value);
+      input.classList.toggle("is-invalid", parsed === null && event.target.value.trim() !== "");
+      if (parsed === null) return;
+      set.reps = parsed.reps;
+      if (parsed.repsTop) set.repsTop = parsed.repsTop;
+      else delete set.repsTop;
+      markChanged();
+    },
+  });
+  return input;
+}
+
 // Each open exercise is a grid: set number, what you did last time in that set, then one
 // box per number. A box turns lime when it beats the same box last time.
 function renderSetRow(exercise, set, index, lastSet, unit) {
   const fields = EXERCISE_TYPES[exercise.type].fields;
   const inputs = fields.map((field) => {
+    if (field.key === "reps" && isRoutine()) return repRangeInput(set, index);
     const lastValue = lastSet?.[field.key];
     const isBetter = (value) => Number.isFinite(lastValue) && Number.isFinite(value) && value > lastValue;
     const input = el("input", {
@@ -562,13 +593,38 @@ function renderSetHeader(exercise, unit) {
     el("span"));
 }
 
+// The suggested weight for an exercise with a rep range ("↑ 140 lb: you hit 8 reps on every
+// set last time"), with Keep to put last time's weight back.
+function suggestionNote(exercise, unit) {
+  const { suggestion } = exercise;
+  if (!suggestion) return null;
+  const range = exercise.sets.find((set) => set.repsTop) ?? exercise.sets[0];
+  const keep = suggestion.from === null
+    ? null
+    : el("ion-button", {
+      class: "suggestion-keep",
+      fill: "clear",
+      size: "small",
+      onclick: () => {
+        keepPreviousWeight(exercise);
+        // On Get ready nothing has started yet, so nothing is saved.
+        if (session.step !== "preview") markChanged();
+        render();
+      },
+    }, `Keep ${suggestion.from}`);
+  return el("div", { class: `suggestion-note is-${suggestion.change}` },
+    el("span", { text: `${exercise.name}: ${suggestionText(suggestion, range, unit)}` }), keep);
+}
+
 function renderExercise(exercise, unit) {
   if (openExercise() !== exercise) {
-    return el("section", { class: "card exercise is-folded", "data-motion-key": exercise.id }, renderExerciseHead(exercise, false));
+    return el("section", { class: "card exercise is-folded", "data-motion-key": exercise.id },
+      renderExerciseHead(exercise, false), suggestionNote(exercise, unit));
   }
   const last = lastPerformance(pastWorkouts(), exercise.name, session.workout.id);
   return el("section", { class: "card exercise is-open", "data-motion-key": exercise.id },
     renderExerciseHead(exercise, true),
+    suggestionNote(exercise, unit),
     exercise.sets.length > 0 ? renderSetHeader(exercise, unit) : null,
     ...exercise.sets.map((set, index) => renderSetRow(exercise, set, index, last?.sets[index], unit)),
     el("ion-button", {
@@ -695,7 +751,7 @@ function guidanceText() {
   const hasExercises = session.workout.exercises.length > 0;
   if (isRoutine()) {
     return hasExercises
-      ? "Set the reps for each set. Tap Save plan when you're done."
+      ? "Set reps for each set, as a number (8) or a range (6-8). Tap Save plan when you're done."
       : "Add your first exercise below.";
   }
   if (!session.isNew) return "Fix anything that's wrong, then tap Save changes.";
@@ -771,7 +827,7 @@ function renderPreview() {
   const cleaned = cleanWorkout(session.workout);
   const rows = cleaned.exercises.map((exercise) => {
     const count = exercise.sets.length;
-    const detail = `${count} ${count === 1 ? "set" : "sets"} · ${describeSet(exercise.type, exercise.sets[0], unit)}`;
+    const detail = `${count} ${count === 1 ? "set" : "sets"} · ${describeTarget(exercise.type, exercise.sets[0], unit)}`;
     return detailRow(exercise.name, detail, null, howToFor(exercise.name) ? () => showHowTo(exercise.name) : null);
   });
   const hasHowTo = cleaned.exercises.some((exercise) => howToFor(exercise.name));
@@ -786,6 +842,7 @@ function renderPreview() {
         : "Look over today's exercises. Edit changes today's workout only.",
     }),
     insetList(...rows),
+    ...session.workout.exercises.map((exercise) => suggestionNote(exercise, unit)),
     el("div", { class: "button-stack action-bar" },
       button("primary", { text: "Begin workout", onclick: beginFromPreview })));
 }

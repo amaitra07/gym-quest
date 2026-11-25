@@ -1,8 +1,9 @@
 import { createStopwatch, formatClock } from "./clock.js";
 import { beep, finalSecondsLeft } from "./countdown.js";
 import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
-import { EXERCISE_TYPES, isSetFilled } from "./exercises.js";
+import { EXERCISE_TYPES, isSetFilled, keepPreviousWeight, repTargetText, suggestionText } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
+import { FEELINGS, feelNote, nextWeightFromFeel, startingPoint } from "./find-weight.js";
 import { burstFrom } from "./motion.js";
 
 const TICK_MS = 250;
@@ -134,16 +135,22 @@ function workDurationSeconds(step) {
   return null;
 }
 
-function targetText(step, unit) {
+// What a set asks for ("135 lb × 6–8 reps"), or with `asDone` what was done ("135 lb × 7 reps").
+function targetText(step, unit, asDone = false) {
   const { type } = step.exercise;
   const { set } = step;
   if (type === "strength") {
-    return set.weight ? `${set.weight} ${unit} × ${set.reps} reps` : `${set.reps} reps`;
+    const reps = asDone ? set.reps : repTargetText(set);
+    return set.weight ? `${set.weight} ${unit} × ${reps} reps` : `${reps} reps`;
   }
   if (type === "cardio") {
     return set.distance ? `${set.minutes} min · ${set.distance} distance` : `${set.minutes} min`;
   }
   return `${set.seconds} second hold`;
+}
+
+function hasRepRange(step) {
+  return step.exercise.type === "strength" && step.set.repsTop > 0;
 }
 
 function setLabel(step) {
@@ -199,6 +206,10 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   let shownPhase = null;
   // The fraction of sets the progress bar last showed.
   let shownProgress = completed.size / Math.max(steps.length, 1);
+  // True while "How many reps?" is showing after Done with set on a set with a rep range.
+  let askingReps = false;
+  // True while "How did it feel?" is showing, when helping someone find their weight.
+  let askingFeel = false;
 
   const now = () => Date.now();
 
@@ -210,6 +221,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
   }
 
   function enterPhase(nextIndex, nextPhase) {
+    askingReps = false;
+    askingFeel = false;
     index = nextIndex;
     phase = nextPhase;
     beepedSecond = null;
@@ -225,6 +238,121 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     phaseClock.pause(now());
     stop();
     render();
+  }
+
+  // A set with a rep range asks how many reps you got, since that decides when to add weight.
+  function askReps() {
+    askingReps = true;
+    render();
+  }
+
+  function recordReps(reps) {
+    steps[index].set.reps = reps;
+    askingReps = false;
+    onEdit();
+    if (isCoaching(steps[index])) askFeel();
+    else completeSet();
+  }
+
+  /* ---------- Find your weight ---------- */
+
+  // A strength exercise with no weight yet (and not marked bodyweight) gets coached: a card
+  // before the first set, then "How did it feel?" after each set until one feels just right.
+  function needsWeight(step) {
+    return step.exercise.type === "strength" && !(step.set.weight > 0) && !step.exercise.bodyweight
+      && startingPoint(step.exercise.name, unit) !== null;
+  }
+
+  function isCoaching(step) {
+    return needsWeight(step) || step.exercise.findingWeight === true;
+  }
+
+  function afterDone(step) {
+    if (hasRepRange(step)) return askReps;
+    return isCoaching(step) ? askFeel : completeSet;
+  }
+
+  function askFeel() {
+    askingFeel = true;
+    render();
+  }
+
+  // The card in place of the rep target, before a weight has been picked.
+  function findWeightCard(step) {
+    const start = startingPoint(step.exercise.name, unit);
+    return el("div", { class: "find-weight-card" },
+      el("p", { class: "find-weight-title", text: "Find your weight" }),
+      el("p", { text: start.text }),
+      el("p", { class: "muted", text: `Do ${repTargetText(step.set)} reps. The last one or two should be hard, but your form should hold. After the set, say how it felt.` }),
+      el("ion-button", {
+        class: "how-to-link",
+        fill: "clear",
+        size: "small",
+        text: "I'm using my bodyweight",
+        onclick: () => {
+          step.exercise.bodyweight = true;
+          onEdit();
+          render();
+        },
+      }));
+  }
+
+  // After the set: what weight was used, and how it felt. The answer moves the next sets.
+  function feelPanel(step) {
+    const { exercise, set } = step;
+    let used = set.weight > 0 ? set.weight : startingPoint(exercise.name, unit)?.weight ?? 0;
+    const value = el("span", { class: "feel-weight-value", text: `${used} ${unit}` });
+    const nudge = (direction) => () => {
+      used = Math.max(0, nextWeightFromFeel(exercise.name, used, direction > 0 ? "easy" : "hard", unit));
+      value.textContent = `${used} ${unit}`;
+    };
+    const answer = (feeling) => () => {
+      set.weight = used;
+      const next = nextWeightFromFeel(exercise.name, used, feeling, unit);
+      steps.forEach((later, position) => {
+        if (position > index && later.exercise === exercise && !completed.has(position)) later.set.weight = next;
+      });
+      exercise.findingWeight = feeling !== "right";
+      exercise.feelNote = feelNote(feeling, next, unit);
+      exercise.foundWeight = next;
+      askingFeel = false;
+      onEdit();
+      completeSet();
+    };
+    return el("div", { class: "feel-panel" },
+      el("p", { class: "player-label", text: "Weight used" }),
+      el("div", { class: "feel-weight" },
+        el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": "Less weight", onclick: nudge(-1) }, icon("minus")),
+        value,
+        el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": "More weight", onclick: nudge(1) }, icon("plus"))),
+      el("p", { class: "player-label", text: "How did it feel?" }),
+      el("div", { class: "feel-choices" },
+        ...FEELINGS.map((feeling) => el("button", {
+          class: `feel-choice is-${feeling.value}`,
+          type: "button",
+          onclick: answer(feeling.value),
+        }, el("strong", { text: feeling.label }), el("small", { text: feeling.hint })))));
+  }
+
+  // One chip per likely count: a couple below the range up to one above it, top of the range in lime.
+  function repChips(step) {
+    const { reps, repsTop } = step.set;
+    const chips = [];
+    for (let count = Math.max(1, reps - 2); count <= repsTop + 1; count += 1) {
+      chips.push(el("ion-button", {
+        class: `rep-chip${count === repsTop ? " is-top" : ""}`,
+        fill: count === repsTop ? "solid" : "outline",
+        "aria-label": `${count} reps`,
+        onclick: () => recordReps(count),
+      }, count === repsTop + 1 ? `${count}+` : String(count)));
+    }
+    return el("div", { class: "rep-ask" },
+      el("p", { class: "player-label", text: "How many reps?" }),
+      el("div", { class: "rep-chips" }, ...chips),
+      el("ion-button", { class: "how-to-link", fill: "clear", size: "small", text: "Back", onclick: () => {
+        askingReps = false;
+        render();
+      } }));
   }
 
   function completeSet() {
@@ -583,6 +711,27 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     ];
   }
 
+  // Before an exercise's first set: the weight the app moved you to, with Keep to undo it.
+  function suggestionLine(exercise) {
+    const { suggestion } = exercise;
+    if (!suggestion) return null;
+    const range = exercise.sets.find((set) => set.repsTop) ?? exercise.sets[0];
+    return el("p", { class: `suggestion-note is-${suggestion.change}` },
+      el("span", { text: suggestionText(suggestion, range, unit) }),
+      suggestion.from === null
+        ? null
+        : el("ion-button", {
+          class: "suggestion-keep",
+          fill: "clear",
+          size: "small",
+          onclick: () => {
+            keepPreviousWeight(exercise);
+            onEdit();
+            render();
+          },
+        }, `Keep ${suggestion.from}`));
+  }
+
   // The line under the exercise name ("Set 2 of 4 · 135 lb × 8 reps"), with a pencil:
   // tapping it opens every set of this exercise to change, add or remove.
   function editTarget(text) {
@@ -607,7 +756,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const lastSet = lastPosition === -1
       ? null
       : el("ion-button", { class: "how-to-link", fill: "clear", size: "small", onclick: editLastSet },
-        icon("edit", "start"), `Last set: ${targetText(steps[lastPosition], unit)}`);
+        icon("edit", "start"), `Last set: ${targetText(steps[lastPosition], unit, true)}`);
     if (howTo === null && lastSet === null) return null;
     return el("div", { class: "player-links" }, howTo, lastSet);
   }
@@ -632,6 +781,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       el("p", { class: "player-label", text: paused ? "Paused" : "Up next" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
       editTarget(`${step.setCount} ${step.setCount === 1 ? "set" : "sets"} · ${targetText(step, unit)}`),
+      suggestionLine(step.exercise),
       renderLinks(step),
       el("div", { class: "phase-stage" },
         el("span", { class: "breath", "aria-hidden": "true" }),
@@ -649,19 +799,25 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     countdownNode = countdown;
     // A set counted in reps has no clock, so its rep target fills the middle instead.
     const repTarget = !hasCountdown && step.exercise.type === "strength" && step.set.reps
-      ? el("p", { class: "player-countdown player-reps" }, String(step.set.reps),
+      ? el("p", { class: "player-countdown player-reps" }, repTargetText(step.set),
         el("small", { text: step.set.weight ? `reps at ${step.set.weight} ${unit}` : "reps" }))
       : null;
     // The middle of the screen: the number pulses during a set; a circle breathes behind it during a rest.
-    const stage = el("div", { class: "phase-stage" },
-      el("span", { class: "breath", "aria-hidden": "true" }),
-      countdown ?? repTarget,
-      phase === "rest" ? el("span", { class: "breath-word", "aria-hidden": "true", text: "Breathe" }) : null);
+    const showCard = phase === "work" && !askingFeel && !askingReps && needsWeight(step);
+    const stage = showCard
+      ? findWeightCard(step)
+      : el("div", { class: "phase-stage" },
+        el("span", { class: "breath", "aria-hidden": "true" }),
+        countdown ?? repTarget,
+        phase === "rest" ? el("span", { class: "breath-word", "aria-hidden": "true", text: "Breathe" }) : null);
+    const note = step.exercise.feelNote ? el("p", { class: "suggestion-note", text: step.exercise.feelNote }) : null;
 
     const common = [
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
-      editTarget(`${setLabel(step)} · ${targetText(step, unit)}`),
+      // Once the reps are in (while asking how it felt), the line shows what was done.
+      editTarget(`${setLabel(step)} · ${targetText(step, unit, askingFeel)}`),
+      step.setNumber === 1 ? suggestionLine(step.exercise) : note,
       renderLinks(step),
       stage,
     ];
@@ -671,13 +827,15 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     } else if (hasCountdown) {
       actions.push(stepButton("Done early", completeSet));
     } else {
-      actions.push(stepButton("Done with set", completeSet));
+      actions.push(stepButton("Done with set", afterDone(step)));
     }
     if (nextExerciseIndex(steps, index) !== -1) {
       const skip = button("secondary", { onclick: skipExercise }, "Next exercise", icon("arrow", "end"));
       skip.disabled = paused;
       actions.push(skip);
     }
+    if (askingReps && phase === "work") return [...common, repChips(step)];
+    if (askingFeel && phase === "work") return [...common.filter((part) => part !== stage), feelPanel(step)];
     return [...common, el("div", { class: "button-stack player-actions" }, ...actions)];
   }
 
