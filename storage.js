@@ -5,6 +5,7 @@ const ROUTINES_KEY = "gymquest.routines";
 const SCHEDULE_KEY = "gymquest.schedule";
 const PROFILE_KEY = "gymquest.profile";
 const THEME_KEY = "gymquest.theme";
+const FIGURE_KEY = "gymquest.figure";
 const UNIT_KEY = "gymquest.unit";
 const SYNC_KEY = "gymquest.sync";
 
@@ -99,6 +100,15 @@ export function loadTheme() {
 
 export function saveTheme(theme) {
   return writeJson(THEME_KEY, theme);
+}
+
+// Which body the muscle map draws: "male" (the default) or "female". Kept on this device.
+export function loadFigure() {
+  return readJson(FIGURE_KEY) === "female" ? "female" : "male";
+}
+
+export function saveFigure(figure) {
+  return writeJson(FIGURE_KEY, figure);
 }
 
 export function loadDraft() {

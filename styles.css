@@ -1446,6 +1446,144 @@ ion-button.step-action {
   }
 }
 
+/* The muscle map on Progress: a front and back figure, muscles filled in lime by sets. */
+.muscle-map {
+  display: grid;
+  gap: 12px;
+}
+
+.muscle-figure {
+  width: 100%;
+  max-width: 340px;
+  justify-self: center;
+}
+
+.body-shape,
+.body-outline > * {
+  fill: color-mix(in srgb, var(--text) 9%, transparent);
+}
+
+.body-shape {
+  stroke: color-mix(in srgb, var(--text) 22%, transparent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+
+.muscle > * {
+  fill: color-mix(in srgb, var(--text) 16%, transparent);
+  stroke: transparent;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill 0.3s ease, stroke 0.2s ease;
+}
+
+.muscle {
+  cursor: pointer;
+  outline: none;
+}
+
+.muscle.level-1 > * {
+  fill: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.muscle.level-2 > * {
+  fill: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.muscle.level-3 > * {
+  fill: var(--accent);
+}
+
+.muscle.is-selected > *,
+.muscle:focus-visible > * {
+  stroke: var(--text);
+}
+
+.figure-label {
+  fill: var(--text-dim);
+  font-family: var(--display-font);
+  font-size: 10px;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.muscle-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-item i {
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) 16%, transparent);
+}
+
+.legend-item.level-1 i {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.legend-item.level-2 i {
+  background: color-mix(in srgb, var(--accent) 70%, transparent);
+}
+
+.legend-item.level-3 i {
+  background: var(--accent);
+}
+
+.muscle-summary {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.muscle-summary.needs-work {
+  color: var(--ion-color-primary);
+}
+
+.muscle-hint {
+  margin: 0;
+  font-size: 14px;
+}
+
+.muscle-detail {
+  padding: 12px 14px;
+  border-radius: var(--radius-small);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.muscle-detail-title {
+  margin: 0 0 6px;
+}
+
+.muscle-detail-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.muscle-detail-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
 .share-preview-frame {
   display: flex;
   align-items: center;

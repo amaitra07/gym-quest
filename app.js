@@ -19,6 +19,7 @@ import {
   clearDraft,
   clearWorkoutData,
   loadDraft,
+  loadFigure,
   loadProfile,
   loadRoutines,
   loadSchedule,
@@ -26,6 +27,7 @@ import {
   loadTheme,
   loadUnit,
   loadWorkouts,
+  saveFigure,
   saveProfile,
   saveRoutines,
   saveSchedule,
@@ -364,11 +366,12 @@ function deleteRoutine(id) {
 // The profile and settings screen, opened from the circle on Home.
 function openProfile() {
   currentTab = "home";
-  renderProfile(profile, loadUnit(), loadTheme(), {
+  renderProfile(profile, loadUnit(), loadTheme(), loadFigure(), {
     onBack: () => showTab("home"),
     onSave: saveProfileDetails,
     onTheme: chooseTheme,
     onUnit: chooseUnit,
+    onFigure: saveFigure,
     onLoadSample: loadSampleData,
     onClearData: clearAllWorkoutData,
   });

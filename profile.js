@@ -12,6 +12,7 @@ const MAX_NAME_LENGTH = 30;
 export const GOALS = ["Build muscle", "Get stronger", "Lose fat", "Improve endurance", "Stay active"];
 export const THEME_CHOICES = [["system", "Match phone"], ["light", "Light"], ["dark", "Dark"]];
 const UNIT_CHOICES = [["lb", "lb · ft"], ["kg", "kg · cm"]];
+const FIGURE_CHOICES = [["male", "Male"], ["female", "Female"]];
 
 const LIMITS = {
   age: [5, 120],
@@ -104,8 +105,9 @@ function sectionTitle(text) {
   return el("h2", { class: "section-title", text });
 }
 
-// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onLoadSample, onClearData }.
-export function renderProfile(profile, unit, theme, actions) {
+// `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onFigure(figure),
+// onLoadSample, onClearData }.
+export function renderProfile(profile, unit, theme, figure, actions) {
   const saved = profile ?? {};
   const imperial = unit === "lb";
   const height = saved.heightCm ? cmToFeetInches(saved.heightCm) : null;
@@ -162,6 +164,8 @@ export function renderProfile(profile, unit, theme, actions) {
     segmented("Appearance", THEME_CHOICES, theme, actions.onTheme),
     el("p", { class: "muted setting-label", text: "Units for weight and height" }),
     segmented("Units", UNIT_CHOICES, unit, actions.onUnit),
+    el("p", { class: "muted setting-label", text: "Body on the muscle map" }),
+    segmented("Body on the muscle map", FIGURE_CHOICES, figure, actions.onFigure),
     sectionTitle("Try it out"),
     insetList(
       el("ion-item", { button: "true", detail: "false", onclick: actions.onLoadSample },

@@ -1,14 +1,19 @@
 import { lineChart } from "./chart.js";
-import { formatDate } from "./dates.js";
+import { formatDate, todayIso } from "./dates.js";
 import { byId, detailRow, el, insetList, listRow, scrollToTop, setHeader } from "./dom.js";
 import { describeSet } from "./exercises.js";
+import { muscleMapCard } from "./muscle-map.js";
+import { loadFigure } from "./storage.js";
 import { exerciseSummary, listExercises, progressPoints } from "./records.js";
 
 // The exercise whose detail page is open, or null for the list of all exercises.
 let selectedName = null;
+// The muscle tapped on the muscle map, or null.
+let selectedMuscle = null;
 
 export function resetProgress() {
   selectedName = null;
+  selectedMuscle = null;
 }
 
 const CHART_CAPTIONS = {
@@ -43,6 +48,11 @@ function renderList(workouts, unit, rerender) {
     ? [el("section", { class: "card" },
       el("p", { class: "empty", text: "Your records and charts show up here after you log a workout. Every lift you do gets its own page." }))]
     : [
+      el("h2", { class: "section-title", text: "Muscles, last 7 days" }),
+      muscleMapCard(workouts, todayIso(), selectedMuscle, (key) => {
+        selectedMuscle = selectedMuscle === key ? null : key;
+        rerender();
+      }, loadFigure()),
       el("h2", { class: "section-title", text: "Your lifts" }),
       el("ion-list", { class: "card-list", lines: "none" }, ...rows),
     ];
