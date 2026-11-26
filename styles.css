@@ -1688,7 +1688,9 @@ ion-title.title-large,
   background: var(--bg);
 }
 
-.ion-page::before {
+/* The 3-2-1 count-in covers the screen, so it gets the same clouds behind its numbers. */
+.ion-page::before,
+.count-in::before {
   content: "";
   position: absolute;
   inset: -20%;
@@ -1712,8 +1714,17 @@ ion-title.title-large,
   }
 }
 
+.count-in {
+  overflow: hidden;
+}
+
+.count-in > * {
+  position: relative;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ion-page::before {
+  .ion-page::before,
+  .count-in::before {
     animation: none;
   }
 }

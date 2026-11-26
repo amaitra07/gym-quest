@@ -61,6 +61,9 @@ export function renderRoutines(routines, { schedule, workouts, today, onPickDay,
   byId("routineList").replaceChildren(...routines.map((routine) => routineRow(routine, "Edit", onEdit)));
   byId("routineHeading").hidden = routines.length === 0;
   byId("routineEmpty").hidden = routines.length > 0;
+  // With no plans yet, the big "New plan" button is the way in, so the top "+ New" waits
+  // until there is a list to add to.
+  byId("newRoutineButton").hidden = routines.length === 0;
   byId("newRoutineButton").onclick = onCreate;
   byId("createFromRoutinesButton").onclick = onCreate;
 }

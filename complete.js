@@ -31,10 +31,8 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
   const preview = el("div", { class: "share-preview-frame" }, el("p", { class: "muted", text: "Making your card…" }));
   const actions = el("div", { class: "button-stack" });
 
-  setHeader("complete", {
-    title: "Summary",
-    end: [el("ion-button", { strong: "true", text: "Done", onclick: onDone })],
-  });
+  // One way out: the big Done under the card (no second Done in the top bar).
+  setHeader("complete", { title: "Summary" });
   fillContainer(
     byId("completeContent"),
     el("h1", { class: records.length > 0 ? "hero-title is-pr" : "hero-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
