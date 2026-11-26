@@ -55,8 +55,10 @@ export function weekOf(today) {
 
 // What to do next and when. `schedule` maps a weekday number to a saved workout's id.
 // With a schedule: today's workout until you have trained today, then the next scheduled
-// day (up to a week ahead). Without one: the rotation in nextRoutine. `daysAhead` is 0 for
-// today, 1 for tomorrow and so on, or null when there is no schedule.
+// day, passing over the first day that holds the workout you just did
+// today (so doing Friday's workout on Thursday doesn't suggest it again on Friday). Without
+// one: the rotation in nextRoutine. `daysAhead` is 0 for today, 1 for tomorrow and so on, or
+// null when there is no schedule.
 export function upNext(routines, schedule, workouts, today) {
   const scheduledOn = (isoDate) => routines.find((routine) => routine.id === schedule[weekdayOf(isoDate)]) ?? null;
   const hasSchedule = Array.from({ length: DAYS_IN_WEEK }, (_, day) =>
@@ -65,10 +67,17 @@ export function upNext(routines, schedule, workouts, today) {
     const routine = nextRoutine(routines, workouts);
     return routine === null ? null : { routine, daysAhead: null };
   }
-  const trainedToday = workouts.some((workout) => workout.date === today);
-  for (let daysAhead = trainedToday ? 1 : 0; daysAhead <= DAYS_IN_WEEK; daysAhead += 1) {
+  const doneToday = new Set(workouts.filter((workout) => workout.date === today).map((workout) => normalize(workout.name)));
+  let skipped = false;
+  // Two weeks ahead at most, so a workout planned once a week still comes round after a skip.
+  for (let daysAhead = doneToday.size > 0 ? 1 : 0; daysAhead <= 2 * DAYS_IN_WEEK; daysAhead += 1) {
     const routine = scheduledOn(addDays(today, daysAhead));
-    if (routine !== null) return { routine, daysAhead };
+    if (routine === null) continue;
+    if (!skipped && doneToday.has(normalize(routine.name))) {
+      skipped = true;
+      continue;
+    }
+    return { routine, daysAhead };
   }
   return null;
 }

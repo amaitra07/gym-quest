@@ -313,7 +313,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         if (position > index && later.exercise === exercise && !completed.has(position)) later.set.weight = next;
       });
       exercise.findingWeight = feeling !== "right";
-      exercise.feelNote = feelNote(feeling, next, unit);
+      exercise.feelNote = feelNote(feeling, next, unit, exercise.name);
       exercise.foundWeight = next;
       askingFeel = false;
       onEdit();

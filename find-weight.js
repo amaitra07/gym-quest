@@ -3,10 +3,12 @@
 // how it felt, and the next set is moved up, down or kept. The aim, as most coaches teach it,
 // is a weight where the last one or two reps are hard but form still holds.
 
-// Where to start and how far to move, by kind of equipment, in lb and kg.
+// Where to start, how far to move, and (for barbells) the lightest it can go, which is the
+// empty bar, by kind of equipment, in lb and kg.
+const EMPTY_BAR = { lb: 45, kg: 20 };
 const KINDS = {
-  bar: { start: { lb: 45, kg: 20 }, step: { lb: 10, kg: 5 }, text: (weight, unit) => `Start with the empty bar (${weight} ${unit}).` },
-  deadlift: { start: { lb: 95, kg: 40 }, step: { lb: 20, kg: 10 }, text: (weight, unit) => `Start light: the bar with small plates, about ${weight} ${unit} in all.` },
+  bar: { start: EMPTY_BAR, floor: EMPTY_BAR, step: { lb: 10, kg: 5 }, text: (weight, unit) => `Start with the empty bar (${weight} ${unit}).` },
+  deadlift: { start: { lb: 95, kg: 40 }, floor: EMPTY_BAR, step: { lb: 20, kg: 10 }, text: (weight, unit) => `Start light: the bar with small plates, about ${weight} ${unit} in all.` },
   dumbbells: { start: { lb: 10, kg: 4 }, step: { lb: 5, kg: 2 }, text: (weight, unit) => `Start with a light pair of dumbbells, ${weight} ${unit} each.` },
   lightDumbbells: { start: { lb: 5, kg: 2 }, step: { lb: 2.5, kg: 1 }, text: (weight, unit) => `Start very light: ${weight} ${unit} dumbbells. This one feels heavy fast.` },
   machine: { start: { lb: 40, kg: 20 }, step: { lb: 10, kg: 5 }, text: (weight, unit) => `Start near the top of the stack, around ${weight} ${unit}.` },
@@ -62,20 +64,32 @@ export const FEELINGS = [
   { value: "hard", label: "Too hard", hint: "Couldn't finish or form broke" },
 ];
 
+// The lightest weight this exercise can use: the empty bar for barbell lifts, otherwise one
+// step (the lightest dumbbell or pin).
+export function lightestWeight(name, unit = "lb") {
+  const kind = kindFor(name);
+  if (!kind) return unit === "kg" ? 2.5 : 5;
+  return kind.floor ? kind.floor[unit] ?? kind.floor.lb : kind.step[unit] ?? kind.step.lb;
+}
+
 // The weight for the next set after one at `weight` that felt `feeling`: a step up if it was
-// easy, a step down (never below the starting point's floor of one step) if too hard, the
-// same if just right.
+// easy, a step down if too hard (never below the lightest it can go, such as the empty bar),
+// the same if just right.
 export function nextWeightFromFeel(name, weight, feeling, unit = "lb") {
   const kind = kindFor(name);
   const step = kind ? kind.step[unit] ?? kind.step.lb : unit === "kg" ? 2.5 : 5;
   if (feeling === "easy") return weight + step;
-  if (feeling === "hard") return Math.max(step, weight - step);
+  if (feeling === "hard") return Math.max(lightestWeight(name, unit), weight - step);
   return weight;
 }
 
-// The note shown with the next set: why the weight moved.
-export function feelNote(feeling, weight, unit) {
+// The note shown with the next set: why the weight moved, or, when the lightest weight was
+// still too hard, what to do instead.
+export function feelNote(feeling, weight, unit, name = "") {
   if (feeling === "easy") return `Last set felt easy, so try ${weight} ${unit}.`;
+  if (feeling === "hard" && weight <= lightestWeight(name, unit) && kindFor(name)?.floor) {
+    return `The empty bar (${weight} ${unit}) is as light as a barbell goes. Do fewer reps with good form, or swap to dumbbells for now.`;
+  }
   if (feeling === "hard") return `Last set was too hard, so try ${weight} ${unit}.`;
   return `${weight} ${unit} felt just right. Stay there.`;
 }

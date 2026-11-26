@@ -14,9 +14,17 @@ function routineRow(routine, actionText, onTap) {
   });
 }
 
-// The first word of a name, short enough to fit in a day cell ("Push day" becomes "Push").
-function shortName(name) {
-  return name.trim().split(/\s+/)[0];
+// A short label for a day cell: the first word ("Push day" becomes "Push"), unless another
+// plan starts with the same word, then the word that tells them apart ("Full body A" and
+// "Full body B" become "A" and "B").
+export function shortName(name, allNames) {
+  const words = name.trim().split(/\s+/);
+  const first = words[0].toLowerCase();
+  const shared = allNames.filter((other) => other !== name && other.trim().split(/\s+/)[0].toLowerCase() === first);
+  if (shared.length === 0) return words[0];
+  const differing = words.find((word, position) =>
+    shared.every((other) => other.trim().split(/\s+/)[position]?.toLowerCase() !== word.toLowerCase()));
+  return differing ?? words[0];
 }
 
 // One week, Sunday first, with the workout planned for each day. A dot marks days you
@@ -38,7 +46,7 @@ function renderWeek(routines, schedule, workouts, today, onPickDay) {
     },
     el("span", { class: "week-letter", text: WEEKDAY_NAMES[day.weekday][0] }),
     el("span", { class: "week-number", text: String(dayNumber) }),
-    el("span", { class: "week-plan", text: routine ? shortName(routine.name) : "–" }),
+    el("span", { class: "week-plan", text: routine ? shortName(routine.name, routines.map((item) => item.name)) : "–" }),
     trainedDates.has(day.iso) ? el("span", { class: "week-done", "aria-hidden": "true" }) : null);
   });
   byId("weekStrip").replaceChildren(...days);
