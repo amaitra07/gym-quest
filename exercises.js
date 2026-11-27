@@ -6,21 +6,21 @@ export const EXERCISE_TYPES = {
     requiredField: "reps",
     fields: [
       { key: "weight", label: "Weight", step: "0.5", usesWeightUnit: true },
-      { key: "reps", label: "Reps", step: "1" },
+      { key: "reps", label: "Reps", step: "1", short: "reps" },
     ],
   },
   cardio: {
     label: "Cardio",
     requiredField: "minutes",
     fields: [
-      { key: "minutes", label: "Minutes", step: "1" },
+      { key: "minutes", label: "Minutes", step: "1", short: "min" },
       { key: "distance", label: "Distance", step: "0.1" },
     ],
   },
   timed: {
     label: "Timed hold",
     requiredField: "seconds",
-    fields: [{ key: "seconds", label: "Seconds", step: "5" }],
+    fields: [{ key: "seconds", label: "Seconds", step: "5", short: "sec" }],
   },
 };
 
@@ -64,6 +64,11 @@ const LIBRARY = [
   ["Plank", "timed"],
   ["Wall Sit", "timed"],
 ];
+
+// The small unit shown beside a number as it's typed: "lb", "reps", "min", "sec".
+export function fieldUnit(field, unit) {
+  return field.usesWeightUnit ? unit : field.short ?? "";
+}
 
 export function newId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);

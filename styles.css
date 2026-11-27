@@ -529,8 +529,8 @@ ion-button.stepper-button {
 }
 
 .stepper-row .number-input {
-  height: 48px;
-  font-size: 22px;
+  min-height: 48px;
+  font-size: 30px;
 }
 
 /* ---------- Cards ---------- */
@@ -989,33 +989,36 @@ ion-accordion-group.details {
   gap: 5px;
 }
 
+/* Done is a plain check, no box: dim until ticked, then lime with a soft glow. */
 .tick-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 46px;
-  border: 2px solid var(--fill-strong);
-  border-radius: var(--radius-small);
+  border: none;
   background: transparent;
-  color: var(--text-dim);
+  color: color-mix(in srgb, var(--text) 28%, transparent);
 }
 
 .tick-button .icon {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   stroke-width: 3;
 }
 
 .set-row.is-done .tick-button,
 .exercise-tick.is-done {
-  border-color: var(--accent);
-  background: var(--accent);
-  color: var(--accent-ink);
+  color: var(--ion-color-primary);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+
+.set-row.is-done .number-field {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .set-row.is-done .number-input {
-  background: color-mix(in srgb, var(--accent) 14%, var(--fill));
+  color: var(--ion-color-primary);
 }
 
 .set-number {
@@ -1030,28 +1033,85 @@ ion-accordion-group.details {
   text-align: center;
 }
 
+/* Numbers you type ("arcade" style, Anish's pick): a big italic number on a thin line with
+   its unit beside it, no box. The line and the number turn lime while you type. */
+.number-field {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+  border-bottom: 2px solid color-mix(in srgb, var(--text) 16%, transparent);
+  cursor: text;
+  transition: border-color 0.2s ease;
+}
+
+.number-field:focus-within {
+  border-color: var(--accent);
+}
+
 .number-input {
+  flex: 1 1 auto;
   width: 100%;
-  min-height: 46px;
-  padding: 0 4px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
   border: none;
-  border-radius: 12px;
-  background: var(--fill);
+  border-radius: 0;
+  background: transparent;
   color: var(--text);
-  font: inherit;
-  font-size: 18px;
-  font-weight: 700;
+  font-family: var(--display-font);
+  font-size: 28px;
+  font-style: italic;
+  font-weight: 800;
+  text-align: right;
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.number-field.no-unit .number-input {
   text-align: center;
 }
 
-/* Fields have no outline; the one being typed in gets a stronger fill instead. */
-.number-input:focus {
-  outline: none;
-  background: var(--fill-strong);
+.number-input::placeholder {
+  color: var(--text-dim);
+  font-family: var(--ion-font-family);
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 600;
+  opacity: 0.6;
 }
 
+/* Profile's number fields (age, weight, height) show their numbers the same arcade way. */
+ion-input[type="number"] .native-input {
+  font-family: var(--display-font);
+  font-size: 24px;
+  font-style: italic;
+  font-weight: 800;
+}
+
+ion-input[type="number"] .native-input::placeholder {
+  font-family: var(--ion-font-family);
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.number-unit {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.number-input:focus {
+  outline: none;
+  color: var(--ion-color-primary);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Beating the same set last time: the number turns lime. */
 .set-row .number-input.is-better {
-  background: color-mix(in srgb, var(--accent) 30%, var(--fill));
+  color: var(--ion-color-primary);
 }
 
 .set-row .icon-button {
@@ -1074,9 +1134,8 @@ ion-button.add-set {
   font-weight: 600;
 }
 
-.rest-row .number-input {
-  width: 84px;
-  min-height: 40px;
+.rest-row .number-field {
+  width: 96px;
   flex-shrink: 0;
 }
 
@@ -2094,7 +2153,7 @@ ion-tab-button.tab-selected .icon {
 }
 
 .sheet-set-row.is-done .number-input {
-  opacity: 0.7;
+  color: var(--ion-color-primary);
 }
 
 .sheet-set-header {
@@ -2289,8 +2348,8 @@ ion-button.rep-chip.is-top {
   --color: var(--accent-ink);
 }
 
-.number-input.rep-range-input.is-invalid {
-  outline: 2px solid var(--danger);
+.number-field:has(.rep-range-input.is-invalid) {
+  border-color: var(--danger);
 }
 
 /* Finishing a set in guided mode: a lime ring and a check burst out of the button. */

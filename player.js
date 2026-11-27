@@ -1,7 +1,7 @@
 import { createStopwatch, formatClock } from "./clock.js";
 import { beep, finalSecondsLeft } from "./countdown.js";
-import { button, confirmAction, detailRow, el, icon, insetList, openSheet, setHeader } from "./dom.js";
-import { EXERCISE_TYPES, isSetFilled, keepPreviousWeight, repTargetText, suggestionText } from "./exercises.js";
+import { button, confirmAction, detailRow, el, icon, insetList, numberField, openSheet, setHeader } from "./dom.js";
+import { EXERCISE_TYPES, fieldUnit, isSetFilled, keepPreviousWeight, repTargetText, suggestionText } from "./exercises.js";
 import { howToFor, showHowTo } from "./how-to.js";
 import { FEELINGS, feelNote, nextWeightFromFeel, startingPoint } from "./find-weight.js";
 import { burstFrom } from "./motion.js";
@@ -540,9 +540,9 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         onChanged();
       };
       return el("div", { class: "stepper-row" },
-        el("span", { class: "stepper-label", text: setFieldName(field) }),
+        el("span", { class: "stepper-label", text: field.label }),
         el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": `Less ${field.label.toLowerCase()}`, onclick: nudge(-1) }, icon("minus")),
-        input,
+        numberField(input, fieldUnit(field, unit)),
         el("ion-button", { class: "stepper-button", fill: "solid", "aria-label": `More ${field.label.toLowerCase()}`, onclick: nudge(1) }, icon("plus")));
     });
   }
@@ -594,7 +594,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       },
     }, "Changes also go to the sets after it");
 
-    const valueInput = (step, position, field) => el("input", {
+    const valueInput = (step, position, field) => numberField(el("input", {
       class: "number-input",
       type: "number",
       inputmode: field.step === "1" || field.step === "5" ? "numeric" : "decimal",
@@ -609,7 +609,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         onEdit();
         draw();
       },
-    });
+    }), fieldUnit(field, unit));
 
     const setRow = (step, position) => {
       const isCurrent = position === index;
@@ -638,7 +638,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
         el("p", { class: "guide", text: "Change any set, before or after you do it. It's saved straight away." }),
         el("div", { class: "sheet-set-row sheet-set-header", "aria-hidden": "true", style: `--fields: ${fields.length}` },
           el("span", { text: "Set" }),
-          ...fields.map((field) => el("span", { text: setFieldName(field) })),
+          ...fields.map((field) => el("span", { text: field.label })),
           el("span")),
         ...rows,
         button("secondary", {

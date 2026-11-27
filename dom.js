@@ -95,6 +95,13 @@ export function listRow({ title, detail, sideTop = null, sideBottom = null, labe
       sideBottom ? el("span", { class: "row-accent", text: sideBottom }) : null));
 }
 
+// A number box drawn the "arcade" way: a big italic number on a thin line, with its unit
+// ("lb", "reps") beside it. Tapping anywhere on it, unit included, focuses the number.
+export function numberField(input, unitText = "") {
+  return el("label", { class: unitText ? "number-field" : "number-field no-unit" },
+    input, unitText ? el("small", { class: "number-unit", text: unitText }) : null);
+}
+
 // A row with a label on the left and its value on the right, with an optional badge. It is
 // read-only unless `onTap` is given, which makes it a button with an arrow at the end.
 export function detailRow(label, value, badge = null, onTap = null) {

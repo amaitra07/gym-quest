@@ -15,6 +15,7 @@ import {
   insetList,
   scrollToTop,
   setHeader,
+  numberField,
   showToast,
 } from "./dom.js";
 import {
@@ -29,6 +30,7 @@ import {
   suggestionText,
   exerciseNames,
   exerciseTypeFor,
+  fieldUnit,
   isSetFilled,
   lastPerformance,
   newId,
@@ -496,7 +498,7 @@ function repRangeInput(set, index) {
       markChanged();
     },
   });
-  return input;
+  return numberField(input, "reps");
 }
 
 // Each open exercise is a grid: set number, what you did last time in that set, then one
@@ -521,7 +523,7 @@ function renderSetRow(exercise, set, index, lastSet, unit) {
         markChanged();
       },
     });
-    return input;
+    return numberField(input, fieldUnit(field, unit));
   });
   return el("div", { class: `set-grid set-row${tracksDone() ? " has-tick" : ""}${set.done ? " is-done" : ""}`, style: `--fields: ${fields.length}` },
     el("span", { class: "set-number", text: String(index + 1) }),
@@ -588,7 +590,7 @@ function renderSetHeader(exercise, unit) {
   return el("div", { class: `set-grid set-header${tracksDone() ? " has-tick" : ""}`, "aria-hidden": "true", style: `--fields: ${fields.length}` },
     el("span", { text: "Set" }),
     el("span", { text: "Last" }),
-    ...fields.map((field) => el("span", { text: setFieldLabel(field, unit) })),
+    ...fields.map((field) => el("span", { text: field.label })),
     tracksDone() ? el("span", { text: "Done" }) : null,
     el("span"));
 }
@@ -639,20 +641,21 @@ function renderExercise(exercise, unit) {
         rows[rows.length - 1]?.querySelector("input")?.focus();
       },
     }, icon("plus", "start"), "Set"),
-    el("label", { class: "rest-row" },
-      el("span", { text: "Rest between sets (seconds)" }),
-      el("input", {
+    el("div", { class: "rest-row" },
+      el("span", { text: "Rest between sets" }),
+      numberField(el("input", {
         class: "number-input",
         type: "number",
         inputmode: "numeric",
         min: "0",
         step: "5",
         value: exercise.restSeconds ?? "",
+        "aria-label": `Rest between sets of ${exercise.name}, in seconds`,
         onInput: (event) => {
           exercise.restSeconds = parseNumber(event.target.value);
           markChanged();
         },
-      })));
+      }), "sec")));
 }
 
 function openAddExercise() {
