@@ -5,9 +5,10 @@ import { longDate } from "./calendar.js";
 import { todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, chooseOption, confirmAction, el, scrollToTop, showToast } from "./dom.js";
 import { newId, workoutFromRoutine } from "./exercises.js";
-import { renderScreens } from "./home.js";
+import { renderHistory } from "./history.js";
+import { renderHome } from "./home.js";
 import { savePhotosForOffline } from "./how-to.js";
-import { fadeInOneByOne } from "./motion.js";
+import { slideIn, staggerIn } from "./motion.js";
 import { renderProfile } from "./profile.js";
 import { renderProgress, resetProgress } from "./progress.js";
 import { findNewRecords } from "./records.js";
@@ -76,40 +77,49 @@ function showTab(name) {
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
-  renderScreens(workouts, routines, schedule, profile, loadDraft(), loadUnit(), {
-    onOpenWorkout: editWorkout,
-    onDeleteWorkout: deleteFromHistory,
-    onStartRoutine: startRoutine,
-    onLogRoutine: logRoutine,
-    onResume: resumeWorkout,
-    onStartEmpty: () => startEmptyWorkout(),
-    onLogDay: logForDay,
-    onStartOther: startOther,
-    onStarterPlan: addStarterPlan,
-  });
-  renderRoutines(routines, {
-    schedule,
-    workouts,
-    today: todayIso(),
-    onPickDay: pickDayWorkout,
-    onEdit: editRoutine,
-    onCreate: createRoutine,
-  });
-  renderProgress(workouts, loadUnit());
+  // Only the tab being opened is drawn. Drawing all four on every switch (History's whole
+  // list included) left work for the phone to finish during the animation, which made the
+  // words stutter (2026-11-27). Each tab is drawn fresh whenever it is opened.
+  if (name === "home") {
+    renderHome(workouts, routines, schedule, profile, loadDraft(), loadUnit(), {
+      onOpenWorkout: editWorkout,
+      onStartRoutine: startRoutine,
+      onLogRoutine: logRoutine,
+      onResume: resumeWorkout,
+      onStartEmpty: () => startEmptyWorkout(),
+      onStartOther: startOther,
+      onStarterPlan: addStarterPlan,
+    });
+  } else if (name === "routines") {
+    renderRoutines(routines, {
+      schedule,
+      workouts,
+      today: todayIso(),
+      onPickDay: pickDayWorkout,
+      onEdit: editRoutine,
+      onCreate: createRoutine,
+    });
+  } else if (name === "progress") {
+    renderProgress(workouts, loadUnit());
+  } else {
+    renderHistory(workouts, editWorkout, deleteFromHistory, logForDay);
+  }
   showScreen(name);
-  if (cameFrom !== name) animateTabIn(name);
+  if (cameFrom !== name) animateTabIn(name, cameFrom);
 }
 
-// Arriving on a tab: its pieces fade in one after another, without moving. Redrawing the
-// same tab does not.
-function animateTabIn(name) {
+// Arriving on a tab: the screen slides in from the side of the tab you came from, and its
+// cards and rows slide up one after another. Redrawing the same tab does neither.
+function animateTabIn(name, cameFrom) {
   const screen = byId(`${name}Screen`);
+  const from = TABS.indexOf(cameFrom);
+  slideIn(screen.querySelector("ion-content"), from === -1 ? 0 : Math.sign(TABS.indexOf(name) - from));
   const pieces = [];
   for (const child of screen.querySelectorAll(".wrap > :not([hidden])")) {
     if (child.matches(".history-list")) pieces.push(...child.children);
     else pieces.push(child);
   }
-  fadeInOneByOne(pieces);
+  staggerIn(pieces);
 }
 
 // Closing a workout returns to the tab it was opened from.

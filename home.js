@@ -1,9 +1,8 @@
 import { distanceUnitFor } from "./activity.js";
 import { addDays, formatDate, todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, el } from "./dom.js";
-import { renderHistory } from "./history.js";
 import { summarize } from "./history-row.js";
-import { fillBar } from "./motion.js";
+import { countUp, fillBar } from "./motion.js";
 import { MUSCLES, musclesFor } from "./muscles.js";
 import { estimateMinutes, planLineText, upNext, weekOf } from "./plan.js";
 import { latestRecord } from "./records.js";
@@ -60,9 +59,9 @@ function renderWeek(workouts) {
 
 function renderStats(workouts) {
   const { level, into, needed } = levelInfo(totalXp(workouts));
-  byId("streakNumber").textContent = String(currentStreak(workouts));
-  byId("workoutCount").textContent = String(workouts.length);
-  byId("levelNumber").textContent = String(level);
+  countUp(byId("streakNumber"), currentStreak(workouts));
+  countUp(byId("workoutCount"), workouts.length);
+  countUp(byId("levelNumber"), level);
   byId("levelName").textContent = titleForLevel(level);
   byId("levelDetail").textContent = `${into} / ${needed} XP`;
   fillBar(byId("levelBar"), into / needed);
@@ -191,14 +190,13 @@ function renderLastWorkout(workouts, onOpenWorkout) {
   row.onclick = () => onOpenWorkout(last);
 }
 
-// Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
-// onStartRoutine, onLogRoutine, onResume, onStartEmpty, onStartOther, onStarterPlan, onLogDay }.
-export function renderScreens(workouts, routines, schedule, profile, draft, unit, actions) {
+// Draws Home. `actions` are { onOpenWorkout, onStartRoutine, onLogRoutine, onResume,
+// onStartEmpty, onStartOther, onStarterPlan }.
+export function renderHome(workouts, routines, schedule, profile, draft, unit, actions) {
   renderHeader(profile, workouts);
   renderWeek(workouts);
   renderOtherStart(renderNext(workouts, routines, schedule, draft, unit, actions), actions);
   renderRecord(workouts, unit);
   renderStats(workouts);
   renderLastWorkout(workouts, actions.onOpenWorkout);
-  renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout, actions.onLogDay);
 }

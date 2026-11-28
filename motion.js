@@ -1,10 +1,28 @@
-// The app's moving parts: a bar that fills, screens that fade in, a pop that replays, and a
-// burst for a finished set. Each does nothing extra when the phone asks for less motion.
+// The app's moving parts: numbers that count up, a bar that fills, a pop that
+// replays, and a burst for a finished set. Each does nothing extra when the phone asks for less motion.
 
-const FADE_MS = 360;
+const COUNT_UP_MS = 900;
 
 export function prefersLessMotion() {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
+
+// Shows `target` in `node`, counting up from 0 with an ease-out. `format` turns the
+// current number into text.
+export function countUp(node, target, format = String) {
+  if (prefersLessMotion() || target <= 0) {
+    node.textContent = format(target);
+    return;
+  }
+  const start = performance.now();
+  const step = (now) => {
+    const progress = Math.min(1, (now - start) / COUNT_UP_MS);
+    const eased = 1 - (1 - progress) ** 3;
+    node.textContent = format(Math.round(target * eased));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  node.textContent = format(0);
+  requestAnimationFrame(step);
 }
 
 // Sets an Ionic progress bar to `value`, filling it from empty so the fill can be seen.
@@ -52,13 +70,12 @@ export function animateHeights(container, selector, mutate) {
   }
 }
 
-// Fades `nodes` in one after another, for a tab that has just opened. Only the opacity
-// changes, so the words never move: moving text is what stuttered on phones (2026-11-27).
-export function fadeInOneByOne(nodes, { maxItems = 12, gapMs = 40 } = {}) {
+// Slides `nodes` up into place one after another, for a screen that builds itself.
+export function staggerIn(nodes, { maxItems = 14, gapMs = 45 } = {}) {
   if (prefersLessMotion()) return;
   [...nodes].slice(0, maxItems).forEach((node, index) => {
-    node.animate([{ opacity: 0 }, { opacity: 1 }],
-      { duration: FADE_MS, delay: index * gapMs, easing: "ease-out", fill: "backwards" });
+    node.animate([{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }],
+      { duration: 420, delay: index * gapMs, easing: EASE_OUT, fill: "backwards" });
   });
 }
 
@@ -67,6 +84,14 @@ export function pop(node, delayMs = 0) {
   if (prefersLessMotion() || !node) return;
   node.animate([{ transform: "scale(0.6)" }, { transform: "scale(1.15)", offset: 0.6 }, { transform: "scale(1)" }],
     { duration: 380, delay: delayMs, easing: SPRING, fill: "backwards" });
+}
+
+// Slides a screen in from the side of the tab that was tapped: `direction` 1 from the
+// right, -1 from the left.
+export function slideIn(node, direction) {
+  if (prefersLessMotion() || !node || direction === 0) return;
+  node.animate([{ opacity: 0.4, transform: `translateX(${direction * 28}px)` }, { opacity: 1, transform: "none" }],
+    { duration: 300, easing: EASE_OUT });
 }
 
 // A gold ring and a check mark bursting out of `anchor`, for finishing a set.
