@@ -1608,6 +1608,13 @@ ion-tab-bar {
   -webkit-backdrop-filter: blur(20px);
 }
 
+/* iPhone Safari holds back a second quick tap in case it is a double-tap to zoom, so fast
+   tab switches were ignored. "manipulation" keeps taps and pinch-zoom but drops that wait. */
+ion-tab-bar,
+ion-tab-button {
+  touch-action: manipulation;
+}
+
 ion-tab-button {
   position: relative;
   --padding-top: 2px;
