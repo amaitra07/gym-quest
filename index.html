@@ -27,7 +27,7 @@
   <title>Gym Quest</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&family=Inter:wght@400;500;600;700;800;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,800&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=Inter:wght@400;500;600;700;800;900&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.8.19/css/ionic.bundle.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core@8.8.19/css/palettes/dark.class.css">
   <link rel="stylesheet" href="styles.css">
@@ -36,10 +36,10 @@
 <body>
   <ion-app>
     <div class="pages">
-      <div class="ion-page" id="homeScreen">
+      <div class="ion-page editorial-page" id="homeScreen">
         <ion-header translucent="true">
           <ion-toolbar>
-            <ion-title>Gym Quest</ion-title>
+            <ion-title class="masthead">Gym Quest</ion-title>
             <ion-buttons slot="end">
               <ion-button id="profileButton" aria-label="Profile and settings">
                 <span class="avatar">
@@ -51,56 +51,55 @@
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <ion-header collapse="condense">
-            <ion-toolbar>
-              <ion-title size="large" id="greetingName"></ion-title>
-            </ion-toolbar>
-          </ion-header>
-          <div class="wrap">
-            <p class="eyebrow" id="homeDate"></p>
-            <div class="bento">
-              <section class="tile tile-next" id="nextTile" aria-labelledby="nextTitle">
-                <span class="tag" id="nextTag">Up next</span>
-                <span class="tile-title" id="nextTitle"></span>
-                <span class="tile-meta" id="nextMeta"></span>
-                <div class="tile-actions" id="nextActions"></div>
-              </section>
-              <button class="tile tile-other" id="otherStartButton" type="button">
-                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                <span id="otherStartText">Start something else</span>
-              </button>
-              <section class="tile tile-streak" aria-label="Day streak">
-                <span class="tile-number" id="streakNumber">0</span>
-                <span class="tile-label">day streak</span>
-              </section>
-              <section class="tile tile-total" aria-label="Workouts logged">
-                <span class="tile-number" id="workoutCount">0</span>
-                <span class="tile-label">workouts logged</span>
-              </section>
-              <section class="tile tile-level" aria-label="Your level">
-                <div class="level-text">
-                  <p class="level-name" id="levelName">Level 1</p>
-                  <p class="tile-label" id="levelDetail"></p>
-                </div>
-                <span class="level-percent" id="levelPercent">0%</span>
-                <ion-progress-bar id="levelBar" value="0" aria-hidden="true"></ion-progress-bar>
-              </section>
-              <button class="tile tile-last" id="lastTile" type="button" hidden>
-                <span class="last-text">
-                  <span class="last-name" id="lastName"></span>
-                  <span class="tile-label" id="lastMeta"></span>
-                </span>
-                <span class="last-xp" id="lastXp"></span>
-              </button>
+          <div class="wrap editorial">
+            <h1 class="headline" id="greetingName"></h1>
+            <p class="lede" id="homeDate"></p>
+            <div class="home-week" id="homeWeek" role="group" aria-label="This week"></div>
+            <section class="feature" id="nextTile" aria-labelledby="nextTitle">
+              <div class="feature-minutes" id="nextMinutesBox" hidden>
+                <span class="big-number num" id="nextMinutes"></span>
+                <span class="kicker">min</span>
+              </div>
+              <span class="kicker" id="nextTag">Up next</span>
+              <h2 class="feature-title" id="nextTitle"></h2>
+              <p class="feature-meta" id="nextMeta"></p>
+            </section>
+            <ol class="exercise-list" id="nextExercises" hidden></ol>
+            <div class="feature-actions" id="nextActions"></div>
+            <button class="text-row" id="otherStartButton" type="button">
+              <span id="otherStartText">Start something else</span>
+              <span class="text-row-arrow" aria-hidden="true">→</span>
+            </button>
+            <section class="record" id="recordBox" aria-label="Latest personal best" hidden>
+              <span class="kicker">Personal best</span>
+              <p class="record-text" id="recordText"></p>
+              <p class="record-date" id="recordDate"></p>
+            </section>
+            <section class="home-stats" aria-label="Your stats">
+              <div class="home-stat"><span class="kicker">Streak</span><b class="num" id="streakNumber">0</b><small>days</small></div>
+              <div class="home-stat"><span class="kicker">Logged</span><b class="num" id="workoutCount">0</b><small>workouts</small></div>
+              <div class="home-stat"><span class="kicker">Level</span><b class="num" id="levelNumber">1</b><small id="levelName"></small></div>
+            </section>
+            <div class="level-line">
+              <ion-progress-bar id="levelBar" value="0" aria-hidden="true"></ion-progress-bar>
+              <span class="level-detail num" id="levelDetail"></span>
             </div>
+            <button class="text-row last-row" id="lastTile" type="button" hidden>
+              <span class="last-text">
+                <span class="kicker">Last session</span>
+                <span class="last-name" id="lastName"></span>
+                <span class="last-meta" id="lastMeta"></span>
+              </span>
+              <span class="text-row-arrow" aria-hidden="true">→</span>
+            </button>
           </div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="routinesScreen" hidden>
+      <div class="ion-page editorial-page" id="routinesScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
-            <ion-title>Plans</ion-title>
+            <ion-title class="masthead">Plans</ion-title>
             <ion-buttons slot="end">
               <ion-button id="newRoutineButton" aria-label="New plan">
                 <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -110,52 +109,45 @@
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <ion-header collapse="condense">
-            <ion-toolbar><ion-title size="large">Plans</ion-title></ion-toolbar>
-          </ion-header>
-          <div class="wrap">
-            <p class="muted screen-intro">A plan is a workout you repeat, like Push day or Legs. Pick a day for each, and Home shows today's.</p>
-            <h2 class="section-title" id="weekHeading">This week</h2>
-            <section class="card week-card" id="weekCard" aria-labelledby="weekHeading">
+          <div class="wrap editorial">
+            <h1 class="headline">Your plans.</h1>
+            <p class="lede">A plan is a workout you repeat, like Push day or Legs. Pick a day for each, and Home shows today's.</p>
+            <h2 class="kicker" id="weekHeading">This week</h2>
+            <section class="week-section" id="weekCard" aria-labelledby="weekHeading">
               <div class="week-strip" id="weekStrip"></div>
-              <p class="muted week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
+              <p class="week-hint">Tap a day to choose its workout. “Up next” on Home follows this plan.</p>
             </section>
-            <h2 class="section-title" id="routineHeading">Your plans</h2>
-            <ion-list class="card-list" lines="none" id="routineList" aria-labelledby="routineHeading"></ion-list>
-            <section class="card" id="routineEmpty" hidden>
-              <p class="empty">No plans yet. Build one like Push day, then start it from Home in one tap. New to this? Home can make you a starter plan.</p>
-              <ion-button expand="block" class="primary-action" id="createFromRoutinesButton">New plan</ion-button>
+            <h2 class="kicker" id="routineHeading">Your plans</h2>
+            <div class="plan-list" id="routineList" role="list" aria-labelledby="routineHeading"></div>
+            <section class="plan-empty" id="routineEmpty" hidden>
+              <p class="lede">No plans yet. Build one like Push day, then start it from Home in one tap. New to this? Home can make you a starter plan.</p>
+              <ion-button expand="block" class="start-button is-solid" id="createFromRoutinesButton">New plan</ion-button>
             </section>
           </div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="progressScreen" hidden>
+      <div class="ion-page editorial-page" id="progressScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" data-header="start"></ion-buttons>
-            <ion-title data-header="title"></ion-title>
+            <ion-title class="masthead" data-header="title"></ion-title>
             <ion-buttons slot="end" data-header="end"></ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <ion-header collapse="condense">
-            <ion-toolbar><ion-title size="large" data-header="title"></ion-title></ion-toolbar>
-          </ion-header>
-          <div class="wrap" id="progressContent"></div>
+          <div class="wrap editorial" id="progressContent"></div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="historyScreen" hidden>
+      <div class="ion-page editorial-page" id="historyScreen" hidden>
         <ion-header translucent="true">
-          <ion-toolbar><ion-title>History</ion-title></ion-toolbar>
+          <ion-toolbar><ion-title class="masthead">History</ion-title></ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <ion-header collapse="condense">
-            <ion-toolbar><ion-title size="large">History</ion-title></ion-toolbar>
-          </ion-header>
-          <div class="wrap">
-            <section class="card" aria-labelledby="calendarTitle">
+          <div class="wrap editorial">
+            <h1 class="headline">Your history.</h1>
+            <section class="calendar" aria-labelledby="calendarTitle">
               <div class="calendar-header">
                 <button class="calendar-nav" id="calendarPrev" type="button" aria-label="Previous month"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
                 <h2 id="calendarTitle"></h2>
@@ -164,15 +156,13 @@
               <div class="calendar-grid" id="calendarGrid"></div>
             </section>
             <div class="list-header">
-              <h2 class="section-title" id="historyHeading">All workouts</h2>
+              <h2 class="kicker" id="historyHeading">All workouts</h2>
               <ion-button fill="clear" size="small" id="showAllButton" hidden>Show all</ion-button>
             </div>
-            <ion-list class="card-list" lines="none" id="historyList" aria-labelledby="historyHeading"></ion-list>
-            <p class="muted swipe-hint" id="historyHint" hidden>Tap a workout to edit it, or swipe it left to delete.</p>
-            <section class="card" id="historyEmpty" hidden>
-              <p class="empty" id="historyEmptyText"></p>
-            </section>
-            <ion-button expand="block" class="secondary-action log-day-button" id="logDayButton" hidden>
+            <ion-list class="history-list" lines="none" id="historyList" aria-labelledby="historyHeading"></ion-list>
+            <p class="swipe-hint" id="historyHint" hidden>Tap a workout to edit it, or swipe it left to delete.</p>
+            <p class="lede history-empty" id="historyEmpty" hidden></p>
+            <ion-button expand="block" fill="outline" class="start-button is-outline log-day-button" id="logDayButton" hidden>
               <svg class="icon" slot="start" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
               <span id="logDayText">Log a workout</span>
             </ion-button>
@@ -180,55 +170,55 @@
         </ion-content>
       </div>
 
-      <div class="ion-page" id="profileScreen" hidden>
+      <div class="ion-page editorial-page" id="profileScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" data-header="start"></ion-buttons>
-            <ion-title data-header="title"></ion-title>
+            <ion-title class="masthead" data-header="title"></ion-title>
             <ion-buttons slot="end" data-header="end"></ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <div class="wrap" id="profileContent"></div>
+          <div class="wrap editorial" id="profileContent"></div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="completeScreen" hidden>
+      <div class="ion-page editorial-page" id="completeScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" data-header="start"></ion-buttons>
-            <ion-title data-header="title"></ion-title>
+            <ion-title class="masthead" data-header="title"></ion-title>
             <ion-buttons slot="end" data-header="end"></ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <div class="wrap" id="completeContent"></div>
+          <div class="wrap editorial" id="completeContent"></div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="workoutScreen" hidden>
+      <div class="ion-page editorial-page" id="workoutScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" data-header="start"></ion-buttons>
-            <ion-title data-header="title"></ion-title>
+            <ion-title class="masthead" data-header="title"></ion-title>
             <ion-buttons slot="end" data-header="end"></ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <div class="wrap" id="workoutContent"></div>
+          <div class="wrap editorial" id="workoutContent"></div>
         </ion-content>
       </div>
 
-      <div class="ion-page" id="activityScreen" hidden>
+      <div class="ion-page editorial-page" id="activityScreen" hidden>
         <ion-header translucent="true">
           <ion-toolbar>
             <ion-buttons slot="start" data-header="start"></ion-buttons>
-            <ion-title data-header="title"></ion-title>
+            <ion-title class="masthead" data-header="title"></ion-title>
             <ion-buttons slot="end" data-header="end"></ion-buttons>
           </ion-toolbar>
         </ion-header>
         <ion-content fullscreen="true">
-          <div class="wrap" id="activityContent"></div>
+          <div class="wrap editorial" id="activityContent"></div>
         </ion-content>
       </div>
     </div>

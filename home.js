@@ -1,43 +1,70 @@
-import { addDays, formatDate, todayIso } from "./dates.js";
+import { distanceUnitFor } from "./activity.js";
+import { addDays, formatDate, todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, el } from "./dom.js";
 import { renderHistory } from "./history.js";
-import { countUp, fillBar } from "./motion.js";
-import { estimateMinutes, upNext } from "./plan.js";
 import { summarize } from "./history-row.js";
+import { countUp, fillBar } from "./motion.js";
+import { MUSCLES, musclesFor } from "./muscles.js";
+import { estimateMinutes, planLineText, upNext, weekOf } from "./plan.js";
+import { latestRecord } from "./records.js";
 import { currentStreak, levelInfo, titleForLevel, totalXp } from "./stats.js";
+
+// Home, laid out like the front page of a magazine ("Editorial", Anish's pick on
+// 2026-11-27): a headline for the time of day, a line about your week, a dot for each day
+// trained, then what's up next with every exercise listed, your latest personal best, and
+// your streak, workouts and level.
 
 const NOON_HOUR = 12;
 const EVENING_HOUR = 18;
+const MUSCLES_IN_SUBTITLE = 3;
+const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
-function greeting(now = new Date()) {
+function partOfDay(now) {
   const hour = now.getHours();
-  if (hour < NOON_HOUR) return "Good morning";
-  if (hour < EVENING_HOUR) return "Good afternoon";
-  return "Good evening";
+  if (hour < NOON_HOUR) return "morning";
+  if (hour < EVENING_HOUR) return "afternoon";
+  return "evening";
 }
 
-// Your name as the big title, the greeting and date under it, and the profile circle (the
-// first letter of your name, or a person icon).
-function renderHeader(profile) {
+function plural(count, word) {
+  return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+// "Friday evening." as the big title, a greeting and your streak under it, and the profile
+// circle (the first letter of your name, or a person icon).
+function renderHeader(profile, workouts) {
   const now = new Date();
   const name = profile?.name?.trim() ?? "";
-  const date = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  byId("greetingName").textContent = name || "Let's go";
-  byId("homeDate").textContent = `${greeting(now)} · ${date}`;
+  const time = partOfDay(now);
+  byId("greetingName").textContent = `${WEEKDAY_NAMES[now.getDay()]} ${time}.`;
+  const greeting = name === "" ? `Good ${time}.` : `Good ${time}, ${name}.`;
+  const streak = currentStreak(workouts);
+  byId("homeDate").textContent = streak >= 2 ? `${greeting} ${streak} days running.` : greeting;
   byId("profileInitial").textContent = name.slice(0, 1).toUpperCase();
   byId("profileInitial").hidden = name === "";
   byId("profileIcon").style.display = name === "" ? "" : "none";
 }
 
+// This week, Sunday to Saturday: a filled dot on each day with a workout, a ring on today.
+function renderWeek(workouts) {
+  const trained = new Set(workouts.map((workout) => workout.date));
+  const days = weekOf(todayIso()).map(({ iso, weekday, isToday }) => {
+    const done = trained.has(iso);
+    const label = `${WEEKDAY_NAMES[weekday]}${isToday ? ", today" : ""}${done ? ", trained" : ""}`;
+    return el("div", { class: `home-day${isToday ? " home-day-today" : ""}${done ? " home-day-done" : ""}`, "aria-label": label },
+      el("span", { text: WEEKDAY_LETTERS[weekday], "aria-hidden": "true" }),
+      el("i", { "aria-hidden": "true" }));
+  });
+  byId("homeWeek").replaceChildren(...days);
+}
+
 function renderStats(workouts) {
   const { level, into, needed } = levelInfo(totalXp(workouts));
-  const percent = Math.round((into / needed) * 100);
-
   countUp(byId("streakNumber"), currentStreak(workouts));
   countUp(byId("workoutCount"), workouts.length);
-  byId("levelName").textContent = `Level ${level}`;
-  byId("levelDetail").textContent = `${titleForLevel(level)} · ${into} / ${needed} XP`;
-  countUp(byId("levelPercent"), percent, (value) => `${value}%`);
+  countUp(byId("levelNumber"), level);
+  byId("levelName").textContent = titleForLevel(level);
+  byId("levelDetail").textContent = `${into} / ${needed} XP`;
   fillBar(byId("levelBar"), into / needed);
 }
 
@@ -50,47 +77,75 @@ function whenLabel(daysAhead) {
   return daysAhead === 7 ? `Next ${weekday}` : weekday;
 }
 
-function plural(count, word) {
-  return `${count} ${word}${count === 1 ? "" : "s"}`;
+// "Lats and upper back, biceps and traps": the main muscles of a plan's first exercises.
+function musclesLine(routine) {
+  const keys = [];
+  for (const exercise of routine.exercises) {
+    for (const key of musclesFor(exercise.name)?.main ?? []) {
+      if (!keys.includes(key)) keys.push(key);
+    }
+  }
+  const labels = keys.slice(0, MUSCLES_IN_SUBTITLE)
+    .map((key, index) => {
+      const label = MUSCLES.find((muscle) => muscle.key === key).label;
+      return index === 0 ? label : label.toLowerCase();
+    });
+  if (labels.length < 2) return labels.join("");
+  return `${labels.slice(0, -1).join(", ")} and ${labels.at(-1)}`;
 }
 
-// A button inside the lime tile; "solid" is dark, "outline" is a dark ring.
-function tileButton(text, fill, onclick) {
-  return el("ion-button", { class: `tile-button is-${fill}`, fill: fill === "solid" ? "solid" : "outline", text, onclick });
+// A button under the plan; "solid" is filled gold, "outline" a thin gold line.
+function startButton(text, fill, onclick) {
+  return el("ion-button", { class: `start-button is-${fill}`, fill: fill === "solid" ? "solid" : "outline", text, onclick });
 }
 
-// The big lime tile, where every workout starts: finish what you started, otherwise the
-// next workout in your weekly plan (or your rotation if you have no schedule), run with
-// timers or logged by hand; with no plans at all, a starter plan. Returns the plan it
-// shows, if any, so "Start something else" can leave it out.
-function renderNextTile(workouts, routines, schedule, draft, actions) {
+// Up next, where every workout starts: finish what you started, otherwise the next workout
+// in your weekly plan (or your rotation if you have no schedule) with all its exercises,
+// run with timers or logged by hand; with no plans at all, a starter plan. Returns the plan
+// it shows, if any, so "Start something else" can leave it out.
+function renderNext(workouts, routines, schedule, draft, unit, actions) {
   const plan = upNext(routines, schedule, workouts, todayIso());
-  const show = (tag, title, meta, ...buttons) => {
+  const show = ({ tag, title, meta, minutes = null, exercises = [], buttons }) => {
     byId("nextTag").textContent = tag;
     byId("nextTitle").textContent = title;
     byId("nextMeta").textContent = meta;
+    byId("nextMinutesBox").hidden = minutes === null;
+    byId("nextMinutes").textContent = minutes ?? "";
+    byId("nextTile").classList.toggle("has-minutes", minutes !== null);
+    byId("nextExercises").hidden = exercises.length === 0;
+    byId("nextExercises").replaceChildren(...exercises.map((exercise) =>
+      el("li", {},
+        el("span", { class: "exercise-name", text: exercise.name }),
+        el("span", { class: "exercise-target", text: planLineText(exercise, unit) }))));
     byId("nextActions").replaceChildren(...buttons);
   };
   if (draft !== null) {
-    show("In progress", draft.name.trim() || "Your workout", "Pick up where you left off.",
-      tileButton("Resume", "solid", actions.onResume));
+    show({ tag: "In progress", title: draft.name.trim() || "Your workout", meta: "Pick up where you left off.",
+      buttons: [startButton("Resume", "solid", actions.onResume)] });
     return null;
   }
   if (plan !== null) {
     const { routine, daysAhead } = plan;
-    show(daysAhead === null ? "Up next" : `Up next · ${whenLabel(daysAhead)}`, routine.name,
-      `${plural(routine.exercises.length, "exercise")} · about ${estimateMinutes(routine)} min`,
-      tileButton("Start guided", "solid", () => actions.onStartRoutine(routine)),
-      tileButton("Log it", "outline", () => actions.onLogRoutine(routine)));
+    const muscles = musclesLine(routine);
+    const count = plural(routine.exercises.length, "exercise");
+    show({
+      tag: daysAhead === null ? "Up next" : `Up next · ${whenLabel(daysAhead)}`,
+      title: routine.name,
+      meta: muscles === "" ? count : `${muscles} · ${count}`,
+      minutes: estimateMinutes(routine),
+      exercises: routine.exercises,
+      buttons: [startButton("Start guided", "solid", () => actions.onStartRoutine(routine)),
+        startButton("Log it", "outline", () => actions.onLogRoutine(routine))],
+    });
     return routine;
   }
   if (routines.length === 0) {
-    show("New here?", "Get a starter plan", "Answer two questions and get ready-made workouts for your week.",
-      tileButton("Make my plan", "solid", actions.onStarterPlan));
+    show({ tag: "New here?", title: "Get a starter plan", meta: "Answer two questions and get ready-made workouts for your week.",
+      buttons: [startButton("Make my plan", "solid", actions.onStarterPlan)] });
     return null;
   }
-  show("Ready when you are", "Log a workout", "Start an empty workout and add exercises as you go.",
-    tileButton("Start", "solid", actions.onStartEmpty));
+  show({ tag: "Ready when you are", title: "Log a workout", meta: "Start an empty workout and add exercises as you go.",
+    buttons: [startButton("Start", "solid", actions.onStartEmpty)] });
   return null;
 }
 
@@ -99,26 +154,51 @@ function renderOtherStart(featured, actions) {
   byId("otherStartButton").onclick = () => actions.onStartOther(featured?.id ?? null);
 }
 
+// The record's number, in gold, inside a sentence: "Bench Press, 185 lb for 5."
+function recordSentence({ name, type, set }, unit) {
+  const gold = (text) => el("em", { class: "num", text });
+  if (type === "strength") {
+    return set.weight > 0
+      ? [`${name}, `, gold(`${set.weight} ${unit}`), ` for ${set.reps}.`]
+      : [`${name}, `, gold(plural(set.reps, "rep")), "."];
+  }
+  if (type === "cardio") {
+    return set.distance > 0
+      ? [`${name}, `, gold(`${set.distance} ${distanceUnitFor(unit)}`), ` in ${set.minutes} min.`]
+      : [`${name}, `, gold(`${set.minutes} min`), "."];
+  }
+  return [`${name}, `, gold(plural(set.seconds, "second")), "."];
+}
+
+function renderRecord(workouts, unit) {
+  const record = latestRecord(workouts);
+  byId("recordBox").hidden = record === null;
+  if (record === null) return;
+  byId("recordText").replaceChildren(...recordSentence(record, unit));
+  byId("recordDate").textContent = formatDate(record.date);
+}
+
 function renderLastWorkout(workouts, onOpenWorkout) {
-  const tile = byId("lastTile");
+  const row = byId("lastTile");
   const newestFirst = [...workouts].sort((a, b) =>
     a.date === b.date ? b.createdAt - a.createdAt : a.date < b.date ? 1 : -1,
   );
   const last = newestFirst[0];
-  tile.hidden = last === undefined;
+  row.hidden = last === undefined;
   if (last === undefined) return;
   byId("lastName").textContent = last.name;
   byId("lastMeta").textContent = `${formatDate(last.date)} · ${summarize(last)}`;
-  byId("lastXp").textContent = `+${last.xp || 0} XP`;
-  tile.onclick = () => onOpenWorkout(last);
+  row.onclick = () => onOpenWorkout(last);
 }
 
 // Draws Home and the History screen. `actions` are { onOpenWorkout, onDeleteWorkout,
 // onStartRoutine, onLogRoutine, onResume, onStartEmpty, onStartOther, onStarterPlan, onLogDay }.
-export function renderScreens(workouts, routines, schedule, profile, draft, actions) {
-  renderHeader(profile);
+export function renderScreens(workouts, routines, schedule, profile, draft, unit, actions) {
+  renderHeader(profile, workouts);
+  renderWeek(workouts);
+  renderOtherStart(renderNext(workouts, routines, schedule, draft, unit, actions), actions);
+  renderRecord(workouts, unit);
   renderStats(workouts);
-  renderOtherStart(renderNextTile(workouts, routines, schedule, draft, actions), actions);
   renderLastWorkout(workouts, actions.onOpenWorkout);
   renderHistory(workouts, actions.onOpenWorkout, actions.onDeleteWorkout, actions.onLogDay);
 }

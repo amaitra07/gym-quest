@@ -197,6 +197,10 @@ export function showToast(message) {
   presentOverlay(toast);
 }
 
+// Menus, pop-ups and sheets use the gold "Editorial" look, like every screen, instead of
+// Ionic's own.
+const OVERLAY_LOOK = "editorial-overlay";
+
 // An in-page replacement for window.confirm, which some phone browsers block.
 // Resolves to true if the user confirms and false if they cancel. `detail` is optional
 // smaller text under the question. The confirm button is red unless `isDestructive` is
@@ -204,6 +208,7 @@ export function showToast(message) {
 export function confirmAction(message, confirmLabel, { detail = null, isDestructive = true } = {}) {
   const confirmRole = isDestructive ? DESTRUCTIVE_ROLE : CONFIRM_ROLE;
   const alert = el("ion-alert");
+  alert.cssClass = OVERLAY_LOOK;
   alert.header = message;
   if (detail !== null) alert.message = detail;
   alert.buttons = [
@@ -217,6 +222,7 @@ export function confirmAction(message, confirmLabel, { detail = null, isDestruct
 // or null if they cancel. The option marked `isPrimary` is shown as the current choice.
 export function chooseOption(title, options) {
   const sheet = el("ion-action-sheet");
+  sheet.cssClass = OVERLAY_LOOK;
   sheet.header = title;
   sheet.buttons = [
     ...options.map((option) => ({
@@ -232,7 +238,7 @@ export function chooseOption(title, options) {
 // A sheet that slides up from the bottom and can be dragged taller or away. Returns
 // `content` to fill and `close()`; `onClosed` runs however it was closed.
 export function openSheet(title, onClosed = () => {}) {
-  const content = el("div", { class: "sheet-body" });
+  const content = el("div", { class: "sheet-body editorial" });
   const modal = el("ion-modal", {},
     el("ion-header", {},
       el("ion-toolbar", {},
@@ -240,6 +246,7 @@ export function openSheet(title, onClosed = () => {}) {
         el("ion-buttons", { slot: "end" },
           el("ion-button", { strong: "true", text: "Done", onclick: () => modal.dismiss() })))),
     el("ion-content", {}, content));
+  modal.cssClass = OVERLAY_LOOK;
   modal.breakpoints = SHEET_HEIGHTS;
   modal.initialBreakpoint = SHEET_HEIGHTS[1];
   presentOverlay(modal).then(onClosed);

@@ -1,17 +1,22 @@
 import { WEEKDAY_NAMES } from "./dates.js";
-import { byId, el, listRow } from "./dom.js";
+import { byId, el } from "./dom.js";
 import { summarize } from "./history-row.js";
-import { weekOf } from "./plan.js";
+import { estimateMinutes, weekOf } from "./plan.js";
 
-// One tappable row for a plan; `actionText` says what tapping does.
-function routineRow(routine, actionText, onTap) {
-  return listRow({
-    title: routine.name,
-    detail: summarize(routine),
-    sideBottom: actionText,
-    label: `${actionText} ${routine.name}`,
-    onTap: () => onTap(routine),
-  });
+// One plan as a numbered row (I., II., ...) on a thin gold line: its name, what's in it and
+// about how long it takes. Tapping opens it to edit.
+function routineRow(routine, onEdit) {
+  return el("button", {
+    class: "text-row plan-row",
+    type: "button",
+    role: "listitem",
+    "aria-label": `Edit ${routine.name}`,
+    onclick: () => onEdit(routine),
+  },
+  el("span", { class: "plan-row-text" },
+    el("span", { class: "plan-row-name", text: routine.name }),
+    el("span", { class: "plan-row-meta", text: `${summarize(routine)} · about ${estimateMinutes(routine)} min` })),
+  el("span", { class: "plan-row-action", text: "Edit" }));
 }
 
 // A short label for a day cell: the first word ("Push day" becomes "Push"), unless another
@@ -58,7 +63,7 @@ export function renderRoutines(routines, { schedule, workouts, today, onPickDay,
   renderWeek(routines, schedule, workouts, today, onPickDay);
   byId("weekHeading").hidden = routines.length === 0;
   byId("weekCard").hidden = routines.length === 0;
-  byId("routineList").replaceChildren(...routines.map((routine) => routineRow(routine, "Edit", onEdit)));
+  byId("routineList").replaceChildren(...routines.map((routine) => routineRow(routine, onEdit)));
   byId("routineHeading").hidden = routines.length === 0;
   byId("routineEmpty").hidden = routines.length > 0;
   // With no plans yet, the big "New plan" button is the way in, so the top "+ New" waits

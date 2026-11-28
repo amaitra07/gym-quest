@@ -102,7 +102,7 @@ function segmented(label, choices, current, onPick) {
 }
 
 function sectionTitle(text) {
-  return el("h2", { class: "section-title", text });
+  return el("h2", { class: "kicker", text });
 }
 
 // `actions` are { onBack, onSave(profile), onTheme(theme), onUnit(unit), onFigure(figure),
@@ -149,6 +149,7 @@ export function renderProfile(profile, unit, theme, figure, actions) {
     onBack: actions.onBack,
   });
   byId("profileContent").replaceChildren(
+    el("h1", { class: "headline", text: "Your profile." }),
     sectionTitle("Account"),
     el("div", { id: "accountSection" }),
     sectionTitle("About you"),

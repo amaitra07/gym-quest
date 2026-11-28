@@ -157,6 +157,14 @@ function setLabel(step) {
   return `Set ${step.setNumber} of ${step.setCount}`;
 }
 
+// This exercise's sets as thin gold segments: done, the one you are on (glowing), and to come.
+function setSegments(step) {
+  return el("div", { class: "set-segments", role: "img", "aria-label": setLabel(step) },
+    ...Array.from({ length: step.setCount }, (_, position) => el("i", {
+      class: position + 1 < step.setNumber ? "is-done" : position + 1 === step.setNumber ? "is-now" : "",
+    })));
+}
+
 // Walks through the workout one set at a time with a total clock and rest
 // countdowns. It never changes the workout; `onExit` returns to the log screen.
 // Returns { stop, isRunning } so the caller can end it when the user navigates away.
@@ -771,7 +779,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const start = stepButton("Start now", skipRest);
     const actions = [start];
     if (nextExerciseIndex(steps, index) !== -1) {
-      const skip = button("secondary", { onclick: skipExercise }, "Skip this exercise", icon("arrow", "end"));
+      const skip = button("text", { class: "next-link", onclick: skipExercise }, "Skip this exercise", icon("arrow", "end"));
       skip.disabled = paused;
       actions.push(skip);
     }
@@ -798,11 +806,15 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
     const countdown = hasCountdown ? el("p", { class: "player-countdown", text: "" }) : null;
     countdownNode = countdown;
     // A set counted in reps has no clock, so its rep target fills the middle instead.
+    // A band of light glides across the gold number each time the spotlight behind it swells.
     const repTarget = !hasCountdown && step.exercise.type === "strength" && step.set.reps
-      ? el("p", { class: "player-countdown player-reps" }, repTargetText(step.set),
+      ? el("p", { class: "player-countdown player-reps" },
+        el("span", { class: "rep-number" }, repTargetText(step.set),
+          el("span", { class: "rep-glint", "aria-hidden": "true", text: repTargetText(step.set) })),
         el("small", { text: step.set.weight ? `reps at ${step.set.weight} ${unit}` : "reps" }))
       : null;
-    // The middle of the screen: the number pulses during a set; a circle breathes behind it during a rest.
+    // The middle of the screen: a gold spotlight pulses behind the number during a set; a
+    // circle breathes behind the clock during a rest.
     const showCard = phase === "work" && !askingFeel && !askingReps && needsWeight(step);
     const stage = showCard
       ? findWeightCard(step)
@@ -814,6 +826,7 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
 
     const common = [
       el("p", { class: "player-label", text: paused ? "Paused" : phase === "rest" ? "Rest" : "Work" }),
+      setSegments(step),
       el("h2", { class: "player-exercise", text: step.exercise.name }),
       // Once the reps are in (while asking how it felt), the line shows what was done.
       editTarget(`${setLabel(step)} · ${targetText(step, unit, askingFeel)}`),
@@ -830,7 +843,8 @@ export function runGuidedWorkout(container, workout, unit, onExit, { resumeFrom 
       actions.push(stepButton("Done with set", afterDone(step)));
     }
     if (nextExerciseIndex(steps, index) !== -1) {
-      const skip = button("secondary", { onclick: skipExercise }, "Next exercise", icon("arrow", "end"));
+      // A small link, so Done with set is the one big button on the screen.
+      const skip = button("text", { class: "next-link", onclick: skipExercise }, "Next exercise", icon("arrow", "end"));
       skip.disabled = paused;
       actions.push(skip);
     }

@@ -1,4 +1,6 @@
+import { distanceUnitFor } from "./activity.js";
 import { addDays, weekdayOf } from "./dates.js";
+import { repTargetText } from "./exercises.js";
 
 // What to suggest doing next, and roughly how long a workout takes.
 
@@ -80,4 +82,20 @@ export function upNext(routines, schedule, workouts, today) {
     return { routine, daysAhead };
   }
   return null;
+}
+
+// One exercise of a plan as a short line for Home's list, from its first set:
+// "4 × 8 · 115 lb", "3 × 8–12", "3 × 30s" or "10 min · 2 mi".
+export function planLineText(exercise, unit) {
+  const first = exercise.sets[0];
+  if (first === undefined) return "";
+  const count = exercise.sets.length;
+  if (exercise.type === "cardio") {
+    const distance = first.distance > 0 ? ` · ${first.distance} ${distanceUnitFor(unit)}` : "";
+    return `${first.minutes ?? 0} min${distance}`;
+  }
+  if (exercise.type === "timed") return `${count} × ${first.seconds ?? 0}s`;
+  const weight = first.weight > 0 ? ` · ${first.weight} ${unit}` : "";
+  const reps = repTargetText(first);
+  return reps === "" ? `${count} sets${weight}` : `${count} × ${reps}${weight}`;
 }

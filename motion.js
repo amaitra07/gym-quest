@@ -1,10 +1,7 @@
-// The Arcade look's moving parts: numbers that count up, a bar that fills, a pop that
-// replays, and a confetti burst. Each does nothing extra when the phone asks for less motion.
+// The app's moving parts: numbers that count up, a bar that fills, a pop that
+// replays, and a burst for a finished set. Each does nothing extra when the phone asks for less motion.
 
 const COUNT_UP_MS = 900;
-const CONFETTI_PIECES = 44;
-const CONFETTI_COLORS = ["#c8f542", "#2de2c6", "#c9b8ff", "#ffffff", "#e8ff7a"];
-const CONFETTI_LIFETIME_MS = 2600;
 
 export function prefersLessMotion() {
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
@@ -45,24 +42,6 @@ export function replay(node, className) {
   node.classList.remove(className);
   void node.offsetWidth;
   node.classList.add(className);
-}
-
-// Drops confetti over `container` for a couple of seconds.
-export function burstConfetti(container = document.body) {
-  if (prefersLessMotion()) return;
-  const layer = document.createElement("div");
-  layer.className = "confetti";
-  layer.setAttribute("aria-hidden", "true");
-  for (let index = 0; index < CONFETTI_PIECES; index++) {
-    const piece = document.createElement("i");
-    piece.style.left = `${Math.random() * 100}%`;
-    piece.style.background = CONFETTI_COLORS[index % CONFETTI_COLORS.length];
-    piece.style.animationDelay = `${Math.random() * 0.4}s`;
-    piece.style.animationDuration = `${1.3 + Math.random() * 0.9}s`;
-    layer.append(piece);
-  }
-  container.append(layer);
-  setTimeout(() => layer.remove(), CONFETTI_LIFETIME_MS);
 }
 
 const EASE_OUT = "cubic-bezier(0.2, 0.8, 0.2, 1)";
@@ -115,7 +94,7 @@ export function slideIn(node, direction) {
     { duration: 300, easing: EASE_OUT });
 }
 
-// A lime ring and a check mark bursting out of `anchor`, for finishing a set.
+// A gold ring and a check mark bursting out of `anchor`, for finishing a set.
 export function burstFrom(anchor) {
   if (prefersLessMotion() || !anchor) return;
   const box = anchor.getBoundingClientRect();

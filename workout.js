@@ -797,9 +797,9 @@ function renderReview() {
   const cleaned = workoutToSave();
   const summary = workoutSummary({ ...cleaned, xp: computeXp(cleaned) }, []);
   const [headlineValue, headlineLabel] = headlineStat(summary, unit);
-  const stat = (label, value) => el("div", { class: "stat-card" },
-    el("span", { class: "muted", text: label }),
-    el("strong", { text: value }));
+  const stat = (label, value) => el("div", { class: "record-column" },
+    el("span", { class: "kicker", text: label }),
+    el("b", { class: "num", text: value }));
 
   const exerciseLists = cleaned.exercises.flatMap((exercise) => [
     el("h2", { class: "section-title", text: exercise.name }),
@@ -812,7 +812,7 @@ function renderReview() {
     byId("workoutContent"),
     renderHero(formatDate(session.workout.date)),
     cleaned.exercises.length > 0
-      ? el("div", { class: "stat-cards" },
+      ? el("div", { class: "record-columns" },
         stat("Exercises", String(summary.exerciseCount)),
         stat("Sets", String(summary.setCount)),
         stat(headlineLabel, headlineValue))

@@ -45,7 +45,7 @@ export function renderHistory(workouts, onOpenWorkout, onDeleteWorkout, onLogDay
   list.replaceChildren(...shown.map((workout) => workoutRow(workout, onOpenWorkout, onDeleteWorkout)));
   byId("historyHint").hidden = shown.length === 0;
   byId("historyEmpty").hidden = shown.length > 0;
-  byId("historyEmptyText").textContent = emptyMessage(selectedDate);
+  byId("historyEmpty").textContent = emptyMessage(selectedDate);
 
   const logDayButton = byId("logDayButton");
   logDayButton.hidden = !canLogForDay(selectedDate);

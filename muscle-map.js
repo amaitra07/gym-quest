@@ -1,4 +1,4 @@
-// The muscle map on Progress: a front and back anatomy figure, each muscle filled in lime by
+// The muscle map on Progress: a front and back anatomy figure, each muscle filled in gold by
 // how many sets it got in the last 7 days, with notes on what was missed and the details
 // of a muscle when it is tapped. Profile picks a male or female figure.
 
@@ -81,7 +81,7 @@ export function muscleMapCard(workouts, today, selected, onPick, body) {
     : missed.length === 0
       ? "Every muscle group got work in the last 7 days."
       : `Needs work: ${missed.join(", ")}. No sets in the last 7 days.`;
-  return el("section", { class: "card muscle-map" },
+  return el("section", { class: "muscle-map" },
     figure(tally, selected, onPick, body),
     el("div", { class: "muscle-legend", "aria-hidden": "true" },
       el("span", { class: "legend-title", text: "Sets" }),

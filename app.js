@@ -76,7 +76,7 @@ function showTab(name) {
   // Coming back to Progress from elsewhere starts at the list, not the last lift opened.
   if (name === "progress" && currentTab !== "progress") resetProgress();
   currentTab = name;
-  renderScreens(workouts, routines, schedule, profile, loadDraft(), {
+  renderScreens(workouts, routines, schedule, profile, loadDraft(), loadUnit(), {
     onOpenWorkout: editWorkout,
     onDeleteWorkout: deleteFromHistory,
     onStartRoutine: startRoutine,
@@ -108,7 +108,7 @@ function animateTabIn(name, cameFrom) {
   slideIn(screen.querySelector("ion-content"), from === -1 ? 0 : Math.sign(TABS.indexOf(name) - from));
   const pieces = [];
   for (const child of screen.querySelectorAll(".wrap > :not([hidden])")) {
-    if (child.matches(".bento, .card-list")) pieces.push(...child.children);
+    if (child.matches(".history-list")) pieces.push(...child.children);
     else pieces.push(child);
   }
   staggerIn(pieces);

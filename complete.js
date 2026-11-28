@@ -1,7 +1,6 @@
 import { button, byId, detailRow, el, fillContainer, insetList, scrollToTop, setHeader, showToast } from "./dom.js";
 import { describeSet } from "./exercises.js";
-import { burstConfetti } from "./motion.js";
-import { workoutSummary } from "./records.js";
+import { headlineStat, workoutSummary } from "./records.js";
 import { drawShareCard } from "./share-card.js";
 
 function fileNameFor(summary) {
@@ -25,9 +24,17 @@ async function shareImage(file, summary) {
   }
 }
 
-// The screen after finishing a workout: what you earned, any new records, and a share card.
+// A summary number as a column: a small gold label over a serif value.
+function summaryColumn(label, value) {
+  return el("div", { class: "record-column" }, el("span", { class: "kicker", text: label }), el("b", { class: "num", text: value }));
+}
+
+// The screen after finishing a workout: a gold glow spreads out behind "Well done." (or
+// "New PR."), then what you earned, the workout in numbers, any new records, and a share card.
 export function renderComplete(workout, records, levelMessage, unit, onDone) {
   const summary = workoutSummary(workout, records);
+  const [headlineValue, headlineLabel] = headlineStat(summary, unit);
+  const hasRecord = records.length > 0;
   const preview = el("div", { class: "share-preview-frame" }, el("p", { class: "muted", text: "Making your card…" }));
   const actions = el("div", { class: "button-stack" });
 
@@ -35,19 +42,24 @@ export function renderComplete(workout, records, levelMessage, unit, onDone) {
   setHeader("complete", { title: "Summary" });
   fillContainer(
     byId("completeContent"),
-    el("h1", { class: records.length > 0 ? "hero-title is-pr" : "hero-title", text: records.length > 0 ? "New PR!" : "Workout saved" }),
-    el("p", { class: "hero-accent", text: levelMessage ?? `+${summary.xp} XP` }),
-    records.length > 0
-      ? el("h2", { class: "section-title", text: records.length === 1 ? "New personal record" : "New personal records" })
+    el("div", { class: "finish-glow", "aria-hidden": "true" }),
+    el("p", { class: "kicker", text: hasRecord ? "Workout saved · new record" : "Workout saved" }),
+    el("h1", { class: "headline finish-title", text: hasRecord ? "New PR." : "Well done." }),
+    el("p", { class: "finish-xp", text: levelMessage ?? `+${summary.xp} XP` }),
+    el("div", { class: "record-columns" },
+      summaryColumn("Exercises", String(summary.exerciseCount)),
+      summaryColumn("Sets", String(summary.setCount)),
+      summaryColumn(headlineLabel, headlineValue)),
+    hasRecord
+      ? el("h2", { class: "kicker", text: records.length === 1 ? "New personal record" : "New personal records" })
       : null,
-    records.length > 0
+    hasRecord
       ? insetList(...records.map((record) => detailRow(record.name, describeSet(record.type, record.set, unit), "PR")))
       : null,
     preview,
     button("primary", { text: "Done", onclick: onDone }),
     actions);
   scrollToTop("complete");
-  burstConfetti();
 
   drawShareCard(summary, unit).then((blob) => {
     const fileName = fileNameFor(summary);

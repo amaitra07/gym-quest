@@ -1,68 +1,65 @@
 /* Gym Quest is built from Ionic components in their iPhone look. This file gives them the
-   app's colours ("Midnight lime") and styles the pieces Ionic has no component for: the
-   Home tiles, the week strip, the calendar, the set grid and the guided workout. */
+   app's colours (the gold "Editorial" look since 2026-11-27: warm black or warm paper with
+   gold) and styles the pieces Ionic has no component for: the Home page, the week strip,
+   the calendar, the set grid and the guided workout. */
 
 :root {
-  --bg: #efefec;
-  --panel: #ffffff;
-  --border: #e2e2dd;
-  --text: #111113;
-  --text-dim: #6b6e76;
+  --bg: #f6f1e7;
+  --panel: #fbf8f1;
+  --border: #e4dccb;
+  --text: #1d1a14;
+  --text-dim: #776f60;
   /* A soft grey fill that works on the page and on cards, for fields and quiet buttons. */
   --fill: color-mix(in srgb, var(--text) 7%, transparent);
   --fill-strong: color-mix(in srgb, var(--text) 14%, transparent);
-  /* Lime fills (buttons, calendar days) work on both themes; lime text needs a darker
-     shade on light backgrounds, so text and strokes use Ionic's primary colour below. */
-  --accent: #c8f542;
-  --accent-pressed: #b0d83a;
-  --accent-ink: #0a0a0c;
-  --violet-bg: #e9e4ff;
-  --violet-text: #5b3fd1;
+  /* Gold fills work on both themes; gold text needs a deeper shade on light paper, so text
+     and strokes use Ionic's primary colour below. */
+  --accent: #d4b97f;
+  --accent-pressed: #c2a568;
+  --accent-ink: #1a140a;
   --danger: #e5484d;
   --radius: 22px;
   --radius-small: 14px;
 
   --ion-font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
   --ion-background-color: var(--bg);
-  --ion-background-color-rgb: 239, 239, 236;
+  --ion-background-color-rgb: 246, 241, 231;
   --ion-text-color: var(--text);
-  --ion-text-color-rgb: 17, 17, 19;
+  --ion-text-color-rgb: 29, 26, 20;
   --ion-item-background: var(--panel);
   --ion-card-background: var(--panel);
   --ion-toolbar-background: var(--bg);
   --ion-tab-bar-background: var(--bg);
-  --ion-color-primary: #4d7c0f;
-  --ion-color-primary-rgb: 77, 124, 15;
+  --ion-color-primary: #8a6a2b;
+  --ion-color-primary-rgb: 138, 106, 43;
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #446d0d;
-  --ion-color-primary-tint: #5f8927;
+  --ion-color-primary-shade: #7a5d26;
+  --ion-color-primary-tint: #967940;
   --ion-color-danger: var(--danger);
   --ion-color-danger-rgb: 229, 72, 77;
 }
 
 /* theme.js adds this class for the dark theme, which also switches on Ionic's dark palette. */
 :root.ion-palette-dark {
-  --bg: #0c0c0e;
-  --panel: #18181c;
-  --border: #2a2a30;
-  --text: #f4f4f5;
-  --text-dim: #8e8e98;
-  --violet-bg: #2b2640;
-  --violet-text: #c9b8ff;
+  --bg: #0c0b09;
+  --panel: #17150f;
+  --border: #2b271e;
+  --text: #ece6da;
+  --text-dim: #8a8478;
 
   --ion-background-color: var(--bg);
-  --ion-background-color-rgb: 12, 12, 14;
+  --ion-background-color-rgb: 12, 11, 9;
   --ion-text-color: var(--text);
-  --ion-text-color-rgb: 244, 244, 245;
+  --ion-text-color-rgb: 236, 230, 218;
   --ion-item-background: var(--panel);
   --ion-card-background: var(--panel);
-  --ion-color-primary: #c8f542;
-  --ion-color-primary-rgb: 200, 245, 66;
-  --ion-color-primary-contrast: #0a0a0c;
-  --ion-color-primary-contrast-rgb: 10, 10, 12;
-  --ion-color-primary-shade: #b0d83a;
-  --ion-color-primary-tint: #cef655;
+  --ion-color-primary: #d4b97f;
+  --ion-color-primary-rgb: 212, 185, 127;
+  --ion-color-primary-contrast: #1a140a;
+  --ion-color-primary-contrast-rgb: 26, 20, 10;
+  --ion-color-primary-shade: #bba370;
+  --ion-color-primary-tint: #d8c08c;
 }
 
 [hidden] {
@@ -103,12 +100,11 @@ ion-header.header-ios ion-toolbar:last-of-type {
 
 ion-tab-bar {
   --border: 0;
-  padding-bottom: 6px;
 }
 
 ion-tab-button .icon {
-  width: 25px;
-  height: 25px;
+  width: 23px;
+  height: 23px;
   margin-top: 4px;
 }
 
@@ -167,7 +163,7 @@ ion-tab-button .icon {
 
 /* More specific than the button looks' own margins, which otherwise win. */
 ion-button.log-day-button {
-  margin-top: 12px;
+  margin-top: 18px;
 }
 
 .card > .empty + ion-button {
@@ -192,11 +188,6 @@ ion-button.log-day-button {
   color: var(--ion-color-primary);
   font-size: 18px;
   font-weight: 800;
-}
-
-#completeContent > .hero-title,
-#completeContent > .hero-accent {
-  margin-inline: 4px;
 }
 
 .form-error {
@@ -336,23 +327,6 @@ ion-item ion-label h2 {
   font-weight: 700;
 }
 
-/* Lists where each row is its own card. */
-ion-list.card-list {
-  padding: 0;
-  background: transparent;
-}
-
-.card-list > ion-item,
-.card-list > ion-item-sliding {
-  margin-bottom: 10px;
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.card-list ion-item {
-  --min-height: 68px;
-}
-
 .row-side {
   display: flex;
   flex-direction: column;
@@ -385,19 +359,6 @@ ion-badge {
   margin-inline-start: 8px;
 }
 
-.list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin: 24px 0 10px;
-}
-
-.list-header .section-title {
-  margin-block: 0;
-}
-
-.swipe-hint,
 .list-note {
   margin: 0 4px 12px;
 }
@@ -423,9 +384,9 @@ ion-progress-bar {
 ion-toast {
   --background: var(--text);
   --color: var(--bg);
-  --border-radius: 16px;
+  --border-radius: 4px;
   --box-shadow: none;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sheet-body {
@@ -448,7 +409,7 @@ ion-toast {
   display: block;
   width: 100%;
   aspect-ratio: 3 / 2;
-  border-radius: 12px;
+  border-radius: 2px;
   background: var(--fill-strong);
   object-fit: cover;
 }
@@ -462,18 +423,19 @@ ion-toast {
 }
 
 .how-to-heading {
-  margin: 16px 0 4px;
-  color: var(--text-dim);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin: 20px 0 6px;
+  color: var(--ion-color-primary);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
 }
 
 .how-to-works {
   margin: 0;
-  font-size: 18px;
-  font-weight: 700;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 300;
 }
 
 .how-to-steps {
@@ -541,224 +503,15 @@ ion-button.stepper-button {
   background: var(--panel);
 }
 
-.stat-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
-  gap: 10px;
-  margin-bottom: 4px;
-}
-
-.stat-card {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 14px 16px;
-  border-radius: var(--radius);
-  background: var(--panel);
-}
-
-.stat-card strong {
-  font-size: 17px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-}
-
-/* ---------- Home ---------- */
-.bento {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 20px;
-  border: none;
-  border-radius: var(--radius);
-  background: var(--panel);
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-}
-
-button.tile {
-  cursor: pointer;
-  transition: opacity 0.1s ease;
-}
-
-button.tile:active {
-  opacity: 0.75;
-}
-
-.tag {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0.6;
-}
-
-.tile-next {
-  grid-column: 1 / -1;
-  min-height: 210px;
-  padding: 22px;
-  gap: 8px;
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.tile-title {
-  margin-top: 6px;
-  font-size: 42px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.tile-meta {
-  font-size: 14px;
-  font-weight: 600;
-  opacity: 0.7;
-}
-
-/* The buttons that start a workout, at the bottom of the lime tile. */
-.tile-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-  padding-top: 12px;
-}
-
-ion-button.tile-button {
-  flex: 1;
-  height: 52px;
-  margin: 0;
-  font-size: 17px;
-  font-weight: 800;
-  --border-radius: 16px;
-}
-
-ion-button.tile-button.is-solid {
-  --background: var(--accent-ink);
-  --background-activated: var(--accent-ink);
-  --color: var(--accent);
-}
-
-ion-button.tile-button.is-outline {
-  --border-color: var(--accent-ink);
-  --border-width: 2px;
-  --color: var(--accent-ink);
-}
-
-/* "Start something else": a slim full-width row under the lime tile. */
-.tile-other {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  padding: 16px 20px;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.tile-other .icon {
-  width: 20px;
-  height: 20px;
-  color: var(--ion-color-primary);
-}
-
-.tile-number {
-  font-size: 60px;
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  line-height: 0.95;
-}
-
-.tile-label {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.tile-streak .tile-number {
-  color: var(--ion-color-primary);
-}
-
-.tile-total {
-  background: var(--violet-bg);
-}
-
-.tile-total .tile-number,
-.tile-total .tile-label {
-  color: var(--violet-text);
-}
-
-.tile-level {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: center;
-  gap: 14px;
-}
-
-.tile-level ion-progress-bar {
-  grid-column: 1 / -1;
-}
-
-.level-name {
-  margin: 0 0 2px;
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-}
-
-.level-percent {
-  color: var(--ion-color-primary);
-  font-size: 36px;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-}
-
-.tile-last {
-  grid-column: 1 / -1;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.last-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.last-name {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.last-xp {
-  flex-shrink: 0;
-  color: var(--ion-color-primary);
-  font-weight: 800;
-}
-
-/* ---------- Weekly plan ---------- */
-.week-card {
-  padding-inline: 12px;
-}
-
+/* ---------- Weekly plan (Plans tab, Editorial) ---------- */
+/* Seven days on thin gold lines: the date in serif, the planned workout in small gold
+   italics (a dash for rest days), a gold dot on days trained and a gold line under today. */
 .week-strip {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  padding: 6px 0;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
 }
 
 .week-day {
@@ -766,80 +519,102 @@ ion-button.tile-button.is-outline {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  padding: 10px 1px 8px;
+  padding: 10px 1px 12px;
   border: none;
-  border-radius: var(--radius-small);
-  background: var(--fill);
-  color: var(--text);
+  background: none;
+  color: var(--ed-ink);
   font: inherit;
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
 .week-day:active {
-  background: var(--fill-strong);
+  opacity: 0.55;
 }
 
 .week-day.is-today {
-  background: var(--violet-bg);
+  box-shadow: inset 0 -1px 0 var(--ed-gold);
 }
 
 .week-letter {
-  color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--ed-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
 }
 
 .week-number {
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
+  font-family: var(--ed-serif);
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.week-day.is-today .week-letter,
+.week-day.is-today .week-number {
+  color: var(--ed-gold);
 }
 
 .week-plan {
   max-width: 100%;
   overflow: hidden;
-  padding: 2px 4px;
-  border-radius: 999px;
-  color: var(--text-dim);
-  font-size: 10px;
-  font-weight: 800;
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 12px;
+  font-style: italic;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .week-day.is-planned .week-plan {
-  background: var(--accent);
-  color: var(--accent-ink);
+  color: var(--ed-gold);
 }
 
 .week-done {
   position: absolute;
-  top: 6px;
+  top: 8px;
   right: 6px;
-  width: 8px;
-  height: 8px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--ion-color-primary);
+  background: var(--ed-gold);
+  box-shadow: 0 0 6px var(--ed-gold);
 }
 
 .week-hint {
-  margin: 12px 6px 0;
+  margin: 10px 0 0;
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 13px;
+  font-style: italic;
 }
 
-/* ---------- Calendar ---------- */
+/* ---------- Calendar (History, Editorial) ---------- */
+/* The month on thin gold lines: serif day numbers, a small gold dot under days trained,
+   today in gold, and a thin gold ring on the day tapped. */
+.calendar {
+  margin-top: 10px;
+  padding: 6px 0 12px;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
 .calendar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .calendar-header h2 {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-style: italic;
+  font-weight: 300;
 }
 
 .calendar-nav {
@@ -849,62 +624,82 @@ ion-button.tile-button.is-outline {
   width: 44px;
   height: 44px;
   border: none;
-  border-radius: 50%;
   background: none;
-  color: var(--ion-color-primary);
+  color: var(--ed-gold);
   cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.calendar-nav .icon {
+  stroke-width: 1.4;
 }
 
 .calendar-nav:active {
-  background: var(--fill);
+  opacity: 0.55;
 }
 
 .calendar-nav:disabled {
-  opacity: 0.3;
+  opacity: 0.25;
   cursor: default;
 }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
+  gap: 2px;
 }
 
 .calendar-weekday {
-  padding: 4px 0;
-  color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 700;
+  padding: 6px 0;
+  color: var(--ed-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
   text-align: center;
 }
 
 .calendar-day {
+  position: relative;
   width: 100%;
   padding: 0;
   border: none;
   border-radius: 50%;
   aspect-ratio: 1;
   background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: 16px;
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-size: 17px;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-.calendar-day.has-workout {
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 800;
+.calendar-day:active {
+  opacity: 0.55;
 }
 
-.calendar-day.is-today:not(.has-workout) {
-  color: var(--ion-color-primary);
-  font-weight: 800;
+.calendar-day.has-workout::after {
+  content: "";
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ed-gold);
+  box-shadow: 0 0 6px var(--ed-gold);
+  transform: translateX(-50%);
+}
+
+.calendar-day.is-today {
+  color: var(--ed-gold);
+  font-style: italic;
 }
 
 .calendar-day.is-selected {
-  background: var(--text);
-  color: var(--bg);
+  box-shadow: inset 0 0 0 1px var(--ed-gold);
+  color: var(--ed-gold);
 }
 
 /* ---------- Workout editor ---------- */
@@ -1342,6 +1137,7 @@ ion-button.step-action {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 0;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .overview-main,
@@ -1356,8 +1152,9 @@ ion-button.step-action {
 }
 
 .overview-name {
-  font-size: 17px;
-  font-weight: 700;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 19px;
+  font-weight: 300;
 }
 
 .overview-row.is-current .overview-name {
@@ -1372,17 +1169,15 @@ ion-button.step-action {
 }
 
 .overview-status {
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 11px;
-  font-weight: 800;
+  color: var(--ion-color-primary);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .overview-status.is-done {
-  background: var(--fill-strong);
-  color: var(--ion-color-primary);
+  color: var(--text-dim);
 }
 
 .set-dots {
@@ -1391,8 +1186,8 @@ ion-button.step-action {
 }
 
 .set-dot {
-  width: 10px;
-  height: 10px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--fill-strong);
 }
@@ -1401,7 +1196,9 @@ ion-button.step-action {
   background: var(--accent);
 }
 
-/* ---------- Progress charts and the share card ---------- */
+/* ---------- Progress charts (Editorial) ---------- */
+/* A thin gold line on hairline guides; record sessions are filled gold dots that glow once
+   the line has drawn itself. */
 .chart {
   display: block;
   width: 100%;
@@ -1409,39 +1206,40 @@ ion-button.step-action {
 }
 
 .chart-grid {
-  stroke: var(--border);
-  stroke-width: 1;
+  stroke: var(--ed-hair);
+  stroke-width: 0.5;
 }
 
 .chart-label {
-  fill: var(--text-dim);
+  fill: var(--ed-muted);
   font-family: var(--ion-font-family);
   font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .chart-line {
   fill: none;
-  stroke: var(--ion-color-primary);
-  stroke-width: 3;
+  stroke: var(--ed-gold);
+  stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--ed-gold) 45%, transparent));
   animation: chart-draw 1.1s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .chart-dot {
-  fill: var(--panel);
-  stroke: var(--ion-color-primary);
-  stroke-width: 2.5;
+  fill: var(--ed-bg);
+  stroke: var(--ed-gold);
+  stroke-width: 1.5;
   transform-box: fill-box;
   transform-origin: center;
   animation: chart-dot 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) both;
   animation-delay: calc(var(--reach) * 1s);
 }
 
-/* Record dots glow after the line has drawn. */
 .chart-record {
-  fill: var(--ion-color-primary);
+  fill: var(--ed-gold);
   animation:
     chart-dot 0.4s cubic-bezier(0.3, 1.6, 0.5, 1) calc(var(--reach) * 1s) both,
     record-glow 1.6s ease-in-out 1.3s 2;
@@ -1465,20 +1263,8 @@ ion-button.step-action {
 
 @keyframes record-glow {
   50% {
-    filter: drop-shadow(0 0 6px var(--accent));
+    filter: drop-shadow(0 0 6px var(--ed-gold));
   }
-}
-
-/* A new personal record: the title drops in gold with a shine sweeping across it, and the
-   PR badges pop in one after another. */
-#completeContent > .hero-title.is-pr {
-  background: linear-gradient(100deg, var(--gold) 35%, #fff6cf 50%, var(--gold) 65%) 0 0 / 250% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation:
-    slam 0.5s cubic-bezier(0.3, 1.45, 0.5, 1) both,
-    shine 1.6s 0.5s ease-in-out 2;
 }
 
 #completeContent ion-badge {
@@ -1495,20 +1281,16 @@ ion-button.step-action {
   animation-delay: 0.3s;
 }
 
-@keyframes shine {
-  from {
-    background-position: 100% 0;
-  }
-
-  to {
-    background-position: 0 0;
-  }
-}
-
-/* The muscle map on Progress: a front and back figure, muscles filled in lime by sets. */
+/* ---------- Muscle map (Progress, Editorial) ---------- */
+/* The "Engraved" figure (Anish's pick on 2026-11-27): front and back drawn in fine gold
+   outlines like an anatomy engraving. Untrained muscles stay as outlines; trained ones fill
+   in with gold, stronger the more sets in the last 7 days. The tapped muscle gets a solid
+   outline. */
 .muscle-map {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding-bottom: 20px;
+  border-bottom: 0.5px solid var(--ed-hair);
 }
 
 .muscle-figure {
@@ -1517,25 +1299,27 @@ ion-button.step-action {
   justify-self: center;
 }
 
-.body-shape,
-.body-outline > * {
-  fill: color-mix(in srgb, var(--text) 9%, transparent);
-}
-
 .body-shape {
-  stroke: color-mix(in srgb, var(--text) 22%, transparent);
-  stroke-width: 2;
+  fill: none;
+  stroke: var(--ed-hair);
+  stroke-width: 0.8;
   vector-effect: non-scaling-stroke;
 }
 
+.body-outline > * {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ed-gold) 35%, transparent);
+  stroke-width: 0.6;
+  vector-effect: non-scaling-stroke;
+}
 
 .muscle > * {
-  fill: color-mix(in srgb, var(--text) 16%, transparent);
-  stroke: transparent;
-  stroke-width: 1.5;
+  fill: transparent;
+  stroke: color-mix(in srgb, var(--ed-gold) 55%, transparent);
+  stroke-width: 0.6;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
-  transition: fill 0.3s ease, stroke 0.2s ease;
+  transition: fill 0.3s ease, stroke 0.2s ease, stroke-width 0.2s ease;
 }
 
 .muscle {
@@ -1543,104 +1327,125 @@ ion-button.step-action {
   outline: none;
 }
 
-.muscle.level-1 > * {
-  fill: color-mix(in srgb, var(--accent) 35%, transparent);
+.muscle.level-1 > *,
+.legend-item.level-1 i {
+  fill: color-mix(in srgb, var(--ed-gold) 14%, transparent);
+  background: color-mix(in srgb, var(--ed-gold) 14%, transparent);
 }
 
-.muscle.level-2 > * {
-  fill: color-mix(in srgb, var(--accent) 70%, transparent);
+.muscle.level-2 > *,
+.legend-item.level-2 i {
+  fill: color-mix(in srgb, var(--ed-gold) 32%, transparent);
+  background: color-mix(in srgb, var(--ed-gold) 32%, transparent);
+}
+
+.muscle.level-3 > *,
+.legend-item.level-3 i {
+  fill: color-mix(in srgb, var(--ed-gold) 58%, transparent);
+  background: color-mix(in srgb, var(--ed-gold) 58%, transparent);
 }
 
 .muscle.level-3 > * {
-  fill: var(--accent);
+  stroke: var(--ed-gold);
 }
 
 .muscle.is-selected > *,
 .muscle:focus-visible > * {
-  stroke: var(--text);
+  stroke: var(--ed-ink);
+  stroke-width: 1.4;
 }
 
 .figure-label {
-  fill: var(--text-dim);
-  font-family: var(--display-font);
-  font-size: 10px;
-  font-style: italic;
-  font-weight: 800;
-  letter-spacing: 0.1em;
+  fill: var(--ed-gold);
+  font-family: var(--ion-font-family);
+  font-size: 7px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
 }
 
 .muscle-legend {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px 14px;
-  color: var(--text-dim);
+  gap: 6px 16px;
+  color: var(--ed-muted);
   font-size: 12px;
-  font-weight: 600;
+}
+
+.legend-title {
+  color: var(--ed-gold);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .legend-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
 
 .legend-item i {
-  width: 12px;
-  height: 12px;
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--text) 16%, transparent);
-}
-
-.legend-item.level-1 i {
-  background: color-mix(in srgb, var(--accent) 35%, transparent);
-}
-
-.legend-item.level-2 i {
-  background: color-mix(in srgb, var(--accent) 70%, transparent);
-}
-
-.legend-item.level-3 i {
-  background: var(--accent);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px color-mix(in srgb, var(--ed-gold) 70%, transparent);
 }
 
 .muscle-summary {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--ed-serif);
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.3;
 }
 
 .muscle-summary.needs-work {
-  color: var(--ion-color-primary);
+  color: var(--ed-gold);
 }
 
 .muscle-hint {
   margin: 0;
-  font-size: 14px;
+  color: var(--ed-muted);
+  font-size: 13px;
 }
 
 .muscle-detail {
-  padding: 12px 14px;
-  border-radius: var(--radius-small);
-  background: color-mix(in srgb, var(--text) 6%, transparent);
+  padding: 12px 0 0;
+  border-top: 0.5px solid var(--ed-hair);
 }
 
 .muscle-detail-title {
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+  color: var(--ed-muted);
+  font-size: 14px;
+}
+
+.muscle-detail-title strong {
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-size: 20px;
+  font-weight: 400;
 }
 
 .muscle-detail-list {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
+  font-size: 15px;
 }
 
 .muscle-detail-list li {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+}
+
+.muscle-detail-list .muted {
+  color: var(--ed-muted);
+  font-size: 13px;
 }
 
 .share-preview-frame {
@@ -1664,26 +1469,12 @@ ion-button.step-action {
    read in sentences stays in the body font. */
 :root {
   --display-font: "Barlow Condensed", "Inter", sans-serif;
-  --teal: #2de2c6;
-  --aurora-violet: #8b6cff;
-  --gold: #f5c542;
-  /* Pale colours wash out on a light page, so the clouds are stronger there. */
-  --aurora-strength: 55%;
-}
-
-:root.ion-palette-dark {
-  --aurora-strength: 40%;
+  --gold: #d4b97f;
 }
 
 ion-title.title-large,
 .hero-title,
-.tile-title,
-.tile-number,
-.level-name,
-.level-percent,
-.last-xp,
 .hero-accent,
-.stat-card strong,
 .player-exercise,
 .player-countdown,
 .count-in-number {
@@ -1694,8 +1485,6 @@ ion-title.title-large,
 
 ion-title.title-large,
 .hero-title,
-.tile-title,
-.level-name,
 .hero-accent,
 .player-exercise {
   text-transform: uppercase;
@@ -1706,30 +1495,8 @@ ion-title.title-large,
   line-height: 0.98;
 }
 
-.tile-title {
-  font-size: 52px;
-  line-height: 0.92;
-}
-
-.tile-number {
-  font-size: 72px;
-}
-
-.level-name {
-  font-size: 26px;
-}
-
-.level-percent {
-  font-size: 44px;
-}
-
-.last-xp,
 .hero-accent {
   font-size: 22px;
-}
-
-.stat-card strong {
-  font-size: 30px;
 }
 
 .player-exercise {
@@ -1741,36 +1508,17 @@ ion-title.title-large,
   font-size: 132px;
 }
 
-/* "Aurora" behind every screen, toolbars included: big soft clouds of lime, teal and violet
-   that drift slowly (Anish's pick over a grid, dots, grain or stripes). */
 .ion-page {
   background: var(--bg);
 }
 
-/* The 3-2-1 count-in covers the screen, so it gets the same clouds behind its numbers. */
+/* A layer behind each page and the count-in, which the Editorial look lights with gold. */
 .ion-page::before,
 .count-in::before {
   content: "";
   position: absolute;
-  inset: -20%;
+  inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(80% 35% at 10% 10%, color-mix(in srgb, var(--accent) var(--aurora-strength), transparent), transparent 75%),
-    radial-gradient(75% 40% at 100% 50%, color-mix(in srgb, var(--teal) calc(var(--aurora-strength) * 0.8), transparent), transparent 75%),
-    radial-gradient(75% 40% at 0% 55%, color-mix(in srgb, var(--accent) calc(var(--aurora-strength) * 0.5), transparent), transparent 75%),
-    radial-gradient(90% 40% at 30% 95%, color-mix(in srgb, var(--aurora-violet) calc(var(--aurora-strength) * 0.9), transparent), transparent 75%),
-    linear-gradient(160deg,
-      color-mix(in srgb, var(--accent) calc(var(--aurora-strength) * 0.3), transparent),
-      color-mix(in srgb, var(--teal) calc(var(--aurora-strength) * 0.2), transparent) 50%,
-      color-mix(in srgb, var(--aurora-violet) calc(var(--aurora-strength) * 0.3), transparent));
-  filter: blur(30px);
-  animation: aurora 24s ease-in-out infinite alternate;
-}
-
-@keyframes aurora {
-  to {
-    transform: translate(6%, 4%) rotate(8deg) scale(1.08);
-  }
 }
 
 .count-in {
@@ -1779,13 +1527,6 @@ ion-title.title-large,
 
 .count-in > * {
   position: relative;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ion-page::before,
-  .count-in::before {
-    animation: none;
-  }
 }
 
 ion-content {
@@ -1844,54 +1585,74 @@ ion-app ion-header.header-translucent .header-background {
   display: none;
 }
 
-/* The tab bar is a floating "liquid glass" pill: frosted and see-through, with a bright
-   top edge, a soft shadow, and a lighter glass bubble behind the selected tab. Pages run
-   down behind it, so the Aurora shows around and through it. */
+/* The tab bar ("A Line", Anish's pick on 2026-11-27): full width on a thin gold line,
+   frosted so pages show faintly through it, with thin icons and small spaced capitals.
+   The open tab turns gold with a small glowing dot under it. It uses the Editorial
+   colours on every screen. */
 :root {
-  --glass: color-mix(in srgb, #ffffff 55%, transparent);
-  --glass-edge: color-mix(in srgb, #ffffff 80%, transparent);
-  --glass-shine: color-mix(in srgb, #ffffff 90%, transparent);
-  --glass-shadow: 0 10px 30px rgba(30, 40, 20, 0.18);
-  --glass-bubble: color-mix(in srgb, #ffffff 70%, transparent);
   --tab-bar-space: calc(88px + env(safe-area-inset-bottom));
-}
-
-:root.ion-palette-dark {
-  --glass: color-mix(in srgb, #2a2a30 45%, transparent);
-  --glass-edge: color-mix(in srgb, #ffffff 16%, transparent);
-  --glass-shine: color-mix(in srgb, #ffffff 30%, transparent);
-  --glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
-  --glass-bubble: color-mix(in srgb, #ffffff 12%, transparent);
 }
 
 ion-tab-bar {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 10;
-  height: 66px;
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 6px;
-  border: 1px solid var(--glass-edge);
-  border-radius: 34px;
-  --background: var(--glass);
-  backdrop-filter: blur(22px) saturate(180%);
-  -webkit-backdrop-filter: blur(22px) saturate(180%);
-  box-shadow: inset 0 1px 0 var(--glass-shine), var(--glass-shadow);
+  box-sizing: content-box;
+  height: 56px;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  border-top: 0.5px solid var(--ed-hair);
+  --background: color-mix(in srgb, var(--ed-bg) 85%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 ion-tab-button {
+  position: relative;
   --padding-top: 2px;
-  --padding-bottom: 2px;
-  border-radius: 26px;
-  transition: background 0.25s ease;
+  --padding-bottom: 8px;
+  --color: var(--ed-muted);
+  --color-selected: var(--ed-gold);
+  transition: opacity 0.15s ease;
 }
 
-ion-tab-button.tab-selected {
-  background: var(--glass-bubble);
-  box-shadow: inset 0 1px 0 var(--glass-shine);
+ion-tab-button:active {
+  opacity: 0.55;
+}
+
+ion-tab-bar .icon {
+  stroke-width: 1.4;
+}
+
+ion-tab-button ion-label {
+  margin-top: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+ion-tab-button.tab-selected ion-label {
+  font-weight: 700;
+}
+
+/* On light paper the other tabs are paler, so the gold open tab stands out. */
+:root:not(.ion-palette-dark) ion-tab-button {
+  --color: color-mix(in srgb, var(--ed-muted) 75%, transparent);
+}
+
+ion-tab-button.tab-selected::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ed-gold);
+  box-shadow: 0 0 6px var(--ed-gold);
+  transform: translateX(-50%);
 }
 
 /* Pages end behind the floating bar, so leave room to scroll the last item above it. */
@@ -1909,65 +1670,20 @@ ion-content ion-header.header-collapse-condense ion-toolbar {
   backdrop-filter: none;
 }
 
-.tile,
-.card,
-.stat-card {
+.card {
   border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
 }
 
-/* The Up next tile: a slowly turning lime and teal glow with a shine on top. */
-/* "clip" rather than "hidden": a hidden overflow can still be scrolled when a button
-   inside it takes focus, which slid the tile's title out of view. */
-.tile-next {
-  overflow: clip;
-  border: none;
-  isolation: isolate;
-}
-
-.tile-next::before {
-  content: "";
-  position: absolute;
-  z-index: -2;
-  inset: -60%;
-  background: conic-gradient(from 0deg, var(--accent), var(--teal), #e8ff7a, var(--accent));
-  animation: spin 9s linear infinite;
-}
-
-.tile-next::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  inset: 0;
-  background: radial-gradient(circle at 18% 15%, rgba(255, 255, 255, 0.4), transparent 55%);
-}
-
-/* The level bar fills slowly in lime to teal, then glows. */
+/* Progress bars fill slowly in gold. */
 ion-progress-bar::part(progress) {
-  background: linear-gradient(90deg, var(--accent), var(--teal));
+  background: var(--accent);
   transition: transform 1.1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.tile-level ion-progress-bar {
-  height: 10px;
-  border-radius: 99px;
-  overflow: visible;
-}
-
-.tile-level ion-progress-bar::part(progress) {
-  border-radius: 99px;
-  animation: glow 1.4s 1.2s ease-in-out 2;
-}
-
 /* Things you tap squash a little and spring back. */
-button.tile,
 ion-button,
 .icon-button {
   transition: transform 0.14s cubic-bezier(0.3, 1.6, 0.5, 1);
-}
-
-button.tile:active {
-  opacity: 1;
-  transform: scale(0.96);
 }
 
 ion-button:active,
@@ -1976,66 +1692,39 @@ ion-button:active,
 }
 
 /* Home and the tab lists pop in one after another when the screen opens. */
-#homeScreen .bento > *,
 #logScreen .wrap > *,
 #routinesScreen .wrap > *,
 #historyScreen .wrap > *,
-#progressScreen .wrap > *,
-#completeContent > * {
+#progressScreen .wrap > * {
   animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) both;
 }
 
-#homeScreen .bento > :nth-child(2),
-.wrap > :nth-child(2),
-#completeContent > :nth-child(2) {
+.wrap > :nth-child(2) {
   animation-delay: 0.05s;
 }
 
-#homeScreen .bento > :nth-child(3),
-.wrap > :nth-child(3),
-#completeContent > :nth-child(3) {
+.wrap > :nth-child(3) {
   animation-delay: 0.1s;
 }
 
-#homeScreen .bento > :nth-child(4),
-.wrap > :nth-child(4),
-#completeContent > :nth-child(4) {
+.wrap > :nth-child(4) {
   animation-delay: 0.15s;
 }
 
-#homeScreen .bento > :nth-child(n + 5),
-.wrap > :nth-child(n + 5),
-#completeContent > :nth-child(n + 5) {
+.wrap > :nth-child(n + 5) {
   animation-delay: 0.2s;
 }
 
-/* The XP you earned pulses after a workout. */
-#completeContent > .hero-accent {
-  transform-origin: left center;
-  animation: pop 0.45s cubic-bezier(0.3, 1.45, 0.5, 1) 0.05s both, pulse 1s 0.6s ease-in-out 2;
-}
-
-/* The selected tab's icon bounces and glows. Every tab keeps its icon and its name. */
-ion-tab-button {
-  --color-selected: var(--ion-color-primary);
-}
-
-ion-tab-button ion-label {
-  font-weight: 600;
-}
-
-ion-tab-button.tab-selected ion-label {
-  font-weight: 800;
-}
-
-ion-tab-button.tab-selected .icon {
-  animation: tab-pop 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
-}
-
-/* Each number of the 3, 2, 1, Go slams in. */
+/* Each number of the 3, 2, 1, Go settles in softly. */
 .count-in-number.is-new {
-  animation: slam 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+  animation: count-settle 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes count-settle {
+  from {
+    opacity: 0;
+    transform: scale(1.12);
+  }
 }
 
 /* ---------- Guided workout: high energy in a set, calm in a rest ---------- */
@@ -2077,14 +1766,6 @@ ion-tab-button.tab-selected .icon {
 .phase-layer.is-work {
   overflow: hidden;
   background: radial-gradient(70% 45% at 50% 55%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 70%);
-}
-
-.phase-layer.is-work::before {
-  content: "";
-  position: absolute;
-  inset: -50%;
-  background: repeating-linear-gradient(-55deg, color-mix(in srgb, var(--accent) 8%, transparent) 0 16px, transparent 16px 42px);
-  animation: stripes 1.6s linear infinite;
 }
 
 .phase-layer.is-rest {
@@ -2143,13 +1824,13 @@ ion-tab-button.tab-selected .icon {
   gap: 8px;
   margin-bottom: 8px;
   padding: 6px 8px;
-  border: 2px solid transparent;
-  border-radius: var(--radius-small);
+  border: 0.5px solid transparent;
+  border-radius: 2px;
 }
 
 .sheet-set-row.is-current {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
 .sheet-set-row.is-done .number-input {
@@ -2177,14 +1858,17 @@ ion-tab-button.tab-selected .icon {
 
 .sheet-set-label strong {
   color: var(--ion-color-primary);
-  font-size: 18px;
-  font-weight: 800;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-style: italic;
+  font-weight: 300;
 }
 
 .sheet-set-label small {
   color: var(--text-dim);
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
@@ -2367,7 +2051,7 @@ ion-button.rep-chip.is-top {
   top: -40px;
   width: 80px;
   height: 80px;
-  border: 4px solid var(--accent);
+  border: 1.5px solid #d4b97f;
   border-radius: 50%;
   animation: burst-ring 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
@@ -2378,8 +2062,8 @@ ion-button.rep-chip.is-top {
   top: -22px;
   width: 44px;
   height: 44px;
-  color: var(--accent);
-  stroke-width: 3.5;
+  color: #d4b97f;
+  stroke-width: 2;
   animation: burst-check 0.7s cubic-bezier(0.3, 1.6, 0.5, 1) forwards;
 }
 
@@ -2523,12 +2207,6 @@ ion-button.rep-chip.is-top {
   display: none;
 }
 
-.phase-work .player-countdown {
-  color: var(--ion-color-primary);
-  text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 55%, transparent);
-  animation: thump 1.6s ease-in-out infinite;
-}
-
 .player-reps {
   display: flex;
   flex-direction: column;
@@ -2569,30 +2247,16 @@ ion-button.rep-chip.is-top {
   opacity: 0.45;
 }
 
-.phase-fx.is-paused .phase-layer::before,
 .player.is-paused .player-countdown,
 .player.is-paused .breath,
 .player.is-paused .breath-word {
   animation-play-state: paused;
 }
 
-@keyframes stripes {
-  to {
-    transform: translateX(51px);
-  }
-}
-
 @keyframes phase-in {
   from {
     opacity: 0;
     transform: scale(0.96);
-  }
-}
-
-@keyframes thump {
-  50% {
-    transform: scale(1.1);
-    text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 85%, transparent);
   }
 }
 
@@ -2621,23 +2285,6 @@ ion-button.rep-chip.is-top {
   }
 }
 
-.confetti {
-  position: fixed;
-  z-index: 2000;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.confetti i {
-  position: absolute;
-  top: -14px;
-  width: 9px;
-  height: 14px;
-  border-radius: 2px;
-  animation: drop 1.6s ease-in forwards;
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -2657,37 +2304,1705 @@ ion-button.rep-chip.is-top {
   }
 }
 
-@keyframes pulse {
-  50% {
-    transform: scale(1.12);
-    text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 80%, transparent);
-  }
-}
-
-@keyframes tab-pop {
-  40% {
-    transform: translateY(-4px) scale(1.18);
-  }
-}
-
-@keyframes slam {
-  from {
-    opacity: 0;
-    transform: scale(1.8);
-  }
-}
-
-@keyframes drop {
-  to {
-    opacity: 0.6;
-    transform: translateY(105vh) rotate(560deg);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.001ms !important;
     animation-delay: 0s !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* ---------- Home: "Editorial" ---------- */
+/* Home reads like the front page of a magazine (Anish's pick on 2026-11-27, the first step
+   towards a premium look): a serif headline, thin gold lines instead of cards, and brushed
+   gold only where it matters. Dark is warm black; light is warm paper with deeper gold ink
+   so the text stays readable. Screens move to it one tab at a time by taking the
+   "editorial-page" class: Home and Plans so far. */
+.editorial-page,
+.editorial-overlay,
+.count-in,
+ion-tab-bar {
+  --ed-calm: #5d7690;
+  --ed-calm-bg: #eef0ee;
+  --ed-bg: #f6f1e7;
+  --ed-ink: #1d1a14;
+  --ed-muted: #776f60;
+  --ed-gold: #8a6a2b;
+  --ed-hair: rgba(138, 106, 43, 0.28);
+  --ed-serif: "Fraunces", Georgia, serif;
+  --ed-brushed-gold: linear-gradient(100deg, #a8874a 0%, #f3dfa8 30%, #c9a35f 50%, #f7e7b8 70%, #a8874a 100%);
+  background: var(--ed-bg);
+  color: var(--ed-ink);
+}
+
+:root.ion-palette-dark .editorial-page,
+:root.ion-palette-dark .editorial-overlay,
+:root.ion-palette-dark .count-in,
+:root.ion-palette-dark ion-tab-bar {
+  --ed-calm: #9fb4c8;
+  --ed-calm-bg: #0a0d11;
+  --ed-bg: #0c0b09;
+  --ed-ink: #ece6da;
+  --ed-muted: #8a8478;
+  --ed-gold: #d4b97f;
+  --ed-hair: rgba(212, 185, 127, 0.22);
+}
+
+/* Ionic marks the whole app (ion-app) as a page too, so it must not get a page's gold
+   corner light; it once drew the green Aurora, which flashed between tabs. */
+ion-app.ion-page::before {
+  display: none;
+}
+
+/* A still, soft gold light in the top corner instead of the drifting Aurora. */
+.editorial-page::before {
+  inset: 0;
+  background: radial-gradient(80% 30% at 0% 0%, color-mix(in srgb, var(--ed-gold) 16%, transparent), transparent 70%);
+  filter: none;
+  animation: none;
+}
+
+.editorial-page ion-title.masthead {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+#homeScreen .avatar {
+  background: none;
+  box-shadow: inset 0 0 0 0.5px var(--ed-gold);
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-weight: 400;
+}
+
+/* Toolbar buttons such as "+ New" are gold text. */
+.editorial-page ion-toolbar ion-button {
+  --color: var(--ed-gold);
+}
+
+.editorial .num {
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial .kicker {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.editorial .headline {
+  margin: 4px 0 8px;
+  font-family: var(--ed-serif);
+  font-size: 56px;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+}
+
+.editorial h2.kicker {
+  margin: 30px 0 12px;
+}
+
+.editorial .lede {
+  margin: 0 0 22px;
+  color: var(--ed-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* This week: a gold dot on each day trained, a ring on today. */
+.home-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 28px;
+  padding: 14px 0;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
+  text-align: center;
+}
+
+.home-week span {
+  color: var(--ed-muted);
+  font-size: 10px;
+  letter-spacing: 0.15em;
+}
+
+.home-week i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  margin: 8px auto 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 0.5px var(--ed-hair);
+}
+
+.home-week .home-day-today span {
+  color: var(--ed-gold);
+}
+
+.home-week .home-day-today i {
+  box-shadow: inset 0 0 0 1px var(--ed-gold);
+}
+
+.home-week .home-day-done i {
+  background: var(--ed-gold);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--ed-gold) 60%, transparent);
+}
+
+/* Up next: the minutes big in brushed gold beside the plan's name. */
+.feature {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.feature.has-minutes {
+  grid-template-columns: auto 1fr;
+  column-gap: 16px;
+}
+
+.feature-minutes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  grid-row: span 3;
+  align-self: center;
+}
+
+.feature-minutes[hidden] {
+  display: none;
+}
+
+.big-number {
+  background: var(--ed-brushed-gold);
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--ed-serif);
+  font-size: 96px;
+  font-weight: 300;
+  line-height: 0.8;
+  animation: gold-sheen 6s ease-in-out infinite;
+}
+
+/* Light paper needs a deeper gold for the number to stand out. */
+:root:not(.ion-palette-dark) .big-number {
+  background-image: linear-gradient(100deg, #6e5220 0%, #b8954f 30%, #7d5f26 50%, #c4a463 70%, #6e5220 100%);
+}
+
+@keyframes gold-sheen {
+  50% {
+    background-position: 100% 0;
+  }
+}
+
+.feature-title {
+  margin: 6px 0 0;
+  font-family: var(--ed-serif);
+  font-size: 40px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.feature-meta {
+  margin: 6px 0 0;
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Every exercise in the plan, numbered I, II, III like a magazine list. */
+.exercise-list {
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: exercise;
+}
+
+.exercise-list[hidden] {
+  display: none;
+}
+
+.exercise-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--ed-gold) 14%, transparent);
+  font-size: 15px;
+  counter-increment: exercise;
+}
+
+.exercise-list li::before {
+  content: counter(exercise, upper-roman) ".";
+  min-width: 30px;
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+}
+
+.exercise-name {
+  flex: 1;
+}
+
+.exercise-target {
+  color: var(--ed-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.feature-actions {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.feature-actions:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
+/* Ionic tints buttons lime on mouse hover and keyboard focus; here the press shrink is
+   the feedback, so those tints are switched off. */
+.editorial-page ion-button.start-button {
+  --background-hover-opacity: 0;
+  --background-focused-opacity: 0;
+  height: 52px;
+  margin: 0;
+  --border-radius: 2px;
+  --box-shadow: none;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.editorial-page ion-button.start-button.is-solid {
+  --background: var(--ed-brushed-gold);
+  --background-activated: var(--ed-brushed-gold);
+  --color: #1a140a;
+  filter: drop-shadow(0 8px 16px color-mix(in srgb, var(--ed-gold) 30%, transparent));
+}
+
+.editorial-page ion-button.start-button.is-outline {
+  --background: transparent;
+  --border-color: var(--ed-gold);
+  --border-width: 0.5px;
+  --color: var(--ed-gold);
+}
+
+/* Rows you tap: plain text on a thin gold line, with an arrow. */
+.text-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 18px 0;
+  border-bottom: 0.5px solid var(--ed-hair);
+  background: none;
+  color: var(--ed-ink);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  transition: opacity 0.15s ease;
+}
+
+.text-row:active {
+  opacity: 0.55;
+}
+
+.text-row-arrow {
+  color: var(--ed-gold);
+}
+
+.feature-actions + .text-row {
+  margin-top: 8px;
+}
+
+/* The latest personal best, as a pull quote. */
+.record {
+  padding: 22px 0;
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+.record[hidden] {
+  display: none;
+}
+
+.record-text {
+  margin: 12px 0 6px;
+  font-family: var(--ed-serif);
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.record-text em {
+  color: var(--ed-gold);
+}
+
+.record-date {
+  margin: 0;
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+/* Streak, workouts and level in three columns split by thin gold lines. */
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+.home-stat {
+  min-width: 0;
+  padding: 20px 0 18px;
+}
+
+.home-stat + .home-stat {
+  padding-left: 14px;
+  border-left: 0.5px solid var(--ed-hair);
+}
+
+.home-stat b {
+  display: block;
+  margin: 10px 0 4px;
+  font-family: var(--ed-serif);
+  font-size: 44px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.home-stat small {
+  display: block;
+  overflow: hidden;
+  color: var(--ed-muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.level-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+#homeScreen .level-line ion-progress-bar {
+  flex: 1;
+  height: 1px;
+  overflow: visible;
+  --background: var(--ed-hair);
+}
+
+#homeScreen .level-line ion-progress-bar::part(progress) {
+  background: var(--ed-gold);
+  box-shadow: 0 0 8px var(--ed-gold);
+}
+
+.level-detail {
+  color: var(--ed-muted);
+  font-size: 12px;
+}
+
+.last-row .last-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.last-name {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.last-meta {
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .big-number {
+    animation: none;
+  }
+}
+
+/* ---------- Plans: "Editorial" ---------- */
+/* Each plan is a numbered row (I., II., ...) like Home's exercise list. */
+.plan-list {
+  border-top: 0.5px solid var(--ed-hair);
+  counter-reset: plan;
+}
+
+.plan-list:empty {
+  display: none;
+}
+
+.plan-row {
+  counter-increment: plan;
+}
+
+.plan-row::before {
+  content: counter(plan, upper-roman) ".";
+  align-self: flex-start;
+  min-width: 30px;
+  padding-top: 4px;
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+}
+
+.plan-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.plan-row-name {
+  font-family: var(--ed-serif);
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1.1;
+}
+
+.plan-row-meta {
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+.plan-row-action {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.plan-row-action::after {
+  content: " →";
+  letter-spacing: 0;
+}
+
+.plan-empty .lede {
+  margin-top: 8px;
+}
+
+/* ---------- Menus and pop-ups from Editorial screens ---------- */
+/* The menu of choices (such as picking a day's workout) and the confirm pop-ups: warm
+   paper or warm black, a small spaced gold heading, serif choices, gold for the current
+   choice and the safe answer. */
+ion-action-sheet.editorial-overlay {
+  --background: color-mix(in srgb, var(--ed-bg) 92%, transparent);
+  --button-background-selected: transparent;
+  --button-color: var(--ed-ink);
+  --color: var(--ed-muted);
+}
+
+ion-action-sheet.editorial-overlay .action-sheet-title {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+ion-action-sheet.editorial-overlay .action-sheet-button {
+  font-family: var(--ed-serif);
+  font-size: 21px;
+  font-weight: 300;
+}
+
+ion-action-sheet.editorial-overlay .action-sheet-selected {
+  color: var(--ed-gold);
+  font-style: italic;
+}
+
+ion-action-sheet.editorial-overlay .action-sheet-cancel {
+  color: var(--ed-gold);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+ion-alert.editorial-overlay {
+  --background: color-mix(in srgb, var(--ed-bg) 94%, transparent);
+}
+
+ion-alert.editorial-overlay .alert-title {
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-size: 21px;
+  font-weight: 400;
+}
+
+ion-alert.editorial-overlay .alert-message {
+  color: var(--ed-muted);
+}
+
+ion-alert.editorial-overlay .alert-button {
+  color: var(--ed-gold);
+}
+
+ion-alert.editorial-overlay .alert-button-role-destructive {
+  color: var(--danger);
+}
+
+/* ---------- Progress: lifts and a lift's page (Editorial) ---------- */
+.lift-list,
+.session-list {
+  border-top: 0.5px solid var(--ed-hair);
+}
+
+.lift-row-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lift-row-name {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.lift-row-meta {
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+.lift-row-best {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.lift-row-best .kicker {
+  font-size: 9px;
+}
+
+.lift-row-value {
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-size: 17px;
+  font-style: italic;
+}
+
+/* A lift's records in columns split by thin gold lines. */
+.record-columns {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  margin-top: 18px;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+.record-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 18px 0;
+}
+
+.record-column + .record-column {
+  padding-left: 14px;
+  border-left: 0.5px solid var(--ed-hair);
+}
+
+.record-column .kicker {
+  font-size: 9px;
+}
+
+.record-column b {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1.15;
+}
+
+.chart-section {
+  padding-bottom: 12px;
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+.chart-section .lede {
+  margin: 10px 0 0;
+}
+
+.session-row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--ed-gold) 14%, transparent);
+}
+
+.session-date {
+  flex-shrink: 0;
+  min-width: 92px;
+  font-family: var(--ed-serif);
+  font-size: 16px;
+}
+
+.session-sets {
+  flex: 1;
+  color: var(--ed-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.session-pr {
+  flex-shrink: 0;
+  color: var(--ed-gold);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+
+/* ---------- History list (Editorial) ---------- */
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 30px 0 12px;
+}
+
+.editorial .list-header h2.kicker {
+  margin: 0;
+}
+
+.list-header ion-button {
+  --color: var(--ed-gold);
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Each past workout is a serif row on a thin gold line; swiping it left still shows
+   Delete. The row is filled with the page colour so Delete stays hidden until swiped. */
+ion-list.history-list {
+  padding: 0;
+  border-top: 0.5px solid var(--ed-hair);
+  background: transparent;
+}
+
+.history-list ion-item-sliding {
+  border-bottom: 0.5px solid var(--ed-hair);
+}
+
+.history-list ion-item {
+  --background: var(--ed-bg);
+  --background-hover-opacity: 0;
+  --color: var(--ed-ink);
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: 74px;
+}
+
+.history-list ion-item ion-label h2 {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+.history-list ion-item ion-label p {
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+.history-list .row-when {
+  color: var(--ed-muted);
+}
+
+.history-list .row-accent {
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 300;
+}
+
+.swipe-hint {
+  margin: 10px 0 0;
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 13px;
+  font-style: italic;
+}
+
+.history-empty {
+  margin-top: 4px;
+}
+
+/* ---------- Workout editor, Get ready and Review (Editorial) ---------- */
+/* The editor shares its pieces (number fields, buttons, inset lists, cards) with screens
+   still in the lime look, so these rules only apply inside an Editorial page. Cards become
+   sections on thin gold lines; numbers are serif on a hairline and turn gold while typed
+   or when they beat last time; buttons are brushed gold or a thin gold outline. */
+:is(.editorial-page, .editorial-overlay) {
+  --ion-item-background: transparent;
+}
+
+:is(.editorial-page, .editorial-overlay) .guide {
+  margin: 4px 0 18px;
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 15px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+:is(.editorial-page, .editorial-overlay) .card {
+  margin: 0;
+  padding: 14px 0;
+  border: none;
+  border-bottom: 0.5px solid var(--ed-hair);
+  border-radius: 0;
+  background: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .guide + .card,
+:is(.editorial-page, .editorial-overlay) .guide + form.card {
+  border-top: 0.5px solid var(--ed-hair);
+}
+
+:is(.editorial-page, .editorial-overlay) .exercise.is-folded {
+  padding-block: 8px;
+}
+
+:is(.editorial-page, .editorial-overlay) .exercise-head h3 {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+:is(.editorial-page, .editorial-overlay) .exercise-title .muted {
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+:is(.editorial-page, .editorial-overlay) .exercise-toggle {
+  color: var(--ed-ink);
+}
+
+:is(.editorial-page, .editorial-overlay) .exercise-toggle .icon {
+  color: var(--ed-gold);
+  stroke-width: 1.4;
+}
+
+:is(.editorial-page, .editorial-overlay) .icon-button {
+  color: var(--ed-muted);
+}
+
+:is(.editorial-page, .editorial-overlay) .set-header {
+  color: var(--ed-gold);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+/* The narrow "Set" column has no room for the spacing. */
+:is(.editorial-page, .editorial-overlay) .set-header span:first-child {
+  letter-spacing: 0;
+}
+
+:is(.editorial-page, .editorial-overlay) .set-number {
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) .set-last {
+  color: var(--ed-muted);
+}
+
+:is(.editorial-page, .editorial-overlay) .number-field {
+  border-bottom: 1px solid var(--ed-hair);
+}
+
+:is(.editorial-page, .editorial-overlay) .number-field:focus-within {
+  border-color: var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .number-input {
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-size: 26px;
+  font-style: normal;
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+}
+
+:is(.editorial-page, .editorial-overlay) .number-input:focus,
+:is(.editorial-page, .editorial-overlay) .set-row .number-input.is-better,
+:is(.editorial-page, .editorial-overlay) .set-row.is-done .number-input {
+  color: var(--ed-gold);
+  text-shadow: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .number-unit {
+  color: var(--ed-muted);
+  font-weight: 500;
+}
+
+:is(.editorial-page, .editorial-overlay) .tick-button {
+  color: color-mix(in srgb, var(--ed-ink) 25%, transparent);
+}
+
+:is(.editorial-page, .editorial-overlay) .tick-button .icon {
+  stroke-width: 1.8;
+}
+
+:is(.editorial-page, .editorial-overlay) .set-row.is-done .tick-button,
+:is(.editorial-page, .editorial-overlay) .exercise-tick.is-done {
+  color: var(--ed-gold);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ed-gold) 60%, transparent));
+}
+
+:is(.editorial-page, .editorial-overlay) .set-row.is-done .number-field {
+  border-color: color-mix(in srgb, var(--ed-gold) 50%, transparent);
+}
+
+/* "+ Set", "+ Exercise", "Keep" and "Show all": small spaced gold capitals. */
+:is(.editorial-page, .editorial-overlay) ion-button.add-set,
+:is(.editorial-page, .editorial-overlay) ion-button.suggestion-keep {
+  --color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+:is(.editorial-page, .editorial-overlay) .rest-row {
+  color: var(--ed-muted);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+:is(.editorial-page, .editorial-overlay) .suggestion-note {
+  padding: 4px 0 4px 12px;
+  border-left: 1px solid var(--ed-gold);
+  border-radius: 0;
+  background: none;
+  color: var(--ed-ink);
+  font-weight: 400;
+}
+
+:is(.editorial-page, .editorial-overlay) .suggestion-note.is-down {
+  border-left-color: var(--ed-muted);
+}
+
+/* Name and date of a logged workout, folded into one line between thin gold lines. */
+:is(.editorial-page, .editorial-overlay) ion-accordion-group.details {
+  margin: 0 0 4px;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
+  border-radius: 0;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-accordion-group.details ion-accordion {
+  background: transparent;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-accordion-group.details ion-item {
+  --background: transparent;
+  --padding-start: 0;
+  --inner-padding-end: 0;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-accordion-group.details ion-item[slot="header"] ion-label {
+  font-family: var(--ed-serif);
+  font-size: 18px;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-note {
+  --color: var(--ed-muted);
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-accordion .ion-accordion-toggle-icon {
+  color: var(--ed-gold);
+}
+
+/* Adding an exercise: the name on a hairline, the type as a gold underlined choice. */
+:is(.editorial-page, .editorial-overlay) .filled-field {
+  padding: 0;
+  border-bottom: 1px solid var(--ed-hair);
+  border-radius: 0;
+  background: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .add-exercise h3 {
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-segment {
+  --background: transparent;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-segment-button {
+  --color: var(--ed-muted);
+  --color-checked: var(--ed-gold);
+  --indicator-color: transparent;
+  --indicator-box-shadow: inset 0 -1px 0 var(--ed-gold);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-input {
+  --highlight-color-focused: var(--ed-gold);
+}
+
+/* Full-width buttons: Finish and Save in brushed gold, the rest a thin gold outline, and
+   Discard or Delete in small red capitals. */
+:is(.editorial-page, .editorial-overlay) ion-button.primary-action,
+:is(.editorial-page, .editorial-overlay) ion-button.secondary-action,
+:is(.editorial-page, .editorial-overlay) ion-button[color="danger"],
+:is(.editorial-page, .editorial-overlay) ion-button[color="medium"] {
+  --border-radius: 2px;
+  --box-shadow: none;
+  --background-hover-opacity: 0;
+  --background-focused-opacity: 0;
+  min-height: 52px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.primary-action {
+  --background: var(--ed-brushed-gold);
+  --background-activated: var(--ed-brushed-gold);
+  --color: #1a140a;
+  filter: drop-shadow(0 8px 16px color-mix(in srgb, var(--ed-gold) 30%, transparent));
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.secondary-action {
+  --background: transparent;
+  --background-activated: transparent;
+  --box-shadow: inset 0 0 0 0.5px var(--ed-gold);
+  --color: var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .button-note {
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-size: 13px;
+  font-style: italic;
+}
+
+/* Get ready and Review: the workout's name as a serif headline, rows on thin gold lines. */
+:is(.editorial-page, .editorial-overlay) .hero-title {
+  font-family: var(--ed-serif);
+  font-size: 46px;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .hero .muted {
+  color: var(--ed-muted);
+}
+
+:is(.editorial-page, .editorial-overlay) .section-title {
+  margin: 26px 0 8px;
+  font-family: var(--ed-serif);
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 300;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-list.list-inset {
+  margin: 0 0 16px;
+  border-top: 0.5px solid var(--ed-hair);
+  border-radius: 0;
+  background: transparent;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-list.list-inset ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  border-bottom: 0.5px solid color-mix(in srgb, var(--ed-gold) 14%, transparent);
+}
+
+:is(.editorial-page, .editorial-overlay) ion-list.list-inset ion-item ion-label {
+  font-family: var(--ed-serif);
+  font-size: 17px;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-badge {
+  --background: transparent;
+  --color: var(--ed-gold);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+}
+
+/* ---------- Guided workout (Editorial) ---------- */
+/* Anish's mix on 2026-11-27 (sample C with premium touches): a set is warm black with a
+   gold spotlight pulsing behind the rep target and a glint of light crossing the number;
+   a rest is midnight ink with a thin gold circle breathing round the clock. Between the
+   two, the spotlight shrinks into the circle and the circle opens back into the spotlight.
+   The sets are thin gold segments, Done with set is the one big button, and Pause and
+   End are small capitals. */
+:is(.editorial-page, .editorial-overlay) .phase-layer.is-work {
+  background: var(--ed-bg);
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-layer.is-rest {
+  background:
+    radial-gradient(80% 60% at 50% 40%, color-mix(in srgb, var(--ed-calm) 14%, transparent), transparent 70%),
+    var(--ed-calm-bg);
+}
+
+/* Fine film grain over both, so the dark reads as a material rather than flat colour. */
+:is(.editorial-page, .editorial-overlay) .phase-fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.editorial-page:has(.player) ion-toolbar ion-button {
+  --ion-color-base: var(--ed-gold) !important;
+  --color: var(--ed-gold);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+:is(.editorial-page, .editorial-overlay) .player-total {
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-size: 17px;
+  font-weight: 300;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .player-position {
+  color: var(--ed-muted);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+:is(.editorial-page, .editorial-overlay) .progress-summary {
+  padding: 10px 0;
+  border-top: 0.5px solid var(--ed-hair);
+  border-bottom: 0.5px solid var(--ed-hair);
+  border-radius: 0;
+  background: none;
+  color: var(--ed-ink);
+}
+
+:is(.editorial-page, .editorial-overlay) .progress-count {
+  font-family: var(--ed-serif);
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) .progress-link {
+  color: var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .progress-summary ion-progress-bar {
+  height: 1px;
+  --background: var(--ed-hair);
+}
+
+:is(.editorial-page, .editorial-overlay) .progress-summary ion-progress-bar::part(progress) {
+  background: var(--ed-gold);
+  box-shadow: 0 0 6px var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .player-label {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  transition: color 1.2s ease;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-rest .player-label {
+  color: var(--ed-calm);
+}
+
+.set-segments {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.set-segments i {
+  width: 26px;
+  height: 2px;
+  background: var(--ed-hair);
+}
+
+.set-segments i.is-done {
+  background: var(--ed-gold);
+}
+
+.set-segments i.is-now {
+  background: var(--ed-gold);
+  box-shadow: 0 0 8px var(--ed-gold);
+  animation: segment-glow 1.6s ease-in-out infinite;
+}
+
+@keyframes segment-glow {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+:is(.editorial-page, .editorial-overlay) .player-exercise {
+  font-family: var(--ed-serif);
+  font-style: normal;
+  font-weight: 300;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .edit-target {
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  color: var(--ed-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+:is(.editorial-page, .editorial-overlay) .edit-target .icon {
+  color: var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.how-to-link {
+  --color: var(--ed-gold);
+  font-size: 13px;
+}
+
+/* The clock or rep target: serif, gold in a set. */
+:is(.editorial-page, .editorial-overlay) .player-countdown {
+  color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-style: normal;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-work .player-countdown {
+  color: var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .player-reps small {
+  color: var(--ed-muted);
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* Gold text is painted only inside its box, so the number gets room for its curves. */
+.rep-number {
+  position: relative;
+  display: inline-block;
+  padding: 0 0.12em;
+  background: var(--ed-brushed-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+:root:not(.ion-palette-dark) .rep-number {
+  background-image: linear-gradient(100deg, #6e5220 0%, #b8954f 30%, #7d5f26 50%, #c4a463 70%, #6e5220 100%);
+}
+
+.rep-glint {
+  position: absolute;
+  inset: 0;
+  padding: 0 0.12em;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 250, 230, 0.95) 50%, transparent 60%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+  animation: rep-glint 1.6s ease-in-out infinite;
+}
+
+@keyframes rep-glint {
+  0% {
+    background-position: 100% 0;
+  }
+
+  55%,
+  100% {
+    background-position: 0% 0;
+  }
+}
+
+/* The stage: a spotlight (::before) in a set, a breathing ring (::after) in a rest. */
+:is(.editorial-page, .editorial-overlay) .phase-stage .breath {
+  display: block;
+  position: relative;
+  width: clamp(140px, 28dvh, 240px);
+  height: clamp(140px, 28dvh, 240px);
+  border-radius: 50%;
+  background: none;
+  animation: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .breath::before,
+:is(.editorial-page, .editorial-overlay) .breath::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+:is(.editorial-page, .editorial-overlay) .breath::before {
+  background: radial-gradient(circle,
+    color-mix(in srgb, var(--ed-gold) 38%, transparent) 0%,
+    color-mix(in srgb, var(--ed-gold) 12%, transparent) 40%,
+    transparent 70%);
+}
+
+:is(.editorial-page, .editorial-overlay) .breath::after {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ed-gold) 70%, transparent), 0 0 40px -10px var(--ed-gold);
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-work .breath::before {
+  opacity: 1;
+  animation: ed-spotlight 1.6s ease-in-out infinite;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-rest .breath::after {
+  opacity: 1;
+  animation: ed-breathe 8s ease-in-out infinite;
+}
+
+/* Into a rest: the spotlight shrinks away as the ring grows out of it. */
+:is(.editorial-page, .editorial-overlay) .phase-rest.is-phase-change .breath::before {
+  animation: ed-spotlight-out 1.1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-rest.is-phase-change .breath::after {
+  animation: ed-ring-in 1.2s cubic-bezier(0.4, 0, 0.2, 1) both, ed-breathe 8s ease-in-out 1.2s infinite;
+}
+
+/* Back into a set: the ring opens out and fades as the spotlight swells back. */
+:is(.editorial-page, .editorial-overlay) .phase-work.is-phase-change .breath::after {
+  animation: ed-ring-out 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-work.is-phase-change .breath::before {
+  animation: ed-spotlight-in 1s ease both, ed-spotlight 1.6s ease-in-out 1s infinite;
+}
+
+:is(.editorial-page, .editorial-overlay) .player.is-paused .breath::before,
+:is(.editorial-page, .editorial-overlay) .player.is-paused .breath::after,
+:is(.editorial-page, .editorial-overlay) .player.is-paused .rep-glint,
+:is(.editorial-page, .editorial-overlay) .player.is-paused .set-segments i {
+  animation-play-state: paused;
+}
+
+@keyframes ed-spotlight {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes ed-spotlight-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+}
+
+@keyframes ed-spotlight-in {
+  from {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+
+  to {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes ed-ring-in {
+  from {
+    opacity: 0;
+    transform: scale(0.45);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(0.72);
+  }
+}
+
+@keyframes ed-ring-out {
+  from {
+    opacity: 1;
+    transform: scale(0.72);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes ed-breathe {
+  0%,
+  100% {
+    transform: scale(0.72);
+  }
+
+  50% {
+    transform: scale(1);
+  }
+}
+
+/* The rest clock fits inside the circle, and "Breathe" sits just below it. */
+:is(.editorial-page, .editorial-overlay) .phase-rest .player-countdown {
+  font-size: clamp(48px, 9dvh, 84px);
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-rest .phase-stage {
+  margin-bottom: 28px;
+}
+
+:is(.editorial-page, .editorial-overlay) .phase-rest .breath-word {
+  position: relative;
+  top: 34px;
+  color: var(--ed-calm);
+  font-family: var(--ed-serif);
+  font-size: 18px;
+  font-style: italic;
+  font-weight: 300;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .up-next-done {
+  color: var(--ed-gold);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* In a rest the big button is a thin calm outline; Next exercise is a small gold link. */
+:is(.editorial-page, .editorial-overlay) .phase-rest ion-button.step-action {
+  --background: transparent;
+  --background-activated: transparent;
+  --box-shadow: inset 0 0 0 0.5px var(--ed-calm);
+  --color: var(--ed-calm);
+  filter: none;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.next-link {
+  --ion-color-base: var(--ed-gold) !important;
+  min-height: 36px;
+  font-size: 11px;
+}
+
+/* Find your weight, How did it feel and How many reps, on thin gold lines. */
+:is(.editorial-page, .editorial-overlay) .find-weight-card {
+  border: 0.5px solid var(--ed-gold);
+  border-radius: 2px;
+  background: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .find-weight-card .find-weight-title,
+:is(.editorial-page, .editorial-overlay) .feel-weight-value {
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-style: normal;
+  font-weight: 300;
+  text-transform: none;
+}
+
+:is(.editorial-page, .editorial-overlay) .feel-choice {
+  border: 0.5px solid var(--ed-hair);
+  border-radius: 2px;
+  background: none;
+  color: var(--ed-ink);
+}
+
+:is(.editorial-page, .editorial-overlay) .feel-choice strong {
+  font-family: var(--ed-serif);
+  font-weight: 400;
+}
+
+:is(.editorial-page, .editorial-overlay) .feel-choice.is-right {
+  border-color: var(--ed-gold);
+  background: color-mix(in srgb, var(--ed-gold) 8%, transparent);
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.rep-chip {
+  --border-radius: 2px;
+  --border-width: 0.5px;
+  --border-color: var(--ed-hair);
+  --color: var(--ed-ink);
+  font-family: var(--ed-serif);
+  font-style: normal;
+  font-weight: 300;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.rep-chip.is-top {
+  --background: var(--ed-brushed-gold);
+  --color: #1a140a;
+}
+
+/* ---------- The 3, 2, 1 count-in (Editorial) ---------- */
+.count-in {
+  background: var(--ed-bg);
+}
+
+.count-in::before {
+  inset: 0;
+  background: radial-gradient(70% 45% at 50% 0%, color-mix(in srgb, var(--ed-gold) 26%, transparent), transparent 70%);
+  filter: none;
+  animation: none;
+}
+
+.count-in-label {
+  color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+.count-in-number {
+  padding: 0 0.1em;
+  background: var(--ed-brushed-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: var(--ed-serif);
+  font-style: normal;
+  font-weight: 300;
+}
+
+.count-in-number.is-go {
+  font-style: italic;
+}
+
+.count-in-hint {
+  color: var(--ed-muted);
+  font-family: var(--ed-serif);
+  font-style: italic;
+}
+
+/* ---------- Workout saved (Editorial) ---------- */
+/* A gold glow spreads out from the middle, then "Well done." (or "New PR.") and the rest
+   rise in one after another. */
+#completeContent {
+  position: relative;
+}
+
+.finish-glow {
+  position: absolute;
+  top: 120px;
+  left: 50%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--ed-gold) 45%, transparent), transparent 70%);
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0);
+  animation: finish-glow 2.4s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes finish-glow {
+  60% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0.35;
+    transform: translate(-50%, -50%) scale(26);
+  }
+}
+
+#completeContent > :not(.finish-glow) {
+  position: relative;
+  animation: finish-rise 0.9s ease both;
+}
+
+#completeContent > :nth-child(3) {
+  animation-delay: 0.45s;
+}
+
+#completeContent > :nth-child(4) {
+  animation-delay: 0.65s;
+}
+
+#completeContent > :nth-child(n + 5) {
+  animation-delay: 0.85s;
+}
+
+@keyframes finish-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+#completeContent > .kicker {
+  margin: 40px 0 0;
+  text-align: center;
+}
+
+.finish-title {
+  text-align: center;
+}
+
+.editorial .finish-title {
+  margin: 10px 0 6px;
+  font-size: 64px;
+}
+
+.finish-xp {
+  margin: 0 0 8px;
+  color: var(--ed-gold);
+  font-family: var(--ed-serif);
+  font-size: 18px;
+  font-style: italic;
+  text-align: center;
+}
+
+#completeContent .record-columns {
+  margin: 16px 0 6px;
+}
+
+/* ---------- Sheets (Editorial) ---------- */
+/* Sheets that slide up (All exercises, Edit sets, How to do it, sign-in) sit on the page
+   colour with a serif title and a thin gold line under the top bar. */
+ion-modal.editorial-overlay {
+  --background: var(--ed-bg);
+  --border-radius: 14px;
+}
+
+ion-modal.editorial-overlay ion-toolbar {
+  --background: var(--ed-bg);
+  --border-width: 0 0 0.5px;
+  --border-color: var(--ed-hair);
+}
+
+ion-modal.editorial-overlay ion-title {
+  font-family: var(--ed-serif);
+  font-size: 19px;
+  font-weight: 400;
+}
+
+ion-modal.editorial-overlay ion-toolbar ion-button {
+  --color: var(--ed-gold);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* ---------- Profile and the activity form (Editorial) ---------- */
+.editorial .setting-label {
+  margin: 18px 0 8px;
+  color: var(--ed-muted);
+  font-size: 13px;
+}
+
+.editorial .list-note {
+  margin: 0 0 12px;
+  color: var(--ed-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.editorial .form-error {
+  margin: 0 0 12px;
+  padding: 4px 0 4px 12px;
+  border-left: 1px solid var(--danger);
+  border-radius: 0;
+  background: none;
+  color: var(--danger);
+  font-weight: 500;
+}
+
+:is(.editorial-page, .editorial-overlay) ion-button.choice {
+  min-height: 38px;
+  font-size: 11px;
+}
+
+/* Full-width buttons one under another (outside a button stack) get a little room. */
+:not(.button-stack) > ion-button[expand="block"] + ion-button[expand="block"] {
+  margin-top: 10px;
+}
+
+/* The date on a "Date" row: gold on a thin gold outline instead of a grey pill. */
+:is(.editorial-page, .editorial-overlay) ion-datetime-button::part(native) {
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: inset 0 0 0 0.5px var(--ed-gold);
+  color: var(--ed-gold);
+}
+
+/* Share and Save image sit just under Done on Workout saved. */
+#completeContent > .button-stack {
+  margin-top: 10px;
 }

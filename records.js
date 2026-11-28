@@ -168,3 +168,16 @@ export function headlineStat(summary, unit) {
   if (summary.reps > 0) return [summary.reps.toLocaleString(), summary.reps === 1 ? "rep" : "reps"];
   return [`+${summary.xp}`, "XP"];
 }
+
+// Your most recent personal record, for Home: walks your workouts oldest first and keeps the
+// last set that beat every earlier session of its exercise, with that workout's date. Null
+// until you have beaten a lift at least once. Logged activities have no sets and are skipped.
+export function latestRecord(workouts) {
+  const sessions = newestLast(workouts.filter((workout) => Array.isArray(workout.exercises)));
+  let latest = null;
+  sessions.forEach((workout, index) => {
+    const records = findNewRecords(sessions.slice(0, index), workout);
+    if (records.length > 0) latest = { ...records.at(-1), date: workout.date };
+  });
+  return latest;
+}
