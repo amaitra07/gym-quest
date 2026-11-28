@@ -3,7 +3,7 @@ import { addDays, formatDate, todayIso, WEEKDAY_NAMES } from "./dates.js";
 import { byId, el } from "./dom.js";
 import { renderHistory } from "./history.js";
 import { summarize } from "./history-row.js";
-import { countUp, fillBar } from "./motion.js";
+import { fillBar } from "./motion.js";
 import { MUSCLES, musclesFor } from "./muscles.js";
 import { estimateMinutes, planLineText, upNext, weekOf } from "./plan.js";
 import { latestRecord } from "./records.js";
@@ -60,9 +60,9 @@ function renderWeek(workouts) {
 
 function renderStats(workouts) {
   const { level, into, needed } = levelInfo(totalXp(workouts));
-  countUp(byId("streakNumber"), currentStreak(workouts));
-  countUp(byId("workoutCount"), workouts.length);
-  countUp(byId("levelNumber"), level);
+  byId("streakNumber").textContent = String(currentStreak(workouts));
+  byId("workoutCount").textContent = String(workouts.length);
+  byId("levelNumber").textContent = String(level);
   byId("levelName").textContent = titleForLevel(level);
   byId("levelDetail").textContent = `${into} / ${needed} XP`;
   fillBar(byId("levelBar"), into / needed);
